@@ -1,17 +1,26 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { LayoutDashboard, FileText, History } from "lucide-react";
+import logo_img from "../assets/images/logo.svg"
 
 function Sidebar() {
   return (
     <div className="w-64 h-screen bg-[#F8F9FA] border-r border-gray-200 fixed left-0 top-0 p-6">
 
 
-      <h1 className="text-3xl font-bold mb-10">
+      {/* <h1 className="text-3xl font-bold mb-10">
         Smart<span className="text-orange-500">HR</span>
-      </h1>
+      </h1> */}
 
-      <p className="text-gray-400 text-xs mb-4 uppercase">
+      <div>
+        <img
+          src={logo_img}
+          alt="Logo"
+          className="w-35 mb-10 object-contain"
+        />
+      </div>
+
+      <p className="text-gray-500 text-xs mb-4 uppercase">
         Main Menu
       </p>
 
