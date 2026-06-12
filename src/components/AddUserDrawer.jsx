@@ -1,10 +1,14 @@
-import React from "react";
+import React, { useState } from "react";
 import CloseIcon from "@mui/icons-material/Close";
 import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
+import VisibilityIcon from "@mui/icons-material/Visibility";
 
 const permissions = ["Employee", "Holidays", "Leaves", "Events"];
 
 const AddUserDrawer = ({ open, onClose }) => {
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+
   return (
     <>
       {/* Overlay */}
@@ -74,14 +78,21 @@ const AddUserDrawer = ({ open, onClose }) => {
 
               <div className="relative">
                 <input
-                  type="password"
+                  type={showPassword ? "text" : "password"}
                   className="input input-bordered w-full pr-10"
                 />
 
-                <VisibilityOffIcon
-                  className="absolute right-3 top-3 text-gray-400"
-                  fontSize="small"
-                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((v) => !v)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                >
+                  {showPassword ? (
+                    <VisibilityIcon fontSize="small" />
+                  ) : (
+                    <VisibilityOffIcon fontSize="small" />
+                  )}
+                </button>
               </div>
             </div>
 
@@ -93,14 +104,21 @@ const AddUserDrawer = ({ open, onClose }) => {
 
               <div className="relative">
                 <input
-                  type="password"
+                  type={showConfirm ? "text" : "password"}
                   className="input input-bordered w-full pr-10"
                 />
 
-                <VisibilityOffIcon
-                  className="absolute right-3 top-3 text-gray-400"
-                  fontSize="small"
-                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirm((v) => !v)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                >
+                  {showConfirm ? (
+                    <VisibilityIcon fontSize="small" />
+                  ) : (
+                    <VisibilityOffIcon fontSize="small" />
+                  )}
+                </button>
               </div>
             </div>
 
