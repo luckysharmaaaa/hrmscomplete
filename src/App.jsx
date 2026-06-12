@@ -1,47 +1,56 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+
 import Sidebar from "./components/Sidebar";
+import Navbar from "./components/Navbar";
+
 import ApplyLeave from "./pages/ApplyLeave";
 import LeaveHistory from "./pages/LeaveHistory";
-import Navbar from "./components/Navbar"
-import Dashboard from "./pages/Dashboard"
+import Dashboard from "./pages/Dashboard";
+import User from "./pages/User";
+import Profile from "./pages/Profile";
+import Login from "./pages/Login";
+
+function Layout() {
+  return (
+    <div className="min-h-screen bg-slate-100">
+      {/* Navbar */}
+      <Navbar />
+
+      <div className="flex">
+        {/* Sidebar */}
+        <Sidebar />
+
+        {/* Main Content */}
+        <main className="flex-1 ml-64 mt-20 p-5 min-h-screen">
+          <Routes>
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/apply-leave" element={<ApplyLeave />} />
+            <Route path="/leave-history" element={<LeaveHistory />} />
+            <Route path="/user" element={<User />} />
+            <Route path="/profile" element={<Profile />} />
+            
+          </Routes>
+        </main>
+      </div>
+    </div>
+  );
+}
 
 function App() {
   return (
     <BrowserRouter>
-      <div className="flex">
-        <Navbar />
-        <Sidebar />
+      <Routes>
+        {/* First Open Login */}
+        <Route path="/" element={<Login />} />
 
-        <div className="ml-64 mt-20 p-5">
-          <Routes>
-            <Route path="/apply-leave" element={<ApplyLeave />} />
-            <Route path="/leave-history" element={<LeaveHistory />} />
-            <Route path = "/dashboard" element={<Dashboard/>}/>
-          </Routes>
-        </div>
-      </div>
+        {/* Signup Page */}
+        <Route path="/signup" element={<SignUp />} />
+
+        {/* Protected Layout Pages */}
+        <Route path="/*" element={<Layout />} />
+      </Routes>
     </BrowserRouter>
   );
 }
 
 export default App;
-
-// import React from "react";
-// import { BrowserRouter, Routes, Route } from "react-router-dom";
-
-// import Login from "./pages/Login";
-// import SignUp from "./pages/SignUp";
-
-// function App() {
-//   return (
-//     <BrowserRouter>
-//       <Routes>
-//         <Route path="/" element={<Login />} />
-//         <Route path="/login" element={<Login />} />
-//         <Route path="/signup" element={<SignUp />} />
-//       </Routes>
-//     </BrowserRouter>
-//   );
-// }
-
-// export default App;
