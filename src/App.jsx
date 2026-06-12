@@ -1,23 +1,33 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+
 import Sidebar from "./components/Sidebar";
+import Navbar from "./components/Navbar";
+
 import ApplyLeave from "./pages/ApplyLeave";
 import LeaveHistory from "./pages/LeaveHistory";
-import Navbar from "./components/Navbar"
-import Dashboard from "./pages/Dashboard"
+import Dashboard from "./pages/Dashboard";
+import User from "./pages/User";
 
 function App() {
   return (
     <BrowserRouter>
-      <div className="flex">
+      <div className="min-h-screen bg-slate-100">
+        {/* Fixed Navbar */}
         <Navbar />
-        <Sidebar />
 
-        <div className="ml-64 mt-20 p-5">
-          <Routes>
-            <Route path="/apply-leave" element={<ApplyLeave />} />
-            <Route path="/leave-history" element={<LeaveHistory />} />
-            <Route path = "/dashboard" element={<Dashboard/>}/>
-          </Routes>
+        <div className="flex">
+          {/* Fixed Sidebar */}
+          <Sidebar />
+
+          {/* Main Content */}
+          <main className="flex-1 ml-64 mt-20 p-5 min-h-screen">
+            <Routes>
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/apply-leave" element={<ApplyLeave />} />
+              <Route path="/leave-history" element={<LeaveHistory />} />
+              <Route path="/user" element={<User />} />
+            </Routes>
+          </main>
         </div>
       </div>
     </BrowserRouter>

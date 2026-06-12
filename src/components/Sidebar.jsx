@@ -5,6 +5,7 @@ import {
   FileText,
   History,
   LogOut,
+  User
 } from "lucide-react";
 
 import logo_img from "../assets/images/logo.svg";
@@ -65,6 +66,19 @@ function Sidebar() {
               <History size={18} />
               <span className="font-medium">
                 Leave History
+              </span>
+            </Link>
+          </li>
+
+          {/* User */}
+          <li>
+            <Link
+              to="/user"
+              className="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700 hover:bg-orange-50 hover:text-orange-500 transition"
+            >
+              <User size={18} />
+              <span className="font-medium">
+                Users
               </span>
             </Link>
           </li>
