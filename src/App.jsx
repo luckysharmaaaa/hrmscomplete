@@ -20,7 +20,7 @@ function App() {
           <Sidebar />
 
           {/* Main Content */}
-          <main className="flex-1 ml-64 mt-20 p-5 min-h-screen">
+          <main className="flex-1  ml-64 mt-20 p-5 min-h-screen">
             <Routes>
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/apply-leave" element={<ApplyLeave />} />
