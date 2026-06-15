@@ -1,15 +1,9 @@
 import React from "react";
-import {
-  Bell,
-  Mail,
-  Search,
-  Settings,
-} from "lucide-react";
+import { Bell, Mail, Search, Settings } from "lucide-react";
 
 function Navbar() {
   return (
     <nav className="fixed top-0 left-64 right-0 h-18 bg-white border-b border-gray-200 px-8 flex items-center justify-between z-50">
-
       {/* Search Box */}
       <div className="relative w-[320px]">
         <Search
@@ -26,7 +20,6 @@ function Navbar() {
 
       {/* Right Side */}
       <div className="flex items-center gap-5">
-
         {/* Settings */}
         <button className="text-gray-600 hover:text-orange-500 transition">
           <Settings size={20} />
@@ -46,7 +39,6 @@ function Navbar() {
 
         {/* Profile */}
         <div className="flex items-center gap-3 cursor-pointer border-l pl-5">
-
           <img
             src="https://i.pravatar.cc/100?img=12"
             alt="profile"
@@ -54,13 +46,9 @@ function Navbar() {
           />
 
           <div>
-            <h3 className="text-sm font-semibold text-gray-800">
-              Lucky
-            </h3>
+            <h3 className="text-sm font-semibold text-gray-800">Lucky</h3>
 
-            <p className="text-xs text-gray-500">
-              Employee
-            </p>
+            <p className="text-xs text-gray-500">Employee</p>
           </div>
         </div>
       </div>
