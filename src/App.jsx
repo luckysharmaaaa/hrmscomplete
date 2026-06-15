@@ -7,6 +7,7 @@ import ApplyLeave from "./pages/ApplyLeave";
 import LeaveHistory from "./pages/LeaveHistory";
 import Dashboard from "./pages/Dashboard";
 import User from "./pages/User";
+import EmployeeList from "./pages/employeelist";
 
 function App() {
   return (
@@ -26,6 +27,9 @@ function App() {
               <Route path="/apply-leave" element={<ApplyLeave />} />
               <Route path="/leave-history" element={<LeaveHistory />} />
               <Route path="/user" element={<User />} />
+              <Route path="/employees" element={<EmployeeList/>} />
+
+
             </Routes>
           </main>
         </div>
