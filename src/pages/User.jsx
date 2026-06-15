@@ -11,8 +11,6 @@ import AddUserDrawer from "../components/AddUserDrawer";
 const User = () => {
   // drawer logic
   const [openDrawer, setOpenDrawer] = useState(false);
-  const [dateRange, setDateRange] = useState([null, null]);
-  const [startDate, endDate] = dateRange;
 
   return (
     <div className="w-full min-h-screen bg-slate-100">
