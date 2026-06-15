@@ -162,6 +162,10 @@ const RolesTable = () => {
             </span>
           </div>
 
+
+
+          
+
           {/* Status */}
           <select
             className="select select-bordered select-xs text-xs h-8 min-h-0 rounded-lg bg-white text-black"
