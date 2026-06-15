@@ -1,5 +1,5 @@
 import React from "react";
-import { Link , useNavigate} from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard,
   FileText,
@@ -99,6 +99,23 @@ function Sidebar() {
           </li>
 
 
+
+          {/* roles */}
+          <li>
+            <Link
+              to="/roles"
+              className="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700 hover:bg-orange-50 hover:text-orange-500 transition"
+            >
+              <User size={18} />
+              <span className="font-medium">
+                roles
+                 </span>
+            </Link>
+          </li>
+
+
+
+
           {/* Logout */}
           <li>
             <Link
@@ -106,7 +123,7 @@ function Sidebar() {
               className="flex items-center gap-3 px-4 py-3 rounded-lg text-red-500 hover:bg-red-50 transition"
             >
               <LogOut size={18} />
-              <span className="font-medium" onClick={()=>{navigate("/")}}>
+              <span className="font-medium" onClick={() => { navigate("/") }}>
                 Logout
               </span>
             </Link>

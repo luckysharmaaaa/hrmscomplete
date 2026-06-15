@@ -9,6 +9,7 @@ import Dashboard from "./pages/Dashboard";
 import User from "./pages/User";
 import Profile from "./pages/Profile";
 import Login from "./pages/Login";
+import Roles from "./pages/Roles"
 
 function Layout() {
   return (
@@ -28,7 +29,7 @@ function Layout() {
             <Route path="/leave-history" element={<LeaveHistory />} />
             <Route path="/user" element={<User />} />
             <Route path="/profile" element={<Profile />} />
-            
+            <Route path = "/roles" element = {<Roles/>}/>
           </Routes>
         </main>
       </div>
@@ -40,13 +41,7 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* First Open Login */}
         <Route path="/" element={<Login />} />
-
-        {/* Signup Page */}
-        <Route path="/signup" element={<SignUp />} />
-
-        {/* Protected Layout Pages */}
         <Route path="/*" element={<Layout />} />
       </Routes>
     </BrowserRouter>
