@@ -1,19 +1,18 @@
 import React, { useState } from "react";
 import { FiHome, FiChevronRight } from "react-icons/fi";
-
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
-import KeyboardDoubleArrowUpIcon from "@mui/icons-material/KeyboardDoubleArrowUp";
 import AddIcon from "@mui/icons-material/Add";
 import DescriptionOutlinedIcon from "@mui/icons-material/DescriptionOutlined";
 import PictureAsPdfOutlinedIcon from "@mui/icons-material/PictureAsPdfOutlined";
 import TableChartOutlinedIcon from "@mui/icons-material/TableChartOutlined";
-
 import UserTable from "../components/UserTable";
 import AddUserDrawer from "../components/AddUserDrawer";
 
 const User = () => {
   // drawer logic
   const [openDrawer, setOpenDrawer] = useState(false);
+  const [dateRange, setDateRange] = useState([null, null]);
+  const [startDate, endDate] = dateRange;
 
   return (
     <div className="w-full min-h-screen bg-slate-100">

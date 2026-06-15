@@ -42,9 +42,6 @@ function App() {
         {/* First Open Login */}
         <Route path="/" element={<Login />} />
 
-        {/* Signup Page */}
-        <Route path="/signup" element={<SignUp />} />
-
         {/* Protected Layout Pages */}
         <Route path="/*" element={<Layout />} />
       </Routes>

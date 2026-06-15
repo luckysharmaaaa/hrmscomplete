@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
   FiSearch,
   FiCalendar,
@@ -8,6 +8,11 @@ import {
   FiChevronUp,
   FiChevronDown,
 } from "react-icons/fi";
+import { DateRangePicker } from "react-date-range";
+import "react-date-range/dist/styles.css";
+import "react-date-range/dist/theme/default.css";
+import EditUserModal from "./EditUserModal";
+import DeleteUserModal from "./DeleteUserModal";
 
 const allUsers = [
   {
@@ -100,6 +105,276 @@ const allUsers = [
     status: "Active",
     avatar: "https://i.pravatar.cc/40?img=10",
   },
+  {
+    id: 11,
+    name: "Emma Johnson",
+    email: "emma@example.com",
+    date: "05 Jan 2024",
+    role: "Employee",
+    status: "Active",
+    avatar: "https://i.pravatar.cc/40?img=11",
+  },
+  {
+    id: 12,
+    name: "Daniel Parker",
+    email: "daniel@example.com",
+    date: "14 Mar 2024",
+    role: "Client",
+    status: "Active",
+    avatar: "https://i.pravatar.cc/40?img=12",
+  },
+  {
+    id: 13,
+    name: "Olivia Brown",
+    email: "olivia@example.com",
+    date: "27 Apr 2024",
+    role: "Employee",
+    status: "Inactive",
+    avatar: "https://i.pravatar.cc/40?img=13",
+  },
+  {
+    id: 14,
+    name: "James Wilson",
+    email: "james@example.com",
+    date: "19 May 2024",
+    role: "Employee",
+    status: "Active",
+    avatar: "https://i.pravatar.cc/40?img=14",
+  },
+  {
+    id: 15,
+    name: "Charlotte Davis",
+    email: "charlotte@example.com",
+    date: "08 Jun 2024",
+    role: "Client",
+    status: "Active",
+    avatar: "https://i.pravatar.cc/40?img=15",
+  },
+  {
+    id: 16,
+    name: "William Moore",
+    email: "william@example.com",
+    date: "15 Jul 2024",
+    role: "Employee",
+    status: "Active",
+    avatar: "https://i.pravatar.cc/40?img=16",
+  },
+  {
+    id: 17,
+    name: "Sophia Taylor",
+    email: "sophia@example.com",
+    date: "01 Aug 2024",
+    role: "Client",
+    status: "Inactive",
+    avatar: "https://i.pravatar.cc/40?img=17",
+  },
+  {
+    id: 18,
+    name: "Benjamin Anderson",
+    email: "benjamin@example.com",
+    date: "10 Sep 2024",
+    role: "Employee",
+    status: "Active",
+    avatar: "https://i.pravatar.cc/40?img=18",
+  },
+  {
+    id: 19,
+    name: "Amelia Thomas",
+    email: "amelia@example.com",
+    date: "22 Oct 2024",
+    role: "Client",
+    status: "Active",
+    avatar: "https://i.pravatar.cc/40?img=19",
+  },
+  {
+    id: 20,
+    name: "Henry Jackson",
+    email: "henry@example.com",
+    date: "30 Nov 2024",
+    role: "Employee",
+    status: "Active",
+    avatar: "https://i.pravatar.cc/40?img=20",
+  },
+  {
+    id: 21,
+    name: "Mia White",
+    email: "mia@example.com",
+    date: "12 Dec 2024",
+    role: "Client",
+    status: "Active",
+    avatar: "https://i.pravatar.cc/40?img=21",
+  },
+  {
+    id: 22,
+    name: "Lucas Harris",
+    email: "lucas@example.com",
+    date: "07 Jan 2025",
+    role: "Employee",
+    status: "Inactive",
+    avatar: "https://i.pravatar.cc/40?img=22",
+  },
+  {
+    id: 23,
+    name: "Evelyn Martin",
+    email: "evelyn@example.com",
+    date: "18 Feb 2025",
+    role: "Client",
+    status: "Active",
+    avatar: "https://i.pravatar.cc/40?img=23",
+  },
+  {
+    id: 24,
+    name: "Alexander Lee",
+    email: "alexander@example.com",
+    date: "05 Mar 2025",
+    role: "Employee",
+    status: "Active",
+    avatar: "https://i.pravatar.cc/40?img=24",
+  },
+  {
+    id: 25,
+    name: "Harper Walker",
+    email: "harper@example.com",
+    date: "14 Apr 2025",
+    role: "Client",
+    status: "Active",
+    avatar: "https://i.pravatar.cc/40?img=25",
+  },
+  {
+    id: 26,
+    name: "Elijah Hall",
+    email: "elijah@example.com",
+    date: "25 May 2025",
+    role: "Employee",
+    status: "Active",
+    avatar: "https://i.pravatar.cc/40?img=26",
+  },
+  {
+    id: 27,
+    name: "Abigail Allen",
+    email: "abigail@example.com",
+    date: "09 Jun 2025",
+    role: "Client",
+    status: "Inactive",
+    avatar: "https://i.pravatar.cc/40?img=27",
+  },
+  {
+    id: 28,
+    name: "Matthew Young",
+    email: "matthew@example.com",
+    date: "17 Jul 2025",
+    role: "Employee",
+    status: "Active",
+    avatar: "https://i.pravatar.cc/40?img=28",
+  },
+  {
+    id: 29,
+    name: "Ella King",
+    email: "ella@example.com",
+    date: "26 Aug 2025",
+    role: "Client",
+    status: "Active",
+    avatar: "https://i.pravatar.cc/40?img=29",
+  },
+  {
+    id: 30,
+    name: "David Wright",
+    email: "david@example.com",
+    date: "04 Sep 2025",
+    role: "Employee",
+    status: "Active",
+    avatar: "https://i.pravatar.cc/40?img=30",
+  },
+  {
+    id: 31,
+    name: "Scarlett Scott",
+    email: "scarlett@example.com",
+    date: "16 Oct 2025",
+    role: "Client",
+    status: "Active",
+    avatar: "https://i.pravatar.cc/40?img=31",
+  },
+  {
+    id: 32,
+    name: "Joseph Green",
+    email: "joseph@example.com",
+    date: "28 Nov 2025",
+    role: "Employee",
+    status: "Inactive",
+    avatar: "https://i.pravatar.cc/40?img=32",
+  },
+  {
+    id: 33,
+    name: "Grace Baker",
+    email: "grace@example.com",
+    date: "09 Dec 2025",
+    role: "Client",
+    status: "Active",
+    avatar: "https://i.pravatar.cc/40?img=33",
+  },
+  {
+    id: 34,
+    name: "Samuel Adams",
+    email: "samuel@example.com",
+    date: "21 Jan 2025",
+    role: "Employee",
+    status: "Active",
+    avatar: "https://i.pravatar.cc/40?img=34",
+  },
+  {
+    id: 35,
+    name: "Chloe Nelson",
+    email: "chloe@example.com",
+    date: "13 Feb 2025",
+    role: "Client",
+    status: "Active",
+    avatar: "https://i.pravatar.cc/40?img=35",
+  },
+  {
+    id: 36,
+    name: "Andrew Carter",
+    email: "andrew@example.com",
+    date: "24 Mar 2025",
+    role: "Employee",
+    status: "Active",
+    avatar: "https://i.pravatar.cc/40?img=36",
+  },
+  {
+    id: 37,
+    name: "Lily Mitchell",
+    email: "lily@example.com",
+    date: "02 Apr 2025",
+    role: "Client",
+    status: "Inactive",
+    avatar: "https://i.pravatar.cc/40?img=37",
+  },
+  {
+    id: 38,
+    name: "Christopher Perez",
+    email: "christopher@example.com",
+    date: "11 May 2025",
+    role: "Employee",
+    status: "Active",
+    avatar: "https://i.pravatar.cc/40?img=38",
+  },
+  {
+    id: 39,
+    name: "Aria Roberts",
+    email: "aria@example.com",
+    date: "19 Jun 2025",
+    role: "Client",
+    status: "Active",
+    avatar: "https://i.pravatar.cc/40?img=39",
+  },
+  {
+    id: 40,
+    name: "Jack Turner",
+    email: "jack@example.com",
+    date: "29 Jul 2025",
+    role: "Employee",
+    status: "Active",
+    avatar: "https://i.pravatar.cc/40?img=40",
+  },
 ];
 
 const SortIcon = () => (
@@ -110,25 +385,109 @@ const SortIcon = () => (
 );
 
 const UserTable = () => {
+  const [user, setUser] = useState(allUsers);
   const [selected, setSelected] = useState([]);
-  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [deleteTarget, setDeleteTarget] = useState(null); // for delete modal
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editUser, setEditUser] = useState(null);
+
+  // ── Date Range Picker ────────────────────────────────────────────
+  const today = new Date();
+  const [datePickerOpen, setDatePickerOpen] = useState(false);
+  const [appliedRange, setAppliedRange] = useState([
+    {
+      startDate: new Date(today.getFullYear(), 0, 1),
+      endDate: new Date(today.getFullYear(), 11, 31),
+      key: "selection",
+    },
+  ]);
+  const [tempRange, setTempRange] = useState(appliedRange);
+  const [activePreset, setActivePreset] = useState("This Year");
+  const datePickerRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (datePickerRef.current && !datePickerRef.current.contains(e.target)) {
+        setDatePickerOpen(false);
+        setTempRange(appliedRange);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [appliedRange]);
+
+  const presets = [
+    { label: "Today", start: today, end: today },
+    {
+      label: "Yesterday",
+      start: new Date(today - 86400000),
+      end: new Date(today - 86400000),
+    },
+    { label: "Last 7 Days", start: new Date(today - 6 * 86400000), end: today },
+    {
+      label: "Last 30 Days",
+      start: new Date(today - 29 * 86400000),
+      end: today,
+    },
+    {
+      label: "This Year",
+      start: new Date(today.getFullYear(), 0, 1),
+      end: new Date(today.getFullYear(), 11, 31),
+    },
+    {
+      label: "Next Year",
+      start: new Date(today.getFullYear() + 1, 0, 1),
+      end: new Date(today.getFullYear() + 1, 11, 31),
+    },
+    { label: "Custom Range", start: null, end: null },
+  ];
+
+  const applyPreset = (preset) => {
+    setActivePreset(preset.label);
+    if (preset.start) {
+      setTempRange([
+        { startDate: preset.start, endDate: preset.end, key: "selection" },
+      ]);
+    }
+  };
+
+  const formatDate = (d) =>
+    d
+      ? d.toLocaleDateString("en-US", {
+          month: "2-digit",
+          day: "2-digit",
+          year: "numeric",
+        })
+      : "";
+
+  const displayLabel = `${formatDate(appliedRange[0].startDate)} - ${formatDate(appliedRange[0].endDate)}`;
+
+  const handleDeleteUser = () => {
+    if (!deleteTarget) return;
+
+    setUser((prev) => prev.filter((user) => user.id !== deleteTarget.id));
+
+    setSelected((prev) => prev.filter((id) => id !== deleteTarget.id));
+
+    setDeleteTarget(null);
+    setIsDeleteModalOpen(false);
+  };
 
   const toggleAll = () =>
-    setSelected(
-      selected.length === allUsers.length ? [] : allUsers.map((u) => u.id),
-    );
+    setSelected(selected.length === user.length ? [] : user.map((u) => u.id));
 
   const toggleOne = (id) =>
     setSelected((prev) =>
       prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
     );
 
-  const filtered = allUsers.filter((u) => {
+  const filtered = user.filter((u) => {
     const matchSearch =
       u.name.toLowerCase().includes(search.toLowerCase()) ||
       u.email.toLowerCase().includes(search.toLowerCase());
@@ -149,21 +508,102 @@ const UserTable = () => {
   const endEntry = Math.min(safePage * rowsPerPage, totalEntries);
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden font-sans">
+    <div className="bg-white rounded-xl shadow-sm border border-gray-200 font-sans">
       {/* ── Top Header ──────────────────────────────────────────────── */}
       <div className="flex items-center justify-between gap-3 px-5 py-3 border-b border-gray-200">
-        <h2 className="text-base font-bold text-[#0F265C]">Users List</h2>
+        <h2 className="text-2xl font-bold text-[#0F265C]">Users List</h2>
 
         <div className="flex items-center gap-2">
           {/* Date Range */}
-          <div className="flex items-center gap-2 border border-gray-200 rounded-lg px-3 py-1.5 text-xs text-gray-600 bg-white cursor-pointer min-w-52">
-            <FiCalendar size={13} className="text-gray-400" />
-            <span>06/06/2026 - 06/12/2026</span>
+          <div className="relative" ref={datePickerRef}>
+            {/* Trigger Button */}
+            <button
+              onClick={() => {
+                setTempRange(appliedRange);
+                setDatePickerOpen((o) => !o);
+              }}
+              className="flex items-center gap-2 border border-gray-200 rounded-lg px-3 py-1.5 text-sm text-gray-600 h-10 bg-white cursor-pointer hover:border-gray-300 transition-colors whitespace-nowrap"
+            >
+              <FiCalendar size={13} className="text-gray-400" />
+              <span>{displayLabel}</span>
+            </button>
+
+            {/* Dropdown Panel */}
+            {datePickerOpen && (
+              <div className="absolute top-12 left-0 z-50 bg-white rounded-xl shadow-2xl border border-gray-200 overflow-hidden w-fit">
+                <div className="flex">
+                  {/* Presets Sidebar */}
+                  <div className="w-36 border-r border-gray-100 py-2 flex flex-col">
+                    {presets.map((p) => (
+                      <button
+                        key={p.label}
+                        onClick={() => applyPreset(p)}
+                        className={`text-left px-4 py-2 text-sm transition-colors ${
+                          activePreset === p.label
+                            ? "bg-orange-500 text-white font-medium"
+                            : "text-gray-600 hover:bg-gray-50"
+                        }`}
+                      >
+                        {p.label}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Calendar */}
+                  <div className="drp-no-sidebar">
+                    <style>{`.drp-no-sidebar .rdrDefinedRangesWrapper { display: none !important; }`}</style>
+                    <DateRangePicker
+                      ranges={tempRange}
+                      onChange={(item) => {
+                        setTempRange([item.selection]);
+                        setActivePreset("Custom Range");
+                      }}
+                      months={1}
+                      direction="horizontal"
+                      showMonthAndYearPickers
+                      rangeColors={["#f97316"]}
+                      color="#f97316"
+                      showDateDisplay={false}
+                      staticRanges={[]}
+                      inputRanges={[]}
+                    />
+                  </div>
+                </div>
+
+                {/* Footer */}
+                <div className="flex items-center justify-between px-4 py-3 border-t border-gray-100 bg-gray-50">
+                  <span className="text-sm text-gray-500 font-medium">
+                    {formatDate(tempRange[0].startDate)} -{" "}
+                    {formatDate(tempRange[0].endDate)}
+                  </span>
+                  <div className="flex gap-2">
+                    <button
+                      className="btn btn-sm btn-ghost border border-gray-200 text-gray-600 hover:bg-gray-100"
+                      onClick={() => {
+                        setTempRange(appliedRange);
+                        setDatePickerOpen(false);
+                      }}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      className="btn btn-sm bg-orange-500 hover:bg-orange-600 border-none text-white"
+                      onClick={() => {
+                        setAppliedRange(tempRange);
+                        setDatePickerOpen(false);
+                      }}
+                    >
+                      Apply
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Role */}
           <select
-            className="select select-bordered select-xs text-xs h-8 min-h-0 rounded-lg bg-white text-black"
+            className="select select-bordered select-sm w-32 text-sm h-10 min-h-0 rounded-lg bg-white text-black"
             value={roleFilter}
             onChange={(e) => {
               setRoleFilter(e.target.value);
@@ -177,7 +617,7 @@ const UserTable = () => {
 
           {/* Status */}
           <select
-            className="select select-bordered select-xs text-xs h-8 min-h-0 rounded-lg bg-white text-black"
+            className="select select-bordered select-sm text-sm h-10 min-h-0 rounded-lg w-32 bg-white text-black"
             value={statusFilter}
             onChange={(e) => {
               setStatusFilter(e.target.value);
@@ -190,7 +630,7 @@ const UserTable = () => {
           </select>
 
           {/* Sort */}
-          <select className="select select-bordered select-xs text-xs h-8 min-h-0 rounded-lg min-w-40 bg-white text-black">
+          <select className="select select-bordered select-xs text-sm h-10 min-h-0 rounded-lg min-w-40 bg-white text-black">
             <option>Sort By : Last 7 Days</option>
             <option>Sort By : Last 30 Days</option>
             <option>Sort By : Last 90 Days</option>
@@ -202,10 +642,10 @@ const UserTable = () => {
       <div className="flex items-center justify-between gap-2 px-5 py-2.5 border-b border-gray-200 text-sm text-gray-600">
         {/* Left: rows per page */}
         <div className="flex items-center gap-2">
-          <span className="whitespace-nowrap">Row Per Page</span>
+          <span className="whitespace-nowrap text-[15px]">Row Per Page</span>
 
           <select
-            className="select select-bordered select-xs h-7 min-h-0 text-xs rounded-md bg-white text-black"
+            className="select select-bordered select-xs h-10 min-h-0 text-xs rounded-md bg-white text-black"
             value={rowsPerPage}
             onChange={(e) => {
               setRowsPerPage(Number(e.target.value));
@@ -221,12 +661,12 @@ const UserTable = () => {
         </div>
 
         {/* Right: search */}
-        <label className="input input-bordered input-xs flex items-center gap-2 h-8 rounded-lg px-3 text-xs bg-white text-black">
+        <label className="input input-bordered input-xs flex items-center gap-2 h-10 rounded-lg px-3 text-xs bg-white text-black">
           <FiSearch size={13} className="text-gray-400" />
           <input
             type="text"
             placeholder="Search"
-            className="grow bg-transparent outline-none text-xs w-32"
+            className="grow bg-transparent outline-none text-[16px] w-32 "
             value={search}
             onChange={(e) => {
               setSearch(e.target.value);
@@ -245,7 +685,7 @@ const UserTable = () => {
                 <input
                   type="checkbox"
                   className="checkbox checkbox-sm border-gray-400 checked:bg-orange-500 checked:border-orange-500"
-                  checked={selected.length === allUsers.length}
+                  checked={selected.length === user.length}
                   onChange={toggleAll}
                 />
               </th>
@@ -309,26 +749,26 @@ const UserTable = () => {
                   <td>
                     <div className="flex items-center gap-2.5">
                       <div className="avatar">
-                        <div className="w-8 h-8 rounded-full">
+                        <div className="w-10 h-10 rounded-full">
                           <img src={user.avatar} alt={user.name} />
                         </div>
                       </div>
-                      <span className="font-medium text-gray-800 text-sm">
+                      <span className="font-medium text-gray-800 text-[15px]">
                         {user.name}
                       </span>
                     </div>
                   </td>
 
                   {/* Email */}
-                  <td className="text-gray-500 text-sm">{user.email}</td>
+                  <td className="text-gray-500 text-[15px]">{user.email}</td>
 
                   {/* Date */}
-                  <td className="text-gray-500 text-sm">{user.date}</td>
+                  <td className="text-gray-500 text-[15px]">{user.date}</td>
 
                   {/* Role Badge */}
                   <td>
                     <span
-                      className={`badge badge-sm border-0 font-medium text-xs px-2.5 py-0.5 ${
+                      className={`badge badge-sm border-0 font-medium text-[15px] px-2.5 py-0.5 ${
                         user.role === "Employee"
                           ? "bg-pink-100 text-pink-600"
                           : "bg-purple-100 text-purple-600"
@@ -341,7 +781,7 @@ const UserTable = () => {
                   {/* Status Badge */}
                   <td>
                     <span
-                      className={`badge badge-sm border-0 text-white font-semibold text-xs gap-1.5 px-2.5 py-0.5 ${
+                      className={`badge badge-sm border-0 text-white font-semibold text-[12px] gap-1.5 px-2.5 py-0.5 ${
                         user.status === "Active" ? "bg-green-500" : "bg-red-500"
                       }`}
                     >
@@ -354,14 +794,11 @@ const UserTable = () => {
                   <td className="text-center">
                     <div className="flex justify-center items-center gap-2">
                       <button
-                        className="btn btn-ghost btn-xs text-gray-400 hover:text-red-500 hover:bg-red-50 p-1 min-h-0 h-auto rounded"
-                        title="Favourite"
-                      >
-                        <FiHeart size={14} />
-                      </button>
-                      <button
-                        className="btn btn-ghost btn-xs text-gray-400 hover:text-orange-500 hover:bg-orange-50 p-1 min-h-0 h-auto rounded"
-                        title="Edit"
+                        className="btn btn-ghost btn-xs text-gray-400 hover:text-orange-500"
+                        onClick={() => {
+                          setEditUser(user);
+                          setIsEditModalOpen(true);
+                        }}
                       >
                         <FiEdit2 size={14} />
                       </button>
@@ -370,7 +807,7 @@ const UserTable = () => {
                         title="Delete"
                         onClick={() => {
                           setDeleteTarget(user);
-                          document.getElementById("delete_modal").showModal();
+                          setIsDeleteModalOpen(true);
                         }}
                       >
                         <FiTrash2 size={14} />
@@ -422,57 +859,27 @@ const UserTable = () => {
           </button>
         </div>
       </div>
+
       {/* ── Delete Confirmation Modal ────────────────────────────── */}
-      <dialog id="delete_modal" className="modal">
-        <div className="modal-box max-w-md rounded-xl p-0 overflow-hidden">
-          {/* Modal Header */}
-          <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
-            <h3 className="text-base font-semibold text-gray-800">
-              Delete User
-            </h3>
-            <form method="dialog">
-              <button className="btn btn-ghost btn-xs btn-circle text-gray-400 hover:text-gray-700">
-                ✕
-              </button>
-            </form>
-          </div>
+      <DeleteUserModal
+        isOpen={isDeleteModalOpen}
+        deleteTarget={deleteTarget}
+        onClose={() => {
+          setIsDeleteModalOpen(false);
+          setDeleteTarget(null);
+        }}
+        onConfirm={handleDeleteUser}
+      />
+      {/* ── Edit Modal ────────────────────────────── */}
 
-          {/* Modal Body */}
-          <div className="px-5 py-5 text-center">
-            <div className="mx-auto mb-4 w-14 h-14 rounded-full bg-red-50 flex items-center justify-center">
-              <FiTrash2 size={24} className="text-red-500" />
-            </div>
-            <p className="text-sm text-gray-600">
-              Are you sure you want to delete{" "}
-              <span className="font-semibold text-gray-900">
-                {deleteTarget?.name}
-              </span>
-              ? This action cannot be undone.
-            </p>
-          </div>
-
-          {/* Modal Actions */}
-          <div className="flex gap-3 px-5 pb-5">
-            <form method="dialog" className="flex-1">
-              <button className="btn btn-outline w-full border-gray-200 text-gray-600 hover:bg-gray-50 hover:border-gray-300">
-                Cancel
-              </button>
-            </form>
-            <form method="dialog" className="flex-1">
-              <button
-                className="btn w-full bg-red-500 hover:bg-red-600 border-none text-white"
-                onClick={() => setDeleteTarget(null)}
-              >
-                Delete
-              </button>
-            </form>
-          </div>
-        </div>
-        {/* Backdrop */}
-        <form method="dialog" className="modal-backdrop">
-          <button>close</button>
-        </form>
-      </dialog>
+      <EditUserModal
+        isOpen={isEditModalOpen}
+        editUser={editUser}
+        onClose={() => {
+          setIsEditModalOpen(false);
+          setEditUser(null);
+        }}
+      />
     </div>
   );
 };
