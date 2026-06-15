@@ -1,5 +1,5 @@
 import React from "react";
-import { Link } from "react-router-dom";
+import { Link , useNavigate} from "react-router-dom";
 import {
   LayoutDashboard,
   FileText,
@@ -11,6 +11,8 @@ import {
 import logo_img from "../assets/images/logo.svg";
 
 function Sidebar() {
+  const navigate = useNavigate()
+
   return (
     <div className="w-64 h-screen bg-[#F7F7F7] border-r border-gray-200 fixed left-0 top-0 overflow-y-auto">
 
@@ -94,14 +96,28 @@ function Sidebar() {
             </Link>
           </li>
 
+          {/* User */}
+          <li>
+            <Link
+              to="/profile"
+              className="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700 hover:bg-orange-50 hover:text-orange-500 transition"
+            >
+              <User size={18} />
+              <span className="font-medium">
+                Profile
+              </span>
+            </Link>
+          </li>
+
+
           {/* Logout */}
           <li>
             <Link
-              to="/login"
+              to="/"
               className="flex items-center gap-3 px-4 py-3 rounded-lg text-red-500 hover:bg-red-50 transition"
             >
               <LogOut size={18} />
-              <span className="font-medium">
+              <span className="font-medium" onClick={()=>{navigate("/")}}>
                 Logout
               </span>
             </Link>

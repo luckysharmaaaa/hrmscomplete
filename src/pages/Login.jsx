@@ -203,7 +203,7 @@ function Login() {
           </div>
 
           {/* Sign In Button */}
-          <button className="w-full h-9 bg-orange-500 hover:bg-orange-600 text-white rounded-lg font-medium text-sm transition flex items-center justify-center">
+          <button className="w-full h-9 bg-orange-500 hover:bg-orange-600 text-white rounded-lg font-medium text-sm transition flex items-center justify-center" onClick={()=>navigate("profile")}>
             Sign In
           </button>
 
