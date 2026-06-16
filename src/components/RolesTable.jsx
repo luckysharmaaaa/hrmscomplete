@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   FiSearch,
   FiCalendar,
@@ -9,69 +9,6 @@ import {
   FiChevronDown,
 } from "react-icons/fi";
 
-const allRoles = [
-  {
-    id: 1,
-    role: "Admin",
-    date: "12 Sep 2024",
-    status: "Active",
-  },
-  {
-    id: 2,
-    role: "HR Manager",
-    date: "24 Oct 2024",
-    status: "Active",
-  },
-  {
-    id: 3,
-    role: "Recruitment Manager",
-    date: "18 Feb 2024",
-    status: "Active",
-  },
-  {
-    id: 4,
-    role: "Payroll Manager",
-    date: "17 Oct 2024",
-    status: "Active",
-  },
-  {
-    id: 5,
-    role: "Leave Manager",
-    date: "20 Jul 2024",
-    status: "Active",
-  },
-  {
-    id: 6,
-    role: "Performance Manager",
-    date: "10 Apr 2024",
-    status: "Active",
-  },
-  {
-    id: 7,
-    role: "Reports Analyst",
-    date: "29 Aug 2024",
-    status: "Active",
-  },
-  {
-    id: 8,
-    role: "Employee",
-    date: "22 Feb 2024",
-    status: "Inactive",
-  },
-  {
-    id: 9,
-    role: "Client",
-    date: "03 Nov 2024",
-    status: "Active",
-  },
-  {
-    id: 10,
-    role: "Department Head",
-    date: "17 Dec 2024",
-    status: "Active",
-  },
-];
-
 const SortIcon = () => (
   <span className="inline-flex flex-col ml-1 opacity-40 leading-none">
     <FiChevronUp size={10} />
@@ -79,45 +16,119 @@ const SortIcon = () => (
   </span>
 );
 
-const RolesTable = () => {
-  const [selected, setSelected] = useState([]);
-  const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState("");
-  const [rowsPerPage, setRowsPerPage] = useState(10);
-  const [currentPage, setCurrentPage] = useState(1);
+const RolesTable = ({
+  roles,
+  setRoles,
+  onEditRole,
+}) => {
+  const [selected, setSelected] =
+    useState([]);
+  const [search, setSearch] =
+    useState("");
+  const [statusFilter, setStatusFilter] =
+    useState("");
+  const [rowsPerPage, setRowsPerPage] =
+    useState(10);
+  const [currentPage, setCurrentPage] =
+    useState(1);
 
+  // Reset page on filter/search
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, statusFilter]);
+
+  // Select All
   const toggleAll = () => {
-    if (selected.length === allRoles.length) {
-      setSelected([]);
+    const currentIds =
+      paginatedRoles.map(
+        (item) => item.id
+        
+      );
+
+    const allSelected =
+      currentIds.every((id) =>
+        selected.includes(id)
+      );
+
+    if (allSelected) {
+      setSelected((prev) =>
+        prev.filter(
+          (id) =>
+            !currentIds.includes(id)
+        )
+      );
     } else {
-      setSelected(allRoles.map((item) => item.id));
+      setSelected((prev) => [
+        ...new Set([
+          ...prev,
+          ...currentIds,
+        ]),
+      ]);
     }
   };
 
+  // Select One
   const toggleOne = (id) => {
     setSelected((prev) =>
       prev.includes(id)
-        ? prev.filter((item) => item !== id)
+        ? prev.filter(
+          (item) => item !== id
+        )
         : [...prev, id]
     );
   };
 
-  const filteredRoles = allRoles.filter((item) => {
-    const matchSearch = item.role
-      .toLowerCase()
-      .includes(search.toLowerCase());
+  // Delete Role
+  const handleDelete = (id) => {
+    const confirmDelete =
+      window.confirm(
+        "Are you sure you want to delete this role?"
+      );
 
-    const matchStatus = statusFilter
-      ? item.status === statusFilter
-      : true;
+    if (!confirmDelete) return;
 
-    return matchSearch && matchStatus;
-  });
+    setRoles((prev) =>
+      prev.filter(
+        (item) => item.id !== id
+      )
+    );
 
-  const totalEntries = filteredRoles.length;
+    setSelected((prev) =>
+      prev.filter((item) => item !== id)
+    );
+  };
+
+  // Search + Filter
+  const filteredRoles =
+    roles.filter((item) => {
+      const matchSearch =
+        item.role
+          .toLowerCase()
+          .includes(
+            search.toLowerCase()
+          );
+
+      const matchStatus =
+        statusFilter
+          ? item.status ===
+          statusFilter
+          : true;
+
+      return (
+        matchSearch && matchStatus
+      );
+    });
+
+  // Pagination
+  const totalEntries =
+    filteredRoles.length;
+
   const totalPages = Math.max(
     1,
-    Math.ceil(totalEntries / rowsPerPage)
+    Math.ceil(
+      totalEntries /
+      rowsPerPage
+    )
   );
 
   const safePage = Math.min(
@@ -125,15 +136,19 @@ const RolesTable = () => {
     totalPages
   );
 
-  const paginatedRoles = filteredRoles.slice(
-    (safePage - 1) * rowsPerPage,
-    safePage * rowsPerPage
-  );
+  const paginatedRoles =
+    filteredRoles.slice(
+      (safePage - 1) *
+      rowsPerPage,
+      safePage * rowsPerPage
+    );
 
   const startEntry =
     totalEntries === 0
       ? 0
-      : (safePage - 1) * rowsPerPage + 1;
+      : (safePage - 1) *
+      rowsPerPage +
+      1;
 
   const endEntry = Math.min(
     safePage * rowsPerPage,
@@ -142,7 +157,6 @@ const RolesTable = () => {
 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden font-sans">
-      
       {/* Header */}
       <div className="flex items-center justify-between gap-3 px-5 py-3 border-b border-gray-200">
         <h2 className="text-base font-bold text-[#0F265C]">
@@ -150,7 +164,6 @@ const RolesTable = () => {
         </h2>
 
         <div className="flex items-center gap-2">
-
           {/* Date */}
           <div className="flex items-center gap-2 border border-gray-200 rounded-lg px-3 py-1.5 text-xs text-gray-600 bg-white cursor-pointer min-w-52">
             <FiCalendar
@@ -158,28 +171,31 @@ const RolesTable = () => {
               className="text-gray-400"
             />
             <span>
-              06/09/2026 - 06/15/2026
+              06/09/2026 -
+              06/15/2026
             </span>
           </div>
-
-
-
-          
 
           {/* Status */}
           <select
             className="select select-bordered select-xs text-xs h-8 min-h-0 rounded-lg bg-white text-black"
-            value={statusFilter}
+            value={
+              statusFilter
+            }
             onChange={(e) =>
-              setStatusFilter(e.target.value)
+              setStatusFilter(
+                e.target.value
+              )
             }
           >
             <option value="">
               Status
             </option>
+
             <option value="Active">
               Active
             </option>
+
             <option value="Inactive">
               Inactive
             </option>
@@ -188,49 +204,59 @@ const RolesTable = () => {
           {/* Sort */}
           <select className="select select-bordered select-xs text-xs h-8 min-h-0 rounded-lg min-w-40 bg-white text-black">
             <option>
-              Sort By : Last 7 Days
+              Sort By : Last
+              7 Days
             </option>
+
             <option>
-              Sort By : Last 30 Days
+              Sort By : Last
+              30 Days
             </option>
+
             <option>
-              Sort By : Last 90 Days
+              Sort By : Last
+              90 Days
             </option>
           </select>
         </div>
       </div>
 
-      {/* Row Per Page + Search */}
+      {/* Search */}
       <div className="flex items-center justify-between gap-2 px-5 py-2.5 border-b border-gray-200 text-sm text-gray-600">
-        
         <div className="flex items-center gap-2">
-          <span className="whitespace-nowrap">Row Per Page</span>
-           
+          <span className="whitespace-nowrap text-[13px]">Row Per Page</span>
 
           <select
             className="select select-bordered select-xs h-7 min-h-0 text-xs rounded-md bg-white text-black"
-            value={rowsPerPage}
+            value={
+              rowsPerPage
+            }
             onChange={(e) =>
               setRowsPerPage(
-                Number(e.target.value)
+                Number(
+                  e.target.value
+                )
               )
             }
           >
             <option value={10}>
               10
             </option>
+
             <option value={25}>
               25
             </option>
+
             <option value={50}>
               50
             </option>
           </select>
 
-          <span>Entries</span>
+          <span>
+            Entries
+          </span>
         </div>
 
-        {/* Search */}
         <label className="input input-bordered input-xs flex items-center gap-2 h-8 rounded-lg px-3 text-xs bg-white text-black">
           <FiSearch
             size={13}
@@ -243,7 +269,9 @@ const RolesTable = () => {
             className="grow bg-transparent outline-none text-xs w-32"
             value={search}
             onChange={(e) =>
-              setSearch(e.target.value)
+              setSearch(
+                e.target.value
+              )
             }
           />
         </label>
@@ -259,16 +287,27 @@ const RolesTable = () => {
                   type="checkbox"
                   className="checkbox checkbox-sm border-gray-400 checked:bg-orange-500 checked:border-orange-500"
                   checked={
-                    selected.length ===
-                    allRoles.length
+                    paginatedRoles.length >
+                    0 &&
+                    paginatedRoles.every(
+                      (
+                        item
+                      ) =>
+                        selected.includes(
+                          item.id
+                        )
+                    )
                   }
-                  onChange={toggleAll}
+                  onChange={
+                    toggleAll
+                  }
                 />
               </th>
 
               <th className="bg-gray-100">
                 <span className="inline-flex items-center gap-0.5 font-bold text-lg">
-                  Role <SortIcon />
+                  Role{" "}
+                  <SortIcon />
                 </span>
               </th>
 
@@ -297,7 +336,7 @@ const RolesTable = () => {
 
           <tbody>
             {paginatedRoles.length ===
-            0 ? (
+              0 ? (
               <tr>
                 <td
                   colSpan={5}
@@ -310,7 +349,9 @@ const RolesTable = () => {
               paginatedRoles.map(
                 (item) => (
                   <tr
-                    key={item.id}
+                    key={
+                      item.id
+                    }
                     className="hover:bg-gray-50 transition-colors"
                   >
                     <td>
@@ -329,45 +370,58 @@ const RolesTable = () => {
                     </td>
 
                     <td className="text-gray-800 text-sm font-medium">
-                      {item.role}
+                      {
+                        item.role
+                      }
                     </td>
 
                     <td className="text-gray-500 text-sm">
-                      {item.date}
+                      {
+                        item.date
+                      }
                     </td>
 
                     <td>
                       <span
-                        className={`badge badge-sm border-0 text-white font-semibold text-xs gap-1.5 px-2.5 py-0.5 ${
-                          item.status ===
-                          "Active"
+                        className={`badge badge-sm border-0 text-white font-semibold text-xs gap-1.5 px-2.5 py-0.5 ${item.status ===
+                            "Active"
                             ? "bg-green-500"
                             : "bg-red-500"
-                        }`}
+                          }`}
                       >
                         <span className="w-1.5 h-1.5 rounded-full bg-white inline-block" />
-                        {item.status}
+                        {
+                          item.status
+                        }
                       </span>
                     </td>
 
                     <td className="text-center">
                       <div className="flex justify-center items-center gap-2">
                         <button className="btn btn-ghost btn-xs text-gray-400 hover:text-blue-500 hover:bg-blue-50 p-1 min-h-0 h-auto rounded">
-                          <FiShield
-                            size={14}
-                          />
+                          <FiShield size={14} />
                         </button>
 
-                        <button className="btn btn-ghost btn-xs text-gray-400 hover:text-orange-500 hover:bg-orange-50 p-1 min-h-0 h-auto rounded">
-                          <FiEdit2
-                            size={14}
-                          />
+                        <button
+                          onClick={() =>
+                            onEditRole(
+                              item
+                            )
+                          }
+                          className="btn btn-ghost btn-xs text-gray-400 hover:text-orange-500 hover:bg-orange-50 p-1 min-h-0 h-auto rounded"
+                        >
+                          <FiEdit2 size={14} />
                         </button>
 
-                        <button className="btn btn-ghost btn-xs text-gray-400 hover:text-red-500 hover:bg-red-50 p-1 min-h-0 h-auto rounded">
-                          <FiTrash2
-                            size={14}
-                          />
+                        <button
+                          onClick={() =>
+                            handleDelete(
+                              item.id
+                            )
+                          }
+                          className="btn btn-ghost btn-xs text-gray-400 hover:text-red-500 hover:bg-red-50 p-1 min-h-0 h-auto rounded"
+                        >
+                          <FiTrash2 size={14} />
                         </button>
                       </div>
                     </td>
@@ -382,7 +436,7 @@ const RolesTable = () => {
       {/* Footer */}
       <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-3 border-t border-gray-200">
         <p className="text-sm text-gray-500">
-          Showing {startEntry} -{" "}
+          Showing {startEntry} -
           {endEntry} of{" "}
           {totalEntries} entries
         </p>
@@ -391,8 +445,12 @@ const RolesTable = () => {
           <button
             className="join-item btn btn-sm btn-ghost border border-gray-200"
             onClick={() =>
-              setCurrentPage((p) =>
-                Math.max(1, p - 1)
+              setCurrentPage(
+                (p) =>
+                  Math.max(
+                    1,
+                    p - 1
+                  )
               )
             }
             disabled={
@@ -403,16 +461,20 @@ const RolesTable = () => {
           </button>
 
           {Array.from(
-            { length: totalPages },
-            (_, i) => i + 1
+            {
+              length:
+                totalPages,
+            },
+            (_, i) =>
+              i + 1
           ).map((page) => (
             <button
               key={page}
-              className={`join-item btn btn-sm border-none ${
-                page === safePage
-                  ? "bg-orange-500 text-white hover:bg-orange-600"
+              className={`join-item btn btn-sm border-none ${page ===
+                  safePage
+                  ? "bg-orange-500 text-white"
                   : "btn-ghost border border-gray-200"
-              }`}
+                }`}
               onClick={() =>
                 setCurrentPage(
                   page
@@ -426,11 +488,12 @@ const RolesTable = () => {
           <button
             className="join-item btn btn-sm btn-ghost border border-gray-200"
             onClick={() =>
-              setCurrentPage((p) =>
-                Math.min(
-                  totalPages,
-                  p + 1
-                )
+              setCurrentPage(
+                (p) =>
+                  Math.min(
+                    totalPages,
+                    p + 1
+                  )
               )
             }
             disabled={

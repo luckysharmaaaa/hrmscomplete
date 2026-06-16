@@ -108,7 +108,7 @@ function Sidebar() {
             >
               <User size={18} />
               <span className="font-medium">
-                roles
+                Roles
                  </span>
             </Link>
           </li>

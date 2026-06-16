@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route ,useLocation } from "react-router-dom";
 
 import Sidebar from "./components/Sidebar";
 import Navbar from "./components/Navbar";
@@ -12,6 +12,8 @@ import Login from "./pages/Login";
 import Roles from "./pages/Roles"
 
 function Layout() {
+  const location = useLocation();
+  const hideNavbar = location.pathname==="/profile"
   return (
     <div className="min-h-screen bg-slate-100">
       {/* Navbar */}
@@ -28,7 +30,7 @@ function Layout() {
             <Route path="/apply-leave" element={<ApplyLeave />} />
             <Route path="/leave-history" element={<LeaveHistory />} />
             <Route path="/user" element={<User />} />
-            <Route path="/profile" element={<Profile />} />
+            <Route className="flex-1" path="/profile" element={<Profile />} />
             <Route path = "/roles" element = {<Roles/>}/>
           </Routes>
         </main>
