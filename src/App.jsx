@@ -10,6 +10,7 @@ import User from "./pages/User";
 import EmployeeList from "./pages/employeelist";
 import Profile from "./pages/Profile";
 import Login from "./pages/Login";
+import EmployeeDetails from "./pages/EmployeeDetails";
 
 function Layout() {
   return (
@@ -30,6 +31,7 @@ function Layout() {
             <Route path="/user" element={<User />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/employees" element={<EmployeeList />} />
+          <Route path="/employees-details" element={<EmployeeDetails />} />
           </Routes>
         </main>
       </div>

@@ -71,7 +71,7 @@ function Sidebar() {
               </span>
             </Link>
           </li>
-
+                  {/* employees List */}
   <li>
             <Link
               to="/employees"
@@ -83,6 +83,20 @@ function Sidebar() {
               </span>
             </Link>
           </li>
+
+<li>
+            <Link
+              to="/employees-details"
+              className="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700 hover:bg-orange-50 hover:text-orange-500 transition"
+            >
+              <History size={18} />
+              <span className="font-medium">
+                Employees Details
+              </span>
+            </Link>
+          </li>
+
+
           {/* User */}
           <li>
             <Link
