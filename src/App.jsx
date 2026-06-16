@@ -9,6 +9,7 @@ import Dashboard from "./pages/Dashboard";
 import User from "./pages/User";
 import Profile from "./pages/Profile";
 import Login from "./pages/Login";
+import LeaveSetting from "./pages/LeaveSetting";
 
 function Layout() {
   return (
@@ -28,6 +29,7 @@ function Layout() {
             <Route path="/leave-history" element={<LeaveHistory />} />
             <Route path="/user" element={<User />} />
             <Route path="/profile" element={<Profile />} />
+            <Route path="/leave-setting" element={<LeaveSetting />} />
           </Routes>
         </main>
       </div>
