@@ -11,6 +11,7 @@ import EmployeeList from "./pages/employeelist";
 import Profile from "./pages/Profile";
 import Login from "./pages/Login";
 import EmployeeDetails from "./pages/EmployeeDetails";
+import LeaveSetting from "./pages/LeaveSetting";
 
 function Layout() {
   return (
@@ -32,6 +33,7 @@ function Layout() {
             <Route path="/profile" element={<Profile />} />
             <Route path="/employees" element={<EmployeeList />} />
           <Route path="/employees-details" element={<EmployeeDetails />} />
+            <Route path="/leave-setting" element={<LeaveSetting />} />
           </Routes>
         </main>
       </div>
