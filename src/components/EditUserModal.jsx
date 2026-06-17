@@ -73,7 +73,7 @@ const FieldError = ({ error, touched }) =>
   ) : null;
 
 // ── Component ─────────────────────────────────────────────────────────────────
-const EditUserModal = ({ isOpen, onClose, editUser }) => {
+const EditUserModal = ({ isOpen, onClose, editUser, onSave }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [permissions, setPermissions] = useState(INITIAL_PERMISSIONS);
@@ -93,8 +93,13 @@ const EditUserModal = ({ isOpen, onClose, editUser }) => {
     },
     validationSchema,
     onSubmit: (values) => {
-      console.log("Updated user:", { ...values, permissions });
-      onClose();
+      const updatedFields = {
+        name: `${values.firstName} ${values.lastName}`.trim(),
+        email: values.email,
+        phone: values.phone,
+        role: values.role,
+      };
+      onSave(updatedFields);
     },
   });
 

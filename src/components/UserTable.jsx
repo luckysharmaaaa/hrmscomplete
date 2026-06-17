@@ -117,6 +117,14 @@ const UserTable = () => {
     setIsDeleteModalOpen(false);
   };
 
+  const handleSaveUser = (updatedFields) => {
+    setUser((prev) =>
+      prev.map((u) => (u.id === editUser.id ? { ...u, ...updatedFields } : u)),
+    );
+    setIsEditModalOpen(false);
+    setEditUser(null);
+  };
+
   const toggleAll = () =>
     setSelected(selected.length === user.length ? [] : user.map((u) => u.id));
 
@@ -527,6 +535,7 @@ const UserTable = () => {
           setIsEditModalOpen(false);
           setEditUser(null);
         }}
+        onSave={handleSaveUser}
       />
     </div>
   );
