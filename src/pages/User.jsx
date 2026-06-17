@@ -76,11 +76,6 @@ const User = () => {
             <AddIcon fontSize="small" />
             Add User
           </button>
-
-          {/* Collapse
-          <button className="btn btn-square bg-white border border-gray-300 text-gray-700 hover:bg-gray-100">
-            <KeyboardDoubleArrowUpIcon fontSize="small" />
-          </button> */}
         </div>
       </div>
 

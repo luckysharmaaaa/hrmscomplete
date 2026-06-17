@@ -10,6 +10,8 @@ import User from "./pages/User";
 import Profile from "./pages/Profile";
 import Login from "./pages/Login";
 import Roles from "./pages/Roles"
+import LeaveSetting from "./pages/LeaveSetting";
+import RolesPermissions from "./pages/RolesPermissions";
 
 function Layout() {
   const location = useLocation();
@@ -32,6 +34,9 @@ function Layout() {
             <Route path="/user" element={<User />} />
             <Route className="flex-1" path="/profile" element={<Profile />} />
             <Route path = "/roles" element = {<Roles/>}/>
+            <Route path="/profile" element={<Profile />} />
+            <Route path="/leave-setting" element={<LeaveSetting />} />
+            <Route path = "/rolespermissions" element = {<RolesPermissions/>}/>
           </Routes>
         </main>
       </div>

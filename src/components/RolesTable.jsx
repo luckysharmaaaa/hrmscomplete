@@ -8,6 +8,7 @@ import {
   FiChevronUp,
   FiChevronDown,
 } from "react-icons/fi";
+import { useNavigate } from "react-router-dom";
 
 const SortIcon = () => (
   <span className="inline-flex flex-col ml-1 opacity-40 leading-none">
@@ -21,8 +22,7 @@ const RolesTable = ({
   setRoles,
   onEditRole,
 }) => {
-  const [selected, setSelected] =
-    useState([]);
+
   const [search, setSearch] =
     useState("");
   const [statusFilter, setStatusFilter] =
@@ -32,51 +32,15 @@ const RolesTable = ({
   const [currentPage, setCurrentPage] =
     useState(1);
 
+
+
+
   // Reset page on filter/search
   useEffect(() => {
     setCurrentPage(1);
   }, [search, statusFilter]);
 
-  // Select All
-  const toggleAll = () => {
-    const currentIds =
-      paginatedRoles.map(
-        (item) => item.id
-        
-      );
 
-    const allSelected =
-      currentIds.every((id) =>
-        selected.includes(id)
-      );
-
-    if (allSelected) {
-      setSelected((prev) =>
-        prev.filter(
-          (id) =>
-            !currentIds.includes(id)
-        )
-      );
-    } else {
-      setSelected((prev) => [
-        ...new Set([
-          ...prev,
-          ...currentIds,
-        ]),
-      ]);
-    }
-  };
-
-  // Select One
-  const toggleOne = (id) => {
-    setSelected((prev) =>
-      prev.includes(id)
-        ? prev.filter(
-          (item) => item !== id
-        )
-        : [...prev, id]
-    );
-  };
 
   // Delete Role
   const handleDelete = (id) => {
@@ -91,10 +55,6 @@ const RolesTable = ({
       prev.filter(
         (item) => item.id !== id
       )
-    );
-
-    setSelected((prev) =>
-      prev.filter((item) => item !== id)
     );
   };
 
@@ -155,6 +115,7 @@ const RolesTable = ({
     totalEntries
   );
 
+  const navigate = useNavigate();
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden font-sans">
       {/* Header */}
@@ -282,27 +243,6 @@ const RolesTable = ({
         <table className="table table-md w-full">
           <thead className="bg-gray-100 text-gray-600 text-xs font-semibold">
             <tr>
-              <th className="w-10 bg-gray-100">
-                <input
-                  type="checkbox"
-                  className="checkbox checkbox-sm border-gray-400 checked:bg-orange-500 checked:border-orange-500"
-                  checked={
-                    paginatedRoles.length >
-                    0 &&
-                    paginatedRoles.every(
-                      (
-                        item
-                      ) =>
-                        selected.includes(
-                          item.id
-                        )
-                    )
-                  }
-                  onChange={
-                    toggleAll
-                  }
-                />
-              </th>
 
               <th className="bg-gray-100">
                 <span className="inline-flex items-center gap-0.5 font-bold text-lg">
@@ -339,7 +279,7 @@ const RolesTable = ({
               0 ? (
               <tr>
                 <td
-                  colSpan={5}
+                  colSpan={4}
                   className="text-center text-gray-400 py-10"
                 >
                   No roles found.
@@ -354,20 +294,7 @@ const RolesTable = ({
                     }
                     className="hover:bg-gray-50 transition-colors"
                   >
-                    <td>
-                      <input
-                        type="checkbox"
-                        className="checkbox checkbox-sm border-gray-400 checked:bg-orange-500 checked:border-orange-500"
-                        checked={selected.includes(
-                          item.id
-                        )}
-                        onChange={() =>
-                          toggleOne(
-                            item.id
-                          )
-                        }
-                      />
-                    </td>
+
 
                     <td className="text-gray-800 text-sm font-medium">
                       {
@@ -384,9 +311,9 @@ const RolesTable = ({
                     <td>
                       <span
                         className={`badge badge-sm border-0 text-white font-semibold text-xs gap-1.5 px-2.5 py-0.5 ${item.status ===
-                            "Active"
-                            ? "bg-green-500"
-                            : "bg-red-500"
+                          "Active"
+                          ? "bg-green-500"
+                          : "bg-red-500"
                           }`}
                       >
                         <span className="w-1.5 h-1.5 rounded-full bg-white inline-block" />
@@ -398,7 +325,14 @@ const RolesTable = ({
 
                     <td className="text-center">
                       <div className="flex justify-center items-center gap-2">
-                        <button className="btn btn-ghost btn-xs text-gray-400 hover:text-blue-500 hover:bg-blue-50 p-1 min-h-0 h-auto rounded">
+                        <button
+                          onClick={() =>
+                            navigate("/rolespermissions", {
+                              state: { role: item },
+                            })
+                          }
+                          className="btn btn-ghost btn-xs text-gray-400 hover:text-blue-500 hover:bg-blue-50 p-1 min-h-0 h-auto rounded"
+                        >
                           <FiShield size={14} />
                         </button>
 
@@ -471,9 +405,9 @@ const RolesTable = ({
             <button
               key={page}
               className={`join-item btn btn-sm border-none ${page ===
-                  safePage
-                  ? "bg-orange-500 text-white"
-                  : "btn-ghost border border-gray-200"
+                safePage
+                ? "bg-orange-500 text-white"
+                : "btn-ghost border border-gray-200"
                 }`}
               onClick={() =>
                 setCurrentPage(
