@@ -404,7 +404,7 @@ const EditEmployeeModal = ({ onClose, onSave, employee }) => {
   );
 };
 
-// ─── Add Employee Modal ───────────────────────────────────────────────────────
+// ─── Add Employee Modal (Smaller Version) ────────────────────────────────────
 const AddEmployeeModal = ({ onClose, onSave, nextId }) => {
   const [activeTab, setActiveTab] = useState('basic');
   const [profileImage, setProfileImage] = useState(null);
@@ -508,62 +508,170 @@ const AddEmployeeModal = ({ onClose, onSave, nextId }) => {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={e => e.target === e.currentTarget && onClose()}>
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-5xl mx-4 overflow-hidden" style={{ maxHeight: '90vh' }}>
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-          <div><span className="text-base font-bold text-gray-900">Add New Employee</span><span className="ml-2 text-xs text-gray-400 font-medium">Employee ID : {form.employeeId || nextId}</span></div>
-          <button onClick={onClose} className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl mx-4 overflow-hidden" style={{ maxHeight: '85vh' }}>
+        <div className="flex items-center justify-between px-5 py-3 border-b border-gray-100">
+          <div>
+            <span className="text-sm font-bold text-gray-900">Add New Employee</span>
+            <span className="ml-2 text-xs text-gray-400 font-medium">Employee ID : {form.employeeId || nextId}</span>
+          </div>
+          <button onClick={onClose} className="w-6 h-6 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
+          </button>
         </div>
-        <div className="flex border-b border-gray-100 px-6">
-          {['basic', 'permissions'].map(tab => (<button key={tab} onClick={() => setActiveTab(tab)} className={`py-3 px-1 mr-6 text-sm font-semibold border-b-2 transition-all capitalize ${activeTab === tab ? 'border-orange-500 text-orange-500' : 'border-transparent text-gray-500 hover:text-gray-700'}`}>{tab === 'basic' ? 'Basic Information' : 'Permissions'}</button>))}
+        <div className="flex border-b border-gray-100 px-5">
+          {['basic', 'permissions'].map(tab => (
+            <button key={tab} onClick={() => setActiveTab(tab)} className={`py-2.5 px-1 mr-4 text-xs font-semibold border-b-2 transition-all capitalize ${activeTab === tab ? 'border-orange-500 text-orange-500' : 'border-transparent text-gray-500 hover:text-gray-700'}`}>
+              {tab === 'basic' ? 'Basic Information' : 'Permissions'}
+            </button>
+          ))}
         </div>
-        <div className="overflow-y-auto px-6 py-5" style={{ maxHeight: 'calc(90vh - 180px)' }}>
+        <div className="overflow-y-auto px-5 py-4" style={{ maxHeight: 'calc(85vh - 160px)' }}>
           {activeTab === 'basic' ? (
-            <div className="space-y-4">
-              <div className="flex items-start gap-4 p-4 bg-gray-50 rounded-xl border border-dashed border-gray-200">
-                <div className="w-14 h-14 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden flex-shrink-0">
-                  {profilePreview ? <img src={profilePreview} alt="Profile" className="w-full h-full object-cover" /> : <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="1.5"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2M12 11a4 4 0 100-8 4 4 0 000 8z"/></svg>}
+            <div className="space-y-3">
+              <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-xl border border-dashed border-gray-200">
+                <div className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden flex-shrink-0">
+                  {profilePreview ? <img src={profilePreview} alt="Profile" className="w-full h-full object-cover" /> : <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="1.5"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2M12 11a4 4 0 100-8 4 4 0 000 8z"/></svg>}
                 </div>
                 <div>
-                  <p className="text-sm font-semibold text-gray-700 mb-0.5">Upload Profile Image</p>
-                  <p className="text-xs text-gray-400 mb-2">Image should be below 4 MB</p>
+                  <p className="text-xs font-semibold text-gray-700 mb-0.5">Upload Profile Image</p>
+                  <p className="text-xs text-gray-400 mb-1.5">Image should be below 4 MB</p>
                   <div className="flex gap-2">
-                    <button onClick={() => fileRef.current.click()} className="px-3 py-1.5 bg-orange-500 text-white text-xs font-semibold rounded-md hover:bg-orange-600 transition-colors">Upload</button>
-                    {profilePreview && (<button onClick={() => { setProfileImage(null); setProfilePreview(null); }} className="px-3 py-1.5 bg-white border border-gray-200 text-gray-600 text-xs font-medium rounded-md hover:bg-gray-50 transition-colors">Cancel</button>)}
+                    <button onClick={() => fileRef.current.click()} className="px-3 py-1 bg-orange-500 text-white text-xs font-semibold rounded-md hover:bg-orange-600 transition-colors">Upload</button>
+                    {profilePreview && (
+                      <button onClick={() => { setProfileImage(null); setProfilePreview(null); }} className="px-3 py-1 bg-white border border-gray-200 text-gray-600 text-xs font-medium rounded-md hover:bg-gray-50 transition-colors">Cancel</button>
+                    )}
                   </div>
                   <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleImageChange} />
                   {errors.image && <p className="text-xs text-red-500 mt-1">{errors.image}</p>}
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div><label className="block text-xs font-semibold text-gray-600 mb-1">First Name <span className="text-red-500">*</span></label><input value={form.firstName} onChange={e => set('firstName', e.target.value)} className={`w-full px-3 py-2 border rounded-lg text-sm text-gray-700 outline-none transition-all ${errors.firstName ? 'border-red-400 bg-red-50 focus:ring-2 focus:ring-red-100' : 'border-gray-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100'}`} />{errors.firstName && <p className="text-xs text-red-500 mt-1">{errors.firstName}</p>}</div>
-                <div><label className="block text-xs font-semibold text-gray-600 mb-1">Last Name</label><input value={form.lastName} onChange={e => set('lastName', e.target.value)} className={`w-full px-3 py-2 border rounded-lg text-sm text-gray-700 outline-none transition-all ${errors.lastName ? 'border-red-400 bg-red-50 focus:ring-2 focus:ring-red-100' : 'border-gray-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100'}`} />{errors.lastName && <p className="text-xs text-red-500 mt-1">{errors.lastName}</p>}</div>
-                <div><label className="block text-xs font-semibold text-gray-600 mb-1">Employee ID <span className="text-red-500">*</span></label><input value={form.employeeId} onChange={e => set('employeeId', e.target.value)} className={`w-full px-3 py-2 border rounded-lg text-sm text-gray-700 outline-none transition-all ${errors.employeeId ? 'border-red-400 bg-red-50 focus:ring-2 focus:ring-red-100' : 'border-gray-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100'}`} />{errors.employeeId && <p className="text-xs text-red-500 mt-1">{errors.employeeId}</p>}</div>
-                <div><label className="block text-xs font-semibold text-gray-600 mb-1">Joining Date <span className="text-red-500">*</span></label><input type="date" value={form.joiningDate} onChange={e => set('joiningDate', e.target.value)} className={`w-full px-3 py-2 border rounded-lg text-sm text-gray-700 outline-none transition-all ${errors.joiningDate ? 'border-red-400 bg-red-50 focus:ring-2 focus:ring-red-100' : 'border-gray-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100'}`} />{errors.joiningDate && <p className="text-xs text-red-500 mt-1">{errors.joiningDate}</p>}</div>
-                <div><label className="block text-xs font-semibold text-gray-600 mb-1">Username <span className="text-red-500">*</span></label><input value={form.username} onChange={e => set('username', e.target.value)} className={`w-full px-3 py-2 border rounded-lg text-sm text-gray-700 outline-none transition-all ${errors.username ? 'border-red-400 bg-red-50 focus:ring-2 focus:ring-red-100' : 'border-gray-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100'}`} />{errors.username && <p className="text-xs text-red-500 mt-1">{errors.username}</p>}</div>
-                <div><label className="block text-xs font-semibold text-gray-600 mb-1">Email <span className="text-red-500">*</span></label><input type="email" value={form.email} onChange={e => set('email', e.target.value)} className={`w-full px-3 py-2 border rounded-lg text-sm text-gray-700 outline-none transition-all ${errors.email ? 'border-red-400 bg-red-50 focus:ring-2 focus:ring-red-100' : 'border-gray-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100'}`} />{errors.email && <p className="text-xs text-red-500 mt-1">{errors.email}</p>}</div>
-                <div><label className="block text-xs font-semibold text-gray-600 mb-1">Password <span className="text-red-500">*</span></label><div className="relative"><input type={showPassword ? 'text' : 'password'} value={form.password} onChange={e => set('password', e.target.value)} className={`w-full px-3 py-2 pr-9 border rounded-lg text-sm text-gray-700 outline-none transition-all ${errors.password ? 'border-red-400 bg-red-50 focus:ring-2 focus:ring-red-100' : 'border-gray-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100'}`} /><button type="button" onClick={() => setShowPassword(v => !v)} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">{showPassword ? <><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24M1 1l22 22"/></> : <><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></>}</svg></button></div>{errors.password && <p className="text-xs text-red-500 mt-1">{errors.password}</p>}</div>
-                <div><label className="block text-xs font-semibold text-gray-600 mb-1">Confirm Password <span className="text-red-500">*</span></label><div className="relative"><input type={showConfirm ? 'text' : 'password'} value={form.confirmPassword} onChange={e => set('confirmPassword', e.target.value)} className={`w-full px-3 py-2 pr-9 border rounded-lg text-sm text-gray-700 outline-none transition-all ${errors.confirmPassword ? 'border-red-400 bg-red-50 focus:ring-2 focus:ring-red-100' : 'border-gray-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100'}`} /><button type="button" onClick={() => setShowConfirm(v => !v)} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">{showConfirm ? <><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24M1 1l22 22"/></> : <><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></>}</svg></button></div>{errors.confirmPassword && <p className="text-xs text-red-500 mt-1">{errors.confirmPassword}</p>}</div>
-                <div><label className="block text-xs font-semibold text-gray-600 mb-1">Phone Number <span className="text-red-500">*</span></label><input value={form.phone} onChange={e => set('phone', e.target.value)} className={`w-full px-3 py-2 border rounded-lg text-sm text-gray-700 outline-none transition-all ${errors.phone ? 'border-red-400 bg-red-50 focus:ring-2 focus:ring-red-100' : 'border-gray-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100'}`} />{errors.phone && <p className="text-xs text-red-500 mt-1">{errors.phone}</p>}</div>
-                <div><label className="block text-xs font-semibold text-gray-600 mb-1">Company <span className="text-red-500">*</span></label><input value={form.company} onChange={e => set('company', e.target.value)} className={`w-full px-3 py-2 border rounded-lg text-sm text-gray-700 outline-none transition-all ${errors.company ? 'border-red-400 bg-red-50 focus:ring-2 focus:ring-red-100' : 'border-gray-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100'}`} />{errors.company && <p className="text-xs text-red-500 mt-1">{errors.company}</p>}</div>
-                <div><label className="block text-xs font-semibold text-gray-600 mb-1">Department</label><select value={form.department} onChange={e => set('department', e.target.value)} className={`w-full px-3 py-2 border rounded-lg text-sm text-gray-700 outline-none transition-all appearance-none bg-white ${errors.department ? 'border-red-400 bg-red-50 focus:ring-2 focus:ring-red-100' : 'border-gray-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100'}`}><option value="">Select</option>{['Engineering', 'Finance', 'Marketing', 'HR', 'Operations'].map(d => <option key={d}>{d}</option>)}</select>{errors.department && <p className="text-xs text-red-500 mt-1">{errors.department}</p>}</div>
-                <div><label className="block text-xs font-semibold text-gray-600 mb-1">Designation</label><select value={form.designation} onChange={e => set('designation', e.target.value)} className={`w-full px-3 py-2 border rounded-lg text-sm text-gray-700 outline-none transition-all appearance-none bg-white ${errors.designation ? 'border-red-400 bg-red-50 focus:ring-2 focus:ring-red-100' : 'border-gray-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100'}`}><option value="">Select</option>{['Developer', 'Manager', 'Executive', 'Finance', 'Tester'].map(d => <option key={d}>{d}</option>)}</select>{errors.designation && <p className="text-xs text-red-500 mt-1">{errors.designation}</p>}</div>
-                <div className="col-span-2"><label className="block text-xs font-semibold text-gray-600 mb-1">About</label><textarea value={form.about} onChange={e => set('about', e.target.value)} rows={3} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm text-gray-700 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-all resize-none" /></div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-600 mb-1">First Name <span className="text-red-500">*</span></label>
+                  <input value={form.firstName} onChange={e => set('firstName', e.target.value)} className={`w-full px-3 py-1.5 border rounded-lg text-sm text-gray-700 outline-none transition-all ${errors.firstName ? 'border-red-400 bg-red-50 focus:ring-2 focus:ring-red-100' : 'border-gray-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100'}`} />
+                  {errors.firstName && <p className="text-xs text-red-500 mt-1">{errors.firstName}</p>}
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-600 mb-1">Last Name</label>
+                  <input value={form.lastName} onChange={e => set('lastName', e.target.value)} className={`w-full px-3 py-1.5 border rounded-lg text-sm text-gray-700 outline-none transition-all ${errors.lastName ? 'border-red-400 bg-red-50 focus:ring-2 focus:ring-red-100' : 'border-gray-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100'}`} />
+                  {errors.lastName && <p className="text-xs text-red-500 mt-1">{errors.lastName}</p>}
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-600 mb-1">Employee ID <span className="text-red-500">*</span></label>
+                  <input value={form.employeeId} onChange={e => set('employeeId', e.target.value)} className={`w-full px-3 py-1.5 border rounded-lg text-sm text-gray-700 outline-none transition-all ${errors.employeeId ? 'border-red-400 bg-red-50 focus:ring-2 focus:ring-red-100' : 'border-gray-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100'}`} />
+                  {errors.employeeId && <p className="text-xs text-red-500 mt-1">{errors.employeeId}</p>}
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-600 mb-1">Joining Date <span className="text-red-500">*</span></label>
+                  <input type="date" value={form.joiningDate} onChange={e => set('joiningDate', e.target.value)} className={`w-full px-3 py-1.5 border rounded-lg text-sm text-gray-700 outline-none transition-all ${errors.joiningDate ? 'border-red-400 bg-red-50 focus:ring-2 focus:ring-red-100' : 'border-gray-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100'}`} />
+                  {errors.joiningDate && <p className="text-xs text-red-500 mt-1">{errors.joiningDate}</p>}
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-600 mb-1">Username <span className="text-red-500">*</span></label>
+                  <input value={form.username} onChange={e => set('username', e.target.value)} className={`w-full px-3 py-1.5 border rounded-lg text-sm text-gray-700 outline-none transition-all ${errors.username ? 'border-red-400 bg-red-50 focus:ring-2 focus:ring-red-100' : 'border-gray-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100'}`} />
+                  {errors.username && <p className="text-xs text-red-500 mt-1">{errors.username}</p>}
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-600 mb-1">Email <span className="text-red-500">*</span></label>
+                  <input type="email" value={form.email} onChange={e => set('email', e.target.value)} className={`w-full px-3 py-1.5 border rounded-lg text-sm text-gray-700 outline-none transition-all ${errors.email ? 'border-red-400 bg-red-50 focus:ring-2 focus:ring-red-100' : 'border-gray-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100'}`} />
+                  {errors.email && <p className="text-xs text-red-500 mt-1">{errors.email}</p>}
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-600 mb-1">Password <span className="text-red-500">*</span></label>
+                  <div className="relative">
+                    <input type={showPassword ? 'text' : 'password'} value={form.password} onChange={e => set('password', e.target.value)} className={`w-full px-3 py-1.5 pr-8 border rounded-lg text-sm text-gray-700 outline-none transition-all ${errors.password ? 'border-red-400 bg-red-50 focus:ring-2 focus:ring-red-100' : 'border-gray-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100'}`} />
+                    <button type="button" onClick={() => setShowPassword(v => !v)} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        {showPassword ? <><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24M1 1l22 22"/></> : <><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></>}
+                      </svg>
+                    </button>
+                  </div>
+                  {errors.password && <p className="text-xs text-red-500 mt-1">{errors.password}</p>}
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-600 mb-1">Confirm Password <span className="text-red-500">*</span></label>
+                  <div className="relative">
+                    <input type={showConfirm ? 'text' : 'password'} value={form.confirmPassword} onChange={e => set('confirmPassword', e.target.value)} className={`w-full px-3 py-1.5 pr-8 border rounded-lg text-sm text-gray-700 outline-none transition-all ${errors.confirmPassword ? 'border-red-400 bg-red-50 focus:ring-2 focus:ring-red-100' : 'border-gray-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100'}`} />
+                    <button type="button" onClick={() => setShowConfirm(v => !v)} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        {showConfirm ? <><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24M1 1l22 22"/></> : <><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></>}
+                      </svg>
+                    </button>
+                  </div>
+                  {errors.confirmPassword && <p className="text-xs text-red-500 mt-1">{errors.confirmPassword}</p>}
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-600 mb-1">Phone Number <span className="text-red-500">*</span></label>
+                  <input value={form.phone} onChange={e => set('phone', e.target.value)} className={`w-full px-3 py-1.5 border rounded-lg text-sm text-gray-700 outline-none transition-all ${errors.phone ? 'border-red-400 bg-red-50 focus:ring-2 focus:ring-red-100' : 'border-gray-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100'}`} />
+                  {errors.phone && <p className="text-xs text-red-500 mt-1">{errors.phone}</p>}
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-600 mb-1">Company <span className="text-red-500">*</span></label>
+                  <input value={form.company} onChange={e => set('company', e.target.value)} className={`w-full px-3 py-1.5 border rounded-lg text-sm text-gray-700 outline-none transition-all ${errors.company ? 'border-red-400 bg-red-50 focus:ring-2 focus:ring-red-100' : 'border-gray-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100'}`} />
+                  {errors.company && <p className="text-xs text-red-500 mt-1">{errors.company}</p>}
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-600 mb-1">Department</label>
+                  <select value={form.department} onChange={e => set('department', e.target.value)} className={`w-full px-3 py-1.5 border rounded-lg text-sm text-gray-700 outline-none transition-all appearance-none bg-white ${errors.department ? 'border-red-400 bg-red-50 focus:ring-2 focus:ring-red-100' : 'border-gray-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100'}`}>
+                    <option value="">Select</option>
+                    {['Engineering', 'Finance', 'Marketing', 'HR', 'Operations'].map(d => <option key={d}>{d}</option>)}
+                  </select>
+                  {errors.department && <p className="text-xs text-red-500 mt-1">{errors.department}</p>}
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-600 mb-1">Designation</label>
+                  <select value={form.designation} onChange={e => set('designation', e.target.value)} className={`w-full px-3 py-1.5 border rounded-lg text-sm text-gray-700 outline-none transition-all appearance-none bg-white ${errors.designation ? 'border-red-400 bg-red-50 focus:ring-2 focus:ring-red-100' : 'border-gray-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100'}`}>
+                    <option value="">Select</option>
+                    {['Developer', 'Manager', 'Executive', 'Finance', 'Tester'].map(d => <option key={d}>{d}</option>)}
+                  </select>
+                  {errors.designation && <p className="text-xs text-red-500 mt-1">{errors.designation}</p>}
+                </div>
+                <div className="col-span-2">
+                  <label className="block text-xs font-semibold text-gray-600 mb-1">About</label>
+                  <textarea value={form.about} onChange={e => set('about', e.target.value)} rows={2} className="w-full px-3 py-1.5 border border-gray-200 rounded-lg text-sm text-gray-700 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-all resize-none" />
+                </div>
               </div>
             </div>
           ) : (
-            <div className="space-y-5">
-              <div><label className="block text-xs font-semibold text-gray-600 mb-2">Role</label><select value={form.role} onChange={e => set('role', e.target.value)} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm text-gray-700 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-all appearance-none bg-white">{['Employee', 'Manager', 'Admin'].map(r => <option key={r}>{r}</option>)}</select></div>
-              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-xl border border-gray-200"><div className="flex items-center gap-3"><span className="text-sm font-semibold text-gray-800">Enable Options</span></div><button onClick={selectAllGlobal} className="text-sm font-medium text-indigo-600 hover:text-indigo-800 transition-colors">Select All</button></div>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-gray-600 mb-2">Role</label>
+                <select value={form.role} onChange={e => set('role', e.target.value)} className="w-full px-3 py-1.5 border border-gray-200 rounded-lg text-sm text-gray-700 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-all appearance-none bg-white">
+                  {['Employee', 'Manager', 'Admin'].map(r => <option key={r}>{r}</option>)}
+                </select>
+              </div>
+              <div className="flex items-center justify-between p-2.5 bg-gray-50 rounded-xl border border-gray-200">
+                <div className="flex items-center gap-3">
+                  <span className="text-sm font-semibold text-gray-800">Enable Options</span>
+                </div>
+                <button onClick={selectAllGlobal} className="text-xs font-medium text-indigo-600 hover:text-indigo-800 transition-colors">Select All</button>
+              </div>
               <div className="overflow-x-auto border border-gray-200 rounded-xl">
-                <table className="w-full min-w-[900px]">
+                <table className="w-full min-w-[700px] text-sm">
                   <thead className="bg-gray-50 border-b border-gray-200">
-                    <tr><th className="py-3 px-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Module</th>{actionLabels.map(action => (<th key={action} className="py-3 px-2 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider w-16">{action}</th>))}<th className="py-3 px-2 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider w-20">Select All</th></tr>
+                    <tr>
+                      <th className="py-2 px-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Module</th>
+                      {actionLabels.map(action => (<th key={action} className="py-2 px-2 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider w-12">{action}</th>))}
+                      <th className="py-2 px-2 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider w-14">Select All</th>
+                    </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100">
                     {modulesList.map(module => {
                       const perms = permissions[module];
                       const allActionsSelected = perms.read && perms.write && perms.create && perms.delete && perms.import && perms.export;
-                      return (<tr key={module} className="hover:bg-gray-50 transition-colors"><td className="py-3 px-4 text-sm font-medium text-gray-800">{module}</td>{actionKeys.map(action => (<td key={action} className="py-3 px-2 text-center"><input type="checkbox" checked={perms[action]} onChange={(e) => updateModulePermission(module, action, e.target.checked)} className="w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer" /></td>))}<td className="py-3 px-2 text-center"><input type="checkbox" checked={allActionsSelected} onChange={() => selectAllForModule(module)} className="w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer" /></td></tr>);
+                      return (
+                        <tr key={module} className="hover:bg-gray-50 transition-colors">
+                          <td className="py-2 px-3 text-xs font-medium text-gray-800">{module}</td>
+                          {actionKeys.map(action => (
+                            <td key={action} className="py-2 px-2 text-center">
+                              <input type="checkbox" checked={perms[action]} onChange={(e) => updateModulePermission(module, action, e.target.checked)} className="w-3.5 h-3.5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer" />
+                            </td>
+                          ))}
+                          <td className="py-2 px-2 text-center">
+                            <input type="checkbox" checked={allActionsSelected} onChange={() => selectAllForModule(module)} className="w-3.5 h-3.5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer" />
+                          </td>
+                        </tr>
+                      );
                     })}
                   </tbody>
                 </table>
@@ -571,9 +679,9 @@ const AddEmployeeModal = ({ onClose, onSave, nextId }) => {
             </div>
           )}
         </div>
-        <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-gray-100 bg-gray-50">
-          <button onClick={onClose} className="px-5 py-2 text-sm font-medium text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-100 transition-colors">Cancel</button>
-          <button onClick={handleSave} className="px-6 py-2 text-sm font-semibold text-white bg-orange-500 rounded-lg hover:bg-orange-600 hover:shadow-md transition-all">Save</button>
+        <div className="flex items-center justify-end gap-3 px-5 py-3 border-t border-gray-100 bg-gray-50">
+          <button onClick={onClose} className="px-4 py-1.5 text-xs font-medium text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-100 transition-colors">Cancel</button>
+          <button onClick={handleSave} className="px-5 py-1.5 text-xs font-semibold text-white bg-orange-500 rounded-lg hover:bg-orange-600 hover:shadow-md transition-all">Save</button>
         </div>
       </div>
     </div>
