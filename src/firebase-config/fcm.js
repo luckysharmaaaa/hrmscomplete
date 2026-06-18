@@ -46,7 +46,7 @@ export const generateFCMToken = async () => {
 
     return token || null;
   } catch (error) {
-    console.error("❌ FCM Error:", error.code, error.message, error);
+    console.error("FCM Error:", error.code, error.message, error);
     return null;
   }
 };
