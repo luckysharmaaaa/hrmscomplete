@@ -1,5 +1,6 @@
 import { signInWithPopup } from "firebase/auth";
 import { auth, googleProvider } from "../firebase-config/firebase";
+import { generateFCMToken } from "../firebase-config/fcm";
 import axios from "axios";
 
 export const googleLogin = async () => {
@@ -8,13 +9,18 @@ export const googleLogin = async () => {
 
     const user = result.user;
 
-    console.log("User:", user);
+    console.log("Google User:", user);
+
+    // Generate FCM Token
+    const fcmToken = await generateFCMToken();
+
+    console.log("FCM Token:", fcmToken);
 
     const response = await axios.post(
-      "http://localhost:5000/v1/auth/login",
+      "http://localhost:5000/v1/users/user_authentication",
       {
         email: user.email,
-        fcm: "",
+        fcm: fcmToken,
       },
       {
         withCredentials: true,
@@ -23,7 +29,7 @@ export const googleLogin = async () => {
 
     return response.data;
   } catch (error) {
-    console.error(error);
+    console.error("Google Login Error:", error);
     throw error;
   }
 };

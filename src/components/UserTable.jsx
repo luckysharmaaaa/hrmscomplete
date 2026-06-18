@@ -2,18 +2,14 @@ import React, { useState, useRef, useEffect } from "react";
 import allUsers from "../constants/user";
 import {
   FiSearch,
-  FiCalendar,
   FiEdit2,
   FiTrash2,
-  FiHeart,
   FiChevronUp,
   FiChevronDown,
 } from "react-icons/fi";
-import { DateRangePicker } from "react-date-range";
-import "react-date-range/dist/styles.css";
-import "react-date-range/dist/theme/default.css";
 import EditUserModal from "./EditUserModal";
 import DeleteUserModal from "./DeleteUserModal";
+import DateRangePickerButton from "./DateRangePickerButton";
 
 const SortIcon = () => (
   <span className="inline-flex flex-col ml-1 opacity-40 leading-none">
@@ -35,9 +31,8 @@ const UserTable = () => {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editUser, setEditUser] = useState(null);
 
-  // ── Date Range Picker ────────────────────────────────────────────
+  // ── Date Range ────────────────────────────────────────────────────
   const today = new Date();
-  const [datePickerOpen, setDatePickerOpen] = useState(false);
   const [appliedRange, setAppliedRange] = useState([
     {
       startDate: new Date(today.getFullYear(), 0, 1),
@@ -45,66 +40,6 @@ const UserTable = () => {
       key: "selection",
     },
   ]);
-  const [tempRange, setTempRange] = useState(appliedRange);
-  const [activePreset, setActivePreset] = useState("This Year");
-  const datePickerRef = useRef(null);
-
-  useEffect(() => {
-    const handleClickOutside = (e) => {
-      if (datePickerRef.current && !datePickerRef.current.contains(e.target)) {
-        setDatePickerOpen(false);
-        setTempRange(appliedRange);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [appliedRange]);
-
-  const presets = [
-    { label: "Today", start: today, end: today },
-    {
-      label: "Yesterday",
-      start: new Date(today - 86400000),
-      end: new Date(today - 86400000),
-    },
-    { label: "Last 7 Days", start: new Date(today - 6 * 86400000), end: today },
-    {
-      label: "Last 30 Days",
-      start: new Date(today - 29 * 86400000),
-      end: today,
-    },
-    {
-      label: "This Year",
-      start: new Date(today.getFullYear(), 0, 1),
-      end: new Date(today.getFullYear(), 11, 31),
-    },
-    {
-      label: "Next Year",
-      start: new Date(today.getFullYear() + 1, 0, 1),
-      end: new Date(today.getFullYear() + 1, 11, 31),
-    },
-    { label: "Custom Range", start: null, end: null },
-  ];
-
-  const applyPreset = (preset) => {
-    setActivePreset(preset.label);
-    if (preset.start) {
-      setTempRange([
-        { startDate: preset.start, endDate: preset.end, key: "selection" },
-      ]);
-    }
-  };
-
-  const formatDate = (d) =>
-    d
-      ? d.toLocaleDateString("en-US", {
-          month: "2-digit",
-          day: "2-digit",
-          year: "numeric",
-        })
-      : "";
-
-  const displayLabel = `${formatDate(appliedRange[0].startDate)} - ${formatDate(appliedRange[0].endDate)}`;
 
   const handleDeleteUser = () => {
     if (!deleteTarget) return;
@@ -125,13 +60,16 @@ const UserTable = () => {
     setEditUser(null);
   };
 
-  const toggleAll = () =>
-    setSelected(selected.length === user.length ? [] : user.map((u) => u.id));
+  {
+    /* Toggle Function in the UserList*/
+  }
+  // const toggleAll = () =>
+  //   setSelected(selected.length === user.length ? [] : user.map((u) => u.id));
 
-  const toggleOne = (id) =>
-    setSelected((prev) =>
-      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
-    );
+  // const toggleOne = (id) =>
+  //   setSelected((prev) =>
+  //     prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
+  //   );
 
   const filtered = user.filter((u) => {
     const matchSearch =
@@ -170,92 +108,15 @@ const UserTable = () => {
         <h2 className="text-2xl font-bold text-[#0F265C]">Users List</h2>
 
         <div className="flex items-center gap-2">
-          {/* Date Range */}
-          <div className="relative" ref={datePickerRef}>
-            {/* Trigger Button */}
-            <button
-              onClick={() => {
-                setTempRange(appliedRange);
-                setDatePickerOpen((o) => !o);
-              }}
-              className="flex items-center gap-2 border border-gray-200 rounded-lg px-3 py-1.5 text-sm text-gray-600 h-10 bg-white cursor-pointer hover:border-gray-300 transition-colors whitespace-nowrap"
-            >
-              <FiCalendar size={13} className="text-gray-400" />
-              <span>{displayLabel}</span>
-            </button>
-
-            {/* Dropdown Panel */}
-            {datePickerOpen && (
-              <div className="absolute top-12 left-0 z-50 bg-white rounded-xl shadow-2xl border border-gray-200 overflow-hidden w-fit">
-                <div className="flex">
-                  {/* Presets Sidebar */}
-                  <div className="w-36 border-r border-gray-100 py-2 flex flex-col">
-                    {presets.map((p) => (
-                      <button
-                        key={p.label}
-                        onClick={() => applyPreset(p)}
-                        className={`text-left px-4 py-2 text-sm transition-colors ${
-                          activePreset === p.label
-                            ? "bg-orange-500 text-white font-medium"
-                            : "text-gray-600 hover:bg-gray-50"
-                        }`}
-                      >
-                        {p.label}
-                      </button>
-                    ))}
-                  </div>
-
-                  {/* Calendar */}
-                  <div className="drp-no-sidebar">
-                    <style>{`.drp-no-sidebar .rdrDefinedRangesWrapper { display: none !important; }`}</style>
-                    <DateRangePicker
-                      ranges={tempRange}
-                      onChange={(item) => {
-                        setTempRange([item.selection]);
-                        setActivePreset("Custom Range");
-                      }}
-                      months={1}
-                      direction="horizontal"
-                      showMonthAndYearPickers
-                      rangeColors={["#f97316"]}
-                      color="#f97316"
-                      showDateDisplay={false}
-                      staticRanges={[]}
-                      inputRanges={[]}
-                    />
-                  </div>
-                </div>
-
-                {/* Footer */}
-                <div className="flex items-center justify-between px-4 py-3 border-t border-gray-100 bg-gray-50">
-                  <span className="text-sm text-gray-500 font-medium">
-                    {formatDate(tempRange[0].startDate)} -{" "}
-                    {formatDate(tempRange[0].endDate)}
-                  </span>
-                  <div className="flex gap-2">
-                    <button
-                      className="btn btn-sm btn-ghost border border-gray-200 text-gray-600 hover:bg-gray-100"
-                      onClick={() => {
-                        setTempRange(appliedRange);
-                        setDatePickerOpen(false);
-                      }}
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      className="btn btn-sm bg-orange-500 hover:bg-orange-600 border-none text-white"
-                      onClick={() => {
-                        setAppliedRange(tempRange);
-                        setDatePickerOpen(false);
-                      }}
-                    >
-                      Apply
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
+          {/* Date Range Picker */}
+          <DateRangePickerButton
+            value={appliedRange}
+            onChange={(newRange) => {
+              setAppliedRange(newRange);
+              setCurrentPage(1);
+            }}
+            defaultPreset="This Year"
+          />
 
           {/* Role */}
           <select
@@ -338,12 +199,13 @@ const UserTable = () => {
           <thead className="bg-gray-100 text-gray-600 text-xs font-semibold">
             <tr>
               <th className="w-10 bg-gray-100">
-                <input
+                {/*toggle all the user*/}
+                {/* <input
                   type="checkbox"
                   className="checkbox checkbox-sm border-gray-400 checked:bg-orange-500 checked:border-orange-500"
                   checked={selected.length === user.length}
                   onChange={toggleAll}
-                />
+                /> */}
               </th>
               <th className="bg-gray-100">
                 <span className="inline-flex items-center gap-0.5 font-bold text-lg">
@@ -393,12 +255,13 @@ const UserTable = () => {
                 >
                   {/* Checkbox */}
                   <td>
-                    <input
+                    {/* Toggle single user*/}
+                    {/* <input
                       type="checkbox"
                       className="checkbox checkbox-sm border-gray-400 checked:bg-orange-500 checked:border-orange-500"
                       checked={selected.includes(user.id)}
                       onChange={() => toggleOne(user.id)}
-                    />
+                    /> */}
                   </td>
 
                   {/* Name + Avatar */}

@@ -155,10 +155,10 @@ const AddUserDrawer = ({ open, onClose }) => {
         <div className="flex items-center justify-between p-5 border-b">
           <h2 className="text-3xl font-bold text-[#0F265C]">Add User</h2>
           <button
-            onClick={handleClose}
-            className="text-gray-500 hover:text-gray-700"
+            onClick={onClose}
+            className="w-8 h-8 flex items-center justify-center rounded-md border border-gray-200 text-gray-400 hover:bg-red-50 hover:border-red-200 hover:text-red-500 transition-all text-base cursor-pointer"
           >
-            <CloseIcon />
+            ✕
           </button>
         </div>
 
@@ -398,13 +398,13 @@ const AddUserDrawer = ({ open, onClose }) => {
                 <thead className="bg-gray-100">
                   <tr>
                     <th>Module Permissions</th>
+                    <th>All</th>
                     <th>Read</th>
                     <th>Write</th>
                     <th>Create</th>
                     <th>Delete</th>
                     <th>Import</th>
                     <th>Export</th>
-                    <th>All</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -412,6 +412,17 @@ const AddUserDrawer = ({ open, onClose }) => {
                     <tr key={mod.module} className="hover:bg-gray-50">
                       <td className="font-medium text-gray-700">
                         {mod.module}
+                      </td>
+
+                      <td>
+                        <input
+                          type="checkbox"
+                          className="checkbox checkbox-sm checkbox-warning"
+                          checked={Object.values(mod.permissions).every(
+                            Boolean,
+                          )}
+                          onChange={() => handleSelectAll(moduleIndex)}
+                        />
                       </td>
 
                       {PERMISSION_KEYS.map((key) => (
@@ -426,17 +437,6 @@ const AddUserDrawer = ({ open, onClose }) => {
                           />
                         </td>
                       ))}
-
-                      <td>
-                        <input
-                          type="checkbox"
-                          className="checkbox checkbox-sm checkbox-warning"
-                          checked={Object.values(mod.permissions).every(
-                            Boolean,
-                          )}
-                          onChange={() => handleSelectAll(moduleIndex)}
-                        />
-                      </td>
                     </tr>
                   ))}
                 </tbody>

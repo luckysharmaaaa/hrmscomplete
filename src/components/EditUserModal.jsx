@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { useFormik } from "formik";
 import * as Yup from "yup";
-
+import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
+import VisibilityIcon from "@mui/icons-material/Visibility";
 // ── Constants ─────────────────────────────────────────────────────────────────
 const PERMISSION_KEYS = [
   "read",
@@ -38,12 +39,11 @@ const validationSchema = Yup.object({
     .email("Enter a valid email address")
     .required("Email is required"),
 
-  // Password optional — validate only if user types something
   password: Yup.string().test(
     "password-strength",
     "Password must be at least 8 chars, include an uppercase letter and a number",
     (value) => {
-      if (!value) return true; // blank = OK (keeping existing password)
+      if (!value) return true;
       return value.length >= 8 && /[A-Z]/.test(value) && /[0-9]/.test(value);
     },
   ),
@@ -66,21 +66,43 @@ const validationSchema = Yup.object({
     .required("Role is required"),
 });
 
-// ── Tiny reusable error label ────────────────────────────────────────────────
+// ── Field Error ───────────────────────────────────────────────────────────────
 const FieldError = ({ error, touched }) =>
   touched && error ? (
     <p className="text-red-500 text-xs mt-1">{error}</p>
   ) : null;
+
+// ── Field Label ───────────────────────────────────────────────────────────────
+const FieldLabel = ({ children }) => (
+  <label className="block text-sm font-medium text-gray-700 mb-1">
+    {children}
+  </label>
+);
+
+// ── Input Class helper ────────────────────────────────────────────────────────
+const inputCls = (hasError) =>
+  `w-full px-3 py-2 text-sm border rounded-md outline-none transition-colors bg-white text-gray-900 placeholder-gray-400
+   ${hasError ? "border-red-400 focus:border-red-500" : "border-gray-300 focus:border-orange-400"}`;
 
 // ── Component ─────────────────────────────────────────────────────────────────
 const EditUserModal = ({ isOpen, onClose, editUser, onSave }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [permissions, setPermissions] = useState(INITIAL_PERMISSIONS);
+  const [visible, setVisible] = useState(false);
 
-  // ── Formik ──────────────────────────────────────────────────────────────────
+  // Slide animation
+  useEffect(() => {
+    if (isOpen) {
+      setTimeout(() => setVisible(true), 10);
+    } else {
+      setVisible(false);
+    }
+  }, [isOpen]);
+
+  // ── Formik ────────────────────────────────────────────────────────────────
   const formik = useFormik({
-    enableReinitialize: true, // repopulate when editUser changes
+    enableReinitialize: true,
     initialValues: {
       firstName: editUser?.name?.split(" ")[0] ?? "",
       lastName: editUser?.name?.split(" ")[1] ?? "",
@@ -93,17 +115,16 @@ const EditUserModal = ({ isOpen, onClose, editUser, onSave }) => {
     },
     validationSchema,
     onSubmit: (values) => {
-      const updatedFields = {
+      onSave({
         name: `${values.firstName} ${values.lastName}`.trim(),
         email: values.email,
         phone: values.phone,
         role: values.role,
-      };
-      onSave(updatedFields);
+      });
     },
   });
 
-  // Reset password visibility when modal closes/opens
+  // Reset on close
   useEffect(() => {
     if (!isOpen) {
       setShowPassword(false);
@@ -112,7 +133,7 @@ const EditUserModal = ({ isOpen, onClose, editUser, onSave }) => {
     }
   }, [isOpen]);
 
-  // ── Permission helpers ───────────────────────────────────────────────────────
+  // ── Permission helpers ────────────────────────────────────────────────────
   const handlePermissionChange = (moduleIndex, key) => {
     setPermissions((prev) =>
       prev.map((mod, i) =>
@@ -120,10 +141,7 @@ const EditUserModal = ({ isOpen, onClose, editUser, onSave }) => {
           ? mod
           : {
               ...mod,
-              permissions: {
-                ...mod.permissions,
-                [key]: !mod.permissions[key],
-              },
+              permissions: { ...mod.permissions, [key]: !mod.permissions[key] },
             },
       ),
     );
@@ -144,43 +162,58 @@ const EditUserModal = ({ isOpen, onClose, editUser, onSave }) => {
     );
   };
 
-  if (!isOpen) return null;
+  if (!isOpen && !visible) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl w-full max-w-4xl shadow-xl overflow-hidden max-h-[90vh] flex flex-col">
-        {/* Header */}
-        <div className="flex justify-between items-center px-6 py-4 border-b shrink-0">
-          <h2 className="text-xl font-semibold text-gray-800">Edit User</h2>
+    <>
+      {/* ── Backdrop ── */}
+      <div
+        onClick={onClose}
+        className={`fixed inset-0 bg-black/50 z-[999] transition-opacity duration-300 ${visible ? "opacity-100" : "opacity-0"}`}
+      />
+
+      {/* ── Sidebar Drawer ── */}
+      <div
+        className={`fixed top-0 right-0 h-screen w-[720px] max-w-[95vw] bg-white z-[1000] flex flex-col shadow-2xl transition-transform duration-300 ease-in-out ${visible ? "translate-x-0" : "translate-x-full"}`}
+      >
+        {/* ── Header ── */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 shrink-0">
+          <div>
+            <h2 className="text-base font-bold text-gray-900 leading-tight">
+              Edit User
+            </h2>
+            <p className="text-xs text-gray-500 mt-0.5">
+              Update user information and permissions
+            </p>
+          </div>
+
           <button
             onClick={onClose}
-            className="text-gray-500 hover:text-black text-xl"
+            className="w-8 h-8 flex items-center justify-center rounded-md border border-gray-200 text-gray-400 hover:bg-red-50 hover:border-red-200 hover:text-red-500 transition-all text-base cursor-pointer"
           >
             ✕
           </button>
         </div>
 
-        {/* Scrollable body */}
+        {/* ── Scrollable Form ── */}
         <form
           onSubmit={formik.handleSubmit}
           noValidate
           className="flex flex-col flex-1 overflow-hidden"
         >
-          <div className="overflow-y-auto flex-1 p-6">
+          <div className="overflow-y-auto flex-1 px-6 py-5">
+            {/* ── 2-column grid ── */}
             <div className="grid grid-cols-2 gap-4">
               {/* First Name */}
               <div>
-                <label className="label">
-                  <span className="label-text font-medium">First Name</span>
-                </label>
+                <FieldLabel>First Name</FieldLabel>
                 <input
                   type="text"
                   name="firstName"
-                  className={`input input-bordered w-full ${
-                    formik.touched.firstName && formik.errors.firstName
-                      ? "border-red-500"
-                      : ""
-                  }`}
+                  placeholder="Enter first name"
+                  className={inputCls(
+                    formik.touched.firstName && formik.errors.firstName,
+                  )}
                   value={formik.values.firstName}
                   onChange={formik.handleChange}
                   onBlur={formik.handleBlur}
@@ -193,17 +226,14 @@ const EditUserModal = ({ isOpen, onClose, editUser, onSave }) => {
 
               {/* Last Name */}
               <div>
-                <label className="label">
-                  <span className="label-text font-medium">Last Name</span>
-                </label>
+                <FieldLabel>Last Name</FieldLabel>
                 <input
                   type="text"
                   name="lastName"
-                  className={`input input-bordered w-full ${
-                    formik.touched.lastName && formik.errors.lastName
-                      ? "border-red-500"
-                      : ""
-                  }`}
+                  placeholder="Enter last name"
+                  className={inputCls(
+                    formik.touched.lastName && formik.errors.lastName,
+                  )}
                   value={formik.values.lastName}
                   onChange={formik.handleChange}
                   onBlur={formik.handleBlur}
@@ -216,17 +246,14 @@ const EditUserModal = ({ isOpen, onClose, editUser, onSave }) => {
 
               {/* Username */}
               <div>
-                <label className="label">
-                  <span className="label-text font-medium">Username</span>
-                </label>
+                <FieldLabel>User Name</FieldLabel>
                 <input
                   type="text"
                   name="userName"
-                  className={`input input-bordered w-full ${
-                    formik.touched.userName && formik.errors.userName
-                      ? "border-red-500"
-                      : ""
-                  }`}
+                  placeholder="Enter username"
+                  className={inputCls(
+                    formik.touched.userName && formik.errors.userName,
+                  )}
                   value={formik.values.userName}
                   onChange={formik.handleChange}
                   onBlur={formik.handleBlur}
@@ -239,17 +266,14 @@ const EditUserModal = ({ isOpen, onClose, editUser, onSave }) => {
 
               {/* Email */}
               <div>
-                <label className="label">
-                  <span className="label-text font-medium">Email</span>
-                </label>
+                <FieldLabel>Email</FieldLabel>
                 <input
                   type="email"
                   name="email"
-                  className={`input input-bordered w-full ${
-                    formik.touched.email && formik.errors.email
-                      ? "border-red-500"
-                      : ""
-                  }`}
+                  placeholder="Enter email address"
+                  className={inputCls(
+                    formik.touched.email && formik.errors.email,
+                  )}
                   value={formik.values.email}
                   onChange={formik.handleChange}
                   onBlur={formik.handleBlur}
@@ -260,26 +284,20 @@ const EditUserModal = ({ isOpen, onClose, editUser, onSave }) => {
                 />
               </div>
 
-              {/* Password (optional) */}
+              {/* Password */}
               <div>
-                <label className="label">
-                  <span className="label-text font-medium">
-                    New Password{" "}
-                    <span className="text-gray-400 font-normal text-xs">
-                      (leave blank to keep current)
-                    </span>
+                <FieldLabel>
+                  Password{" "}
+                  <span className="text-gray-400 font-normal text-[11px]">
+                    (leave blank to keep)
                   </span>
-                </label>
+                </FieldLabel>
                 <div className="relative">
                   <input
                     type={showPassword ? "text" : "password"}
                     name="password"
-                    placeholder="Leave blank to keep current"
-                    className={`input input-bordered w-full pr-10 ${
-                      formik.touched.password && formik.errors.password
-                        ? "border-red-500"
-                        : ""
-                    }`}
+                    placeholder="Min. 8 characters"
+                    className={`${inputCls(formik.touched.password && formik.errors.password)} pr-10`}
                     value={formik.values.password}
                     onChange={formik.handleChange}
                     onBlur={formik.handleBlur}
@@ -287,9 +305,13 @@ const EditUserModal = ({ isOpen, onClose, editUser, onSave }) => {
                   <button
                     type="button"
                     onClick={() => setShowPassword((v) => !v)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 text-sm cursor-pointer"
                   >
-                    {showPassword ? "🙈" : "👁"}
+                    {showPassword ? (
+                      <VisibilityIcon fontSize="small" />
+                    ) : (
+                      <VisibilityOffIcon fontSize="small" />
+                    )}
                   </button>
                 </div>
                 <FieldError
@@ -300,22 +322,13 @@ const EditUserModal = ({ isOpen, onClose, editUser, onSave }) => {
 
               {/* Confirm Password */}
               <div>
-                <label className="label">
-                  <span className="label-text font-medium">
-                    Confirm New Password
-                  </span>
-                </label>
+                <FieldLabel>Confirm Password</FieldLabel>
                 <div className="relative">
                   <input
                     type={showConfirm ? "text" : "password"}
                     name="confirmPassword"
-                    placeholder="Repeat new password"
-                    className={`input input-bordered w-full pr-10 ${
-                      formik.touched.confirmPassword &&
-                      formik.errors.confirmPassword
-                        ? "border-red-500"
-                        : ""
-                    }`}
+                    placeholder="Repeat password"
+                    className={`${inputCls(formik.touched.confirmPassword && formik.errors.confirmPassword)} pr-10`}
                     value={formik.values.confirmPassword}
                     onChange={formik.handleChange}
                     onBlur={formik.handleBlur}
@@ -323,9 +336,13 @@ const EditUserModal = ({ isOpen, onClose, editUser, onSave }) => {
                   <button
                     type="button"
                     onClick={() => setShowConfirm((v) => !v)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 text-sm cursor-pointer"
                   >
-                    {showConfirm ? "🙈" : "👁"}
+                    {showConfirm ? (
+                      <VisibilityIcon fontSize="small" />
+                    ) : (
+                      <VisibilityOffIcon fontSize="small" />
+                    )}
                   </button>
                 </div>
                 <FieldError
@@ -336,18 +353,14 @@ const EditUserModal = ({ isOpen, onClose, editUser, onSave }) => {
 
               {/* Phone */}
               <div>
-                <label className="label">
-                  <span className="label-text font-medium">Phone</span>
-                </label>
+                <FieldLabel>Phone</FieldLabel>
                 <input
                   type="text"
                   name="phone"
                   placeholder="Enter phone number"
-                  className={`input input-bordered w-full ${
-                    formik.touched.phone && formik.errors.phone
-                      ? "border-red-500"
-                      : ""
-                  }`}
+                  className={inputCls(
+                    formik.touched.phone && formik.errors.phone,
+                  )}
                   value={formik.values.phone}
                   onChange={formik.handleChange}
                   onBlur={formik.handleBlur}
@@ -360,16 +373,10 @@ const EditUserModal = ({ isOpen, onClose, editUser, onSave }) => {
 
               {/* Role */}
               <div>
-                <label className="label">
-                  <span className="label-text font-medium">Role</span>
-                </label>
+                <FieldLabel>Role</FieldLabel>
                 <select
                   name="role"
-                  className={`select select-bordered w-full ${
-                    formik.touched.role && formik.errors.role
-                      ? "border-red-500"
-                      : ""
-                  }`}
+                  className={`${inputCls(formik.touched.role && formik.errors.role)} cursor-pointer`}
                   value={formik.values.role}
                   onChange={formik.handleChange}
                   onBlur={formik.handleBlur}
@@ -386,73 +393,92 @@ const EditUserModal = ({ isOpen, onClose, editUser, onSave }) => {
               </div>
             </div>
 
-            {/* ── Permissions Table ──────────────────────────────────────── */}
-            <div className="mt-6 border rounded-lg overflow-hidden">
-              <table className="table w-full">
-                <thead className="bg-gray-100">
-                  <tr>
-                    <th>Module Permissions</th>
-                    <th>Read</th>
-                    <th>Write</th>
-                    <th>Create</th>
-                    <th>Delete</th>
-                    <th>Import</th>
-                    <th>Export</th>
-                    <th>All</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {permissions.map((mod, moduleIndex) => (
-                    <tr key={mod.module} className="hover:bg-gray-50">
-                      <td className="font-medium text-gray-700">
-                        {mod.module}
-                      </td>
+            {/* ── Divider ── */}
+            <hr className="my-5 border-gray-200" />
 
-                      {PERMISSION_KEYS.map((key) => (
-                        <td key={key}>
+            {/* ── Permissions Table ── */}
+            <div>
+              <p className="text-sm font-semibold text-gray-700 mb-3">
+                Module Permissions
+              </p>
+              <div className="border border-gray-200 rounded-lg overflow-hidden">
+                <table className="w-full text-sm border-collapse">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="text-left px-3 py-2.5 text-gray-700 font-semibold border-b border-gray-200">
+                        Module
+                      </th>
+                      <th className="text-center px-2 py-2.5 text-gray-700 font-semibold border-b border-gray-200">
+                        All
+                      </th>
+                      {PERMISSION_KEYS.map((k) => (
+                        <th
+                          key={k}
+                          className="text-center px-2 py-2.5 text-gray-700 font-semibold border-b border-gray-200 capitalize"
+                        >
+                          {k.charAt(0).toUpperCase() + k.slice(1)}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {permissions.map((mod, moduleIndex) => (
+                      <tr
+                        key={mod.module}
+                        className={`hover:bg-gray-50 transition-colors ${moduleIndex < permissions.length - 1 ? "border-b border-gray-100" : ""}`}
+                      >
+                        <td className="px-3 py-2.5 font-medium text-gray-700">
+                          {mod.module}
+                        </td>
+                        <td className="text-center px-2 py-2.5">
                           <input
                             type="checkbox"
-                            className="checkbox checkbox-sm"
-                            checked={mod.permissions[key]}
-                            onChange={() =>
-                              handlePermissionChange(moduleIndex, key)
-                            }
+                            className="checkbox checkbox-sm checkbox-warning"
+                            checked={Object.values(mod.permissions).every(
+                              Boolean,
+                            )}
+                            onChange={() => handleSelectAll(moduleIndex)}
                           />
                         </td>
-                      ))}
-
-                      <td>
-                        <input
-                          type="checkbox"
-                          className="checkbox checkbox-sm checkbox-warning"
-                          checked={Object.values(mod.permissions).every(
-                            Boolean,
-                          )}
-                          onChange={() => handleSelectAll(moduleIndex)}
-                        />
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                        {PERMISSION_KEYS.map((key) => (
+                          <td key={key} className="text-center px-2 py-2.5">
+                            <input
+                              type="checkbox"
+                              className="checkbox checkbox-sm"
+                              checked={mod.permissions[key]}
+                              onChange={() =>
+                                handlePermissionChange(moduleIndex, key)
+                              }
+                            />
+                          </td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
 
-          {/* Footer */}
-          <div className="flex justify-end gap-3 px-6 py-4 border-t shrink-0">
-            <button type="button" className="btn btn-outline" onClick={onClose}>
+          {/* ── Footer ── */}
+          <div className="flex justify-end items-center gap-3 px-6 py-4 border-t border-gray-200 shrink-0 bg-white">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-5 py-2 text-sm font-medium border border-gray-300 rounded-md text-gray-700 bg-white hover:bg-gray-50 transition-colors cursor-pointer"
+            >
               Cancel
             </button>
             <button
               type="submit"
-              className="btn bg-orange-500 hover:bg-orange-600 border-none text-white"
+              className="px-5 py-2 text-sm font-semibold rounded-md text-white bg-orange-500 hover:bg-orange-600 transition-colors shadow-md shadow-orange-200 cursor-pointer"
             >
               Update User
             </button>
           </div>
         </form>
       </div>
-    </div>
+    </>
   );
 };
 
