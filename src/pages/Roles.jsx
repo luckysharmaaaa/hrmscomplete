@@ -15,66 +15,26 @@ const Roles = () => {
   const [openDrawer, setOpenDrawer] = useState(false);
   const [editRole, setEditRole] = useState(null);
   const [roles, setRoles] = useState([
-    {
-      id: 1,
-      role: "Admin",
-      date: "12 Sep 2024",
-      status: "Active",
-    },
-    {
-      id: 2,
-      role: "HR Manager",
-      date: "24 Oct 2024",
-      status: "Active",
-    },
-    {
-      id: 3,
-      role: "Recruitment Manager",
-      date: "18 Feb 2024",
-      status: "Active",
-    },
-    {
-      id: 4,
-      role: "Payroll Manager",
-      date: "17 Oct 2024",
-      status: "Active",
-    },
-    {
-      id: 5,
-      role: "Leave Manager",
-      date: "20 Jul 2024",
-      status: "Active",
-    },
-    {
-      id: 6,
-      role: "Performance Manager",
-      date: "10 Apr 2024",
-      status: "Active",
-    },
-    {
-      id: 7,
-      role: "Reports Analyst",
-      date: "29 Aug 2024",
-      status: "Active",
-    },
-    {
-      id: 8,
-      role: "Employee",
-      date: "22 Feb 2024",
-      status: "Inactive",
-    },
-    {
-      id: 9,
-      role: "Client",
-      date: "03 Nov 2024",
-      status: "Active",
-    },
-    {
-      id: 10,
-      role: "Department Head",
-      date: "17 Dec 2024",
-      status: "Active",
-    },
+    { id: 1,  role: "Admin",               date: "Jan 5 2026",  status: "Active"   },
+    { id: 2,  role: "HR Manager",          date: "Jan 14 2026", status: "Active"   },
+    { id: 3,  role: "Recruitment Manager", date: "Feb 3 2026",  status: "Active"   },
+    { id: 4,  role: "Payroll Manager",     date: "Feb 18 2026", status: "Inactive" },
+    { id: 5,  role: "Leave Manager",       date: "Mar 7 2026",  status: "Active"   },
+    { id: 6,  role: "Performance Manager", date: "Mar 22 2026", status: "Active"   },
+    { id: 7,  role: "Reports Analyst",     date: "Apr 1 2026",  status: "Inactive" },
+    { id: 8,  role: "Employee",            date: "Apr 15 2026", status: "Active"   },
+    { id: 9,  role: "Client",              date: "Apr 28 2026", status: "Active"   },
+    { id: 10, role: "Department Head",     date: "May 6 2026",  status: "Active"   },
+    { id: 11, role: "Project Manager",     date: "May 12 2026", status: "Active"   },
+    { id: 12, role: "Team Lead",           date: "May 19 2026", status: "Inactive" },
+    { id: 13, role: "Developer",           date: "Jun 2 2026",  status: "Active"   },
+    { id: 14, role: "Designer",            date: "Jun 5 2026",  status: "Active"   },
+    { id: 15, role: "QA Engineer",         date: "Jun 8 2026",  status: "Active"   },
+    { id: 16, role: "DevOps Engineer",     date: "Jun 10 2026", status: "Inactive" },
+    { id: 17, role: "Support Agent",       date: "Jun 12 2026", status: "Active"   },
+    { id: 18, role: "Sales Manager",       date: "Jun 14 2026", status: "Active"   },
+    { id: 19, role: "Marketing Manager",   date: "Jun 16 2026", status: "Inactive" },
+    { id: 20, role: "Finance Analyst",     date: "Jun 17 2026", status: "Active"   },
   ]);
   
   const handleOpenDrawer = () => {
