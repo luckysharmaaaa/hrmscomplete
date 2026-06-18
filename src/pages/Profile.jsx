@@ -64,7 +64,7 @@ const Profile = () => {
   };
 
   return (
-    <div className="w-full min-h-screen bg-slate-100">
+    <div className="w-full min-h-screen bg-slate-100 ">
       {/* Header */}
       <div className="flex items-start justify-between px-6 py-1">
         <div>

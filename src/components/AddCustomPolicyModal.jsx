@@ -67,7 +67,7 @@ const AddCustomPolicyModal = ({ open, onClose, leave, onAdd }) => {
   // Move selected available → assigned
   const moveSelected = () => {
     setAssigned((prev) => [...prev, ...selectedLeft]);
-    setAvailable((prev) => prev.filter((n) => !selectedLeft.includes(n)));
+    setAvailabhle((prev) => prev.filter((n) => !selectedLeft.includes(n)));
     setSelectedLeft([]);
   };
 
@@ -102,7 +102,7 @@ const AddCustomPolicyModal = ({ open, onClose, leave, onAdd }) => {
 
   return (
     <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center">
-      <div className="bg-white w-[820px] rounded-lg shadow-2xl overflow-hidden">
+      <div className="bg-white w-205 rounded-lg shadow-2xl overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-5 border-b border-gray-200">
           <h2 className="text-xl font-bold text-[#0F265C]">
@@ -159,7 +159,7 @@ const AddCustomPolicyModal = ({ open, onClose, leave, onAdd }) => {
             <div className="flex items-center gap-3">
               {/* Left — Available */}
               <div className="flex-1 border border-gray-300 rounded-md overflow-hidden">
-                <div className="h-[200px] overflow-y-auto">
+                <div className="h-50 overflow-y-auto">
                   {available.length === 0 ? (
                     <p className="text-center text-sm text-gray-400 mt-8">
                       No employees available
@@ -223,7 +223,7 @@ const AddCustomPolicyModal = ({ open, onClose, leave, onAdd }) => {
 
               {/* Right — Assigned */}
               <div className="flex-1 border border-gray-300 rounded-md overflow-hidden">
-                <div className="h-[200px] overflow-y-auto">
+                <div className="h-50 overflow-y-auto">
                   {assigned.length === 0 ? (
                     <p className="text-center text-sm text-gray-400 mt-8">
                       No employees assigned
