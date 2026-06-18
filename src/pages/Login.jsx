@@ -6,11 +6,24 @@ import { useNavigate } from "react-router-dom";
 
 import { FaFacebookF, FaApple } from "react-icons/fa";
 import { Mail, EyeOff, Eye } from "lucide-react";
+import { googleLogin } from "../services/authServices";
 
 function Login() {
-
   const navigate = useNavigate();
 
+  //login with google pop-up
+  const handleGoogleLogin = async () => {
+    try {
+      const response = await googleLogin();
+
+      console.log(response);
+
+      // navigate dashboard
+      navigate("/dashboard");
+    } catch (error) {
+      console.log(error);
+    }
+  };
 
   const [formData, setFormData] = useState({
     email: "",
@@ -39,9 +52,7 @@ function Login() {
     if (!formData.email.trim()) {
       newErrors.email = "Email is required";
     } else if (
-      !/^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i.test(
-        formData.email
-      )
+      !/^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i.test(formData.email)
     ) {
       newErrors.email = "Invalid email address";
     }
@@ -50,8 +61,7 @@ function Login() {
     if (!formData.password) {
       newErrors.password = "Password is required";
     } else if (formData.password.length < 6) {
-      newErrors.password =
-        "Password must be at least 6 characters";
+      newErrors.password = "Password must be at least 6 characters";
     }
 
     setErrors(newErrors);
@@ -66,7 +76,7 @@ function Login() {
     if (validateForm()) {
       console.log("Login Data:", formData);
 
-      alert("Login Successful!");
+      // alert("Login Successful!");
 
       // Reset Form
       setFormData({
@@ -98,18 +108,12 @@ function Login() {
         >
           {/* Logo */}
           <div className="text-center mb-3">
-            <img
-              src={logo_img}
-              alt="logo"
-              className="w-24 mx-auto"
-            />
+            <img src={logo_img} alt="logo" className="w-24 mx-auto" />
           </div>
 
           {/* Heading */}
           <div className="text-center mb-3">
-            <h1 className="text-[22px] font-bold text-[#1b2559]">
-              Sign In
-            </h1>
+            <h1 className="text-[22px] font-bold text-[#1b2559]">Sign In</h1>
 
             <p className="text-gray-500 mt-1 text-xs">
               Please enter your details to sign in
@@ -138,9 +142,7 @@ function Login() {
             </div>
 
             {errors.email && (
-              <p className="text-red-500 text-xs mt-1">
-                {errors.email}
-              </p>
+              <p className="text-red-500 text-xs mt-1">{errors.email}</p>
             )}
           </div>
 
@@ -162,23 +164,15 @@ function Login() {
 
               <button
                 type="button"
-                onClick={() =>
-                  setShowPassword(!showPassword)
-                }
+                onClick={() => setShowPassword(!showPassword)}
                 className="px-3 text-gray-400"
               >
-                {showPassword ? (
-                  <Eye size={16} />
-                ) : (
-                  <EyeOff size={16} />
-                )}
+                {showPassword ? <Eye size={16} /> : <EyeOff size={16} />}
               </button>
             </div>
 
             {errors.password && (
-              <p className="text-red-500 text-xs mt-1">
-                {errors.password}
-              </p>
+              <p className="text-red-500 text-xs mt-1">{errors.password}</p>
             )}
           </div>
 
@@ -194,65 +188,44 @@ function Login() {
               Remember Me
             </label>
 
-            <button
-              type="button"
-              className="text-red-500 hover:underline"
-            >
+            <button type="button" className="text-red-500 hover:underline">
               Forgot Password?
             </button>
           </div>
 
           {/* Sign In Button */}
-          <button className="w-full h-9 bg-orange-500 hover:bg-orange-600 text-white rounded-lg font-medium text-sm transition flex items-center justify-center" onClick={()=>navigate("profile")}>
+          <button
+            className="w-full h-9 bg-orange-500 hover:bg-orange-600 text-white rounded-lg font-medium text-sm transition flex items-center justify-center"
+            onClick={() => navigate("profile")}
+          >
             Sign In
           </button>
-
-          {/* Create Account */}
-          <p className="text-center text-xs text-gray-600 mt-3">
-            Don’t have an account?
-            <span
-              onClick={() => navigate("/signup")}
-              className="text-orange-500 ml-1 cursor-pointer hover:underline"
-            >
-              Create Account
-            </span>
-          </p>
 
           {/* Divider */}
           <div className="flex items-center my-3">
             <div className="flex-1 border-t border-gray-300"></div>
 
-            <span className="mx-3 text-gray-400 text-xs">
-              Or
-            </span>
+            <span className="mx-3 text-gray-400 text-xs">Or</span>
 
             <div className="flex-1 border-t border-gray-300"></div>
           </div>
 
           {/* Social Login */}
+          <p className="flex justify-center items-center mb-4  text-gray-500 font-semi-bold">
+            Continue with Google
+          </p>
           <div className="flex justify-center gap-2">
-            <button className="w-15 h-9 bg-[#1877F2] rounded-lg flex items-center justify-center hover:opacity-90 transition">
-              <FaFacebookF className="text-white text-sm" />
-            </button>
-
-            <button className="w-15 h-9 border border-gray-300 rounded-lg flex items-center justify-center hover:bg-gray-50 transition">
-              <img
-                src={google_icon}
-                alt="Google"
-                className="w-4 h-4"
-              />
-            </button>
-
-            <button className="w-15 h-9 bg-black rounded-lg flex items-center justify-center hover:opacity-90 transition">
-              <FaApple className="text-white text-sm" />
+            <button
+              onClick={handleGoogleLogin}
+              className="w-100 h-10 border border-gray-300 rounded-lg flex items-center justify-center hover:bg-gray-50 transition"
+            >
+              <img src={google_icon} alt="Google" className="w-6 h-6" />
             </button>
           </div>
 
           {/* COPYRIGHT */}
           <div className="text-center pt-3">
-            <p className="text-xs text-gray-500">
-              Copyright © 2026 - SmartHR
-            </p>
+            <p className="text-xs text-gray-500">Copyright © 2026 - SmartHR</p>
           </div>
         </form>
       </div>

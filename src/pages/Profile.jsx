@@ -176,11 +176,19 @@ const EmployeeFormModal = ({ title, employee, onClose, onSave, nextId }) => {
   const actionLabels = ['Read', 'Write', 'Create', 'Delete', 'Import', 'Export'];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={e => e.target === e.currentTarget && onClose()}>
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-5xl mx-4 overflow-hidden" style={{ maxHeight: '90vh' }}>
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-          <div><span className="text-base font-bold text-gray-900">{title}</span><span className="ml-2 text-xs text-gray-400 font-medium">Employee ID : {form.employeeId}</span></div>
-          <button onClick={onClose} className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-gray-100"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+    <div className="w-full min-h-screen bg-slate-100 ">
+      {/* Header */}
+      <div className="flex items-start justify-between px-6 py-1">
+        <div>
+          <h1 className="text-3xl font-bold text-[#0F265C]">Profile</h1>
+
+          <div className="flex items-center gap-2 mt-3 text-sm text-gray-500">
+            <FiHome size={14} />
+            <FiChevronRight size={14} />
+            <span>Pages</span>
+            <FiChevronRight size={14} />
+            <span className="font-medium text-[#0F265C]">Profile</span>
+          </div>
         </div>
         <div className="flex border-b border-gray-100 px-6">
           {['basic', 'permissions'].map(tab => (<button key={tab} onClick={() => setActiveTab(tab)} className={`py-3 px-1 mr-6 text-sm font-semibold border-b-2 capitalize ${activeTab === tab ? 'border-orange-500 text-orange-500' : 'border-transparent text-gray-500'}`}>{tab === 'basic' ? 'Basic Information' : 'Permissions'}</button>))}

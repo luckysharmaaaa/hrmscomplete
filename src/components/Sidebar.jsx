@@ -108,6 +108,18 @@ function Sidebar() {
             </Link>
           </li>
 
+
+           {/* User */}
+          <li>
+            <Link
+              to="/rolespermissions"
+              className="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700 hover:bg-orange-50 hover:text-orange-500 transition"
+            >
+              <User size={18} />
+              <span className="font-medium">Roles-Permissions</span>
+            </Link>
+          </li>
+
           {/* User */}
           <li>
             <Link
@@ -116,6 +128,18 @@ function Sidebar() {
             >
               <User size={18} />
               <span className="font-medium">Profile</span>
+            </Link>
+          </li>
+
+
+          {/* Roles */}
+          <li>
+            <Link
+              to="/roles"
+              className="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700 hover:bg-orange-50 hover:text-orange-500 transition"
+            >
+              <User size={18} />
+              <span className="font-medium">Roles</span>
             </Link>
           </li>
 

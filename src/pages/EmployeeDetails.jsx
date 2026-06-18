@@ -74,11 +74,51 @@ const projectDetailsData = {
     description: "The World Health Tracking System (WHTS) project aims to modernize and streamline the global health management processes within.",
     timeSpent: "85/168 Hrs", timeSpentPercent: 51,
     tasks: [
-      { name: "Patient appointment booking", status: "Completed", statusColor: "bg-green-100 text-green-600", priority: "low" },
-      { name: "Appointment booking with payment gateway", status: "In Progress", statusColor: "bg-purple-100 text-purple-600", priority: "medium" },
-      { name: "Patient and Doctor video conferencing", status: "Completed", statusColor: "bg-green-100 text-green-600", priority: "high" },
-      { name: "Behaviour Analysis Module", status: "Pending", statusColor: "bg-orange-100 text-orange-600", priority: "high" },
-      { name: "Go Live and Post Implementation Support", status: "Pending", statusColor: "bg-orange-100 text-orange-600", priority: "medium" },
+      { 
+        name: "Update calendar and schedule", 
+        status: "Completed", 
+        statusColor: "bg-green-100 text-green-600", 
+        priority: "medium",
+        tag: "Internal",
+        description: "Update the calendar and scheduling system",
+        assignee: "Sophie"
+      },
+      { 
+        name: "Appointment booking with payment gateway", 
+        status: "In Progress", 
+        statusColor: "bg-purple-100 text-purple-600", 
+        priority: "medium",
+        tag: "External",
+        description: "Integrate payment gateway for online appointment booking",
+        assignee: "John"
+      },
+      { 
+        name: "Patient and Doctor video conferencing", 
+        status: "Completed", 
+        statusColor: "bg-green-100 text-green-600", 
+        priority: "high",
+        tag: "Internal",
+        description: "Implement video call functionality between patients and doctors",
+        assignee: "Sophie"
+      },
+      { 
+        name: "Behaviour Analysis Module", 
+        status: "Pending", 
+        statusColor: "bg-orange-100 text-orange-600", 
+        priority: "high",
+        tag: "Team",
+        description: "Analyze patient behavior patterns and generate insights",
+        assignee: "Mike"
+      },
+      { 
+        name: "Go Live and Post Implementation Support", 
+        status: "Pending", 
+        statusColor: "bg-orange-100 text-orange-600", 
+        priority: "medium",
+        tag: "Client",
+        description: "Provide support after project go-live and ensure smooth operations",
+        assignee: "Sophie"
+      },
     ],
     images: ["https://images.unsplash.com/photo-1576091160550-2173dba999ef?w=200&h=200&fit=crop", "https://images.unsplash.com/photo-1505751172876-fa1923c5c528?w=200&h=200&fit=crop", "https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=200&h=200&fit=crop"],
     files: [
@@ -104,11 +144,51 @@ const projectDetailsData = {
     description: "The Enhanced Patient Management System (EPMS) project aims to modernize and streamline the patient management processes.",
     timeSpent: "66/120 Hrs", timeSpentPercent: 55,
     tasks: [
-      { name: "Patient appointment booking", status: "Completed", statusColor: "bg-green-100 text-green-600", priority: "low" },
-      { name: "Appointment booking with payment gateway", status: "In Progress", statusColor: "bg-purple-100 text-purple-600", priority: "medium" },
-      { name: "Patient and Doctor video conferencing", status: "Completed", statusColor: "bg-green-100 text-green-600", priority: "high" },
-      { name: "Behaviour Analysis Module", status: "Pending", statusColor: "bg-orange-100 text-orange-600", priority: "high" },
-      { name: "Go Live and Post Implementation Support", status: "Pending", statusColor: "bg-orange-100 text-orange-600", priority: "medium" },
+      { 
+        name: "Patient appointment booking", 
+        status: "Completed", 
+        statusColor: "bg-green-100 text-green-600", 
+        priority: "low",
+        tag: "Internal",
+        description: "Schedule patient appointments with hospital staff",
+        assignee: "Sophie"
+      },
+      { 
+        name: "Appointment booking with payment gateway", 
+        status: "In Progress", 
+        statusColor: "bg-purple-100 text-purple-600", 
+        priority: "medium",
+        tag: "External",
+        description: "Payment gateway integration for hospital appointments",
+        assignee: "John"
+      },
+      { 
+        name: "Patient and Doctor video conferencing", 
+        status: "Completed", 
+        statusColor: "bg-green-100 text-green-600", 
+        priority: "high",
+        tag: "Internal",
+        description: "Video consultation between patients and hospital doctors",
+        assignee: "Sophie"
+      },
+      { 
+        name: "Behaviour Analysis Module", 
+        status: "Pending", 
+        statusColor: "bg-orange-100 text-orange-600", 
+        priority: "high",
+        tag: "Team",
+        description: "Analyze patient behavior and treatment patterns",
+        assignee: "Mike"
+      },
+      { 
+        name: "Go Live and Post Implementation Support", 
+        status: "Pending", 
+        statusColor: "bg-orange-100 text-orange-600", 
+        priority: "medium",
+        tag: "Client",
+        description: "Post-launch support and maintenance",
+        assignee: "Sophie"
+      },
     ],
     images: ["https://images.unsplash.com/photo-1576091160550-2173dba999ef?w=200&h=200&fit=crop", "https://images.unsplash.com/photo-1505751172876-fa1923c5c528?w=200&h=200&fit=crop"],
     files: [
@@ -135,10 +215,10 @@ const InputField = ({ label, name, value, onChange, error, placeholder, type = "
   </div>
 );
 
-const FormButtons = ({ onCancel, onSave }) => (
+const FormButtons = ({ onCancel, onSave, saveText = "Save" }) => (
   <div className="flex items-center justify-end gap-3 px-4 py-3 border-t border-gray-200 bg-gray-50 rounded-b-xl">
     <button onClick={onCancel} className="px-4 py-1.5 text-sm text-gray-600 hover:text-gray-800 font-medium transition-colors">Cancel</button>
-    <button onClick={onSave} className="px-5 py-1.5 text-sm bg-orange-500 hover:bg-orange-600 text-white font-medium rounded-lg transition-colors">Save</button>
+    <button onClick={onSave} className="px-5 py-1.5 text-sm bg-orange-500 hover:bg-orange-600 text-white font-medium rounded-lg transition-colors">{saveText}</button>
   </div>
 );
 
@@ -296,12 +376,926 @@ const DropdownMenu = ({ isOpen, onClose, options, buttonRef }) => {
   );
 };
 
-// ========== PROJECT DETAILS ==========
+// ========== ADD NEW TODO MODAL ==========
+const AddNewTodoModal = ({ isOpen, onClose, onSave }) => {
+  const [formData, setFormData] = useState({
+    title: "",
+    tag: "",
+    priority: "Medium",
+    description: "",
+    assignee: "Sophie",
+    status: "Pending",
+  });
+
+  const [errors, setErrors] = useState({});
+
+  useEffect(() => {
+    if (isOpen) {
+      setFormData({
+        title: "",
+        tag: "",
+        priority: "Medium",
+        description: "",
+        assignee: "Sophie",
+        status: "Pending",
+      });
+      setErrors({});
+    }
+  }, [isOpen]);
+
+  if (!isOpen) return null;
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+    if (errors[name]) {
+      setErrors(prev => ({ ...prev, [name]: "" }));
+    }
+  };
+
+  const validate = () => {
+    const newErrors = {};
+    if (!formData.title.trim()) newErrors.title = "Todo title is required";
+    if (!formData.tag) newErrors.tag = "Tag is required";
+    if (!formData.assignee.trim()) newErrors.assignee = "Assignee is required";
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSubmit = () => {
+    if (validate()) {
+      if (onSave) {
+        onSave(formData);
+      }
+      onClose();
+    }
+  };
+
+  const annotations = ["Onhold", "Inprogress", "Completed", "Pending", "Inprogress"];
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+      <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 sticky top-0 bg-white z-10">
+          <h2 className="text-base font-semibold text-gray-800">Add New Todo</h2>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        {/* Body */}
+        <div className="px-6 py-5 space-y-4">
+          {/* Todo Title */}
+          <div>
+            <label className="block text-xs font-medium text-gray-700 mb-1">
+              Todo Title <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              name="title"
+              value={formData.title}
+              onChange={handleChange}
+              className={`w-full px-3 py-2 text-sm border ${errors.title ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500`}
+              placeholder="Enter todo title"
+            />
+            {errors.title && <p className="text-xs text-red-500 mt-1">{errors.title}</p>}
+          </div>
+
+          {/* Tag & Priority - Side by side */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">
+                Tag <span className="text-red-500">*</span>
+              </label>
+              <select
+                name="tag"
+                value={formData.tag}
+                onChange={handleChange}
+                className={`w-full px-3 py-2 text-sm border ${errors.tag ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 bg-white`}
+              >
+                <option value="">Select</option>
+                <option value="Internal">Internal</option>
+                <option value="External">External</option>
+                <option value="Team">Team</option>
+                <option value="Client">Client</option>
+              </select>
+              {errors.tag && <p className="text-xs text-red-500 mt-1">{errors.tag}</p>}
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">Priority</label>
+              <select
+                name="priority"
+                value={formData.priority}
+                onChange={handleChange}
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 bg-white"
+              >
+                <option value="Low">Low</option>
+                <option value="Medium">Medium</option>
+                <option value="High">High</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Description */}
+          <div>
+            <label className="block text-xs font-medium text-gray-700 mb-1">Descriptions</label>
+            <div className="border border-gray-300 rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-orange-500">
+              <div className="flex items-center gap-1 px-3 py-1.5 bg-gray-50 border-b border-gray-200">
+                <button className="text-sm text-gray-600 hover:text-gray-800 px-1.5 py-0.5 rounded hover:bg-gray-200 transition-colors">14</button>
+                <button className="text-sm font-bold text-gray-600 hover:text-gray-800 px-1.5 py-0.5 rounded hover:bg-gray-200 transition-colors">B</button>
+                <button className="text-sm italic text-gray-600 hover:text-gray-800 px-1.5 py-0.5 rounded hover:bg-gray-200 transition-colors">I</button>
+                <button className="text-sm underline text-gray-600 hover:text-gray-800 px-1.5 py-0.5 rounded hover:bg-gray-200 transition-colors">U</button>
+                <button className="text-sm text-gray-600 hover:text-gray-800 px-1.5 py-0.5 rounded hover:bg-gray-200 transition-colors">S</button>
+                <button className="text-sm text-gray-600 hover:text-gray-800 px-1.5 py-0.5 rounded hover:bg-gray-200 transition-colors">[ ]</button>
+              </div>
+              <textarea
+                name="description"
+                value={formData.description}
+                onChange={handleChange}
+                rows="3"
+                className="w-full px-3 py-2 text-sm border-0 focus:outline-none resize-none"
+                placeholder="Enter description..."
+              />
+            </div>
+          </div>
+
+          {/* Add Assignee */}
+          <div>
+            <label className="block text-xs font-medium text-gray-700 mb-1">
+              Add Assignee <span className="text-red-500">*</span>
+            </label>
+            <div className="flex items-center gap-2">
+              <img src="https://randomuser.me/api/portraits/women/68.jpg" alt="Sophie" className="w-8 h-8 rounded-full object-cover" />
+              <input
+                type="text"
+                name="assignee"
+                value={formData.assignee}
+                onChange={handleChange}
+                className={`flex-1 px-3 py-2 text-sm border ${errors.assignee ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500`}
+                placeholder="Enter assignee name"
+              />
+            </div>
+            {errors.assignee && <p className="text-xs text-red-500 mt-1">{errors.assignee}</p>}
+          </div>
+
+          {/* Status */}
+          <div>
+            <label className="block text-xs font-medium text-gray-700 mb-1">Status</label>
+            <select
+              name="status"
+              value={formData.status}
+              onChange={handleChange}
+              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 bg-white"
+            >
+              <option value="Pending">Pending</option>
+              <option value="In Progress">In Progress</option>
+              <option value="Completed">Completed</option>
+              <option value="On Hold">On Hold</option>
+            </select>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="border-t border-gray-200">
+          {/* Priority & Time row */}
+          <div className="flex items-center justify-between px-6 py-2 bg-gray-50">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-medium text-gray-700">Priority</span>
+              <span className="text-xs text-orange-500 font-medium">{formData.priority}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-gray-500">65/120 Hrs</span>
+            </div>
+          </div>
+
+          {/* Annotations */}
+          <div className="px-6 py-2 border-t border-gray-100 bg-gray-50/50">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-xs font-medium text-gray-700">Annotations</span>
+              {annotations.map((item, index) => (
+                <span 
+                  key={index} 
+                  className={`text-xs px-2 py-0.5 rounded-full ${
+                    index === 0 ? "bg-yellow-100 text-yellow-700" :
+                    index === 1 ? "bg-blue-100 text-blue-700" :
+                    index === 2 ? "bg-green-100 text-green-700" :
+                    index === 3 ? "bg-gray-100 text-gray-700" :
+                    "bg-purple-100 text-purple-700"
+                  }`}
+                >
+                  {item}
+                </span>
+              ))}
+            </div>
+          </div>
+
+          {/* Buttons */}
+          <div className="flex items-center justify-end gap-3 px-6 py-3 border-t border-gray-200 bg-gray-50 rounded-b-xl">
+            <button onClick={onClose} className="px-4 py-1.5 text-sm text-gray-600 hover:text-gray-800 font-medium transition-colors">Cancel</button>
+            <button onClick={handleSubmit} className="px-5 py-1.5 text-sm bg-orange-500 hover:bg-orange-600 text-white font-medium rounded-lg transition-colors">Add New Todo</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ========== EDIT TODO MODAL ==========
+const EditTodoModal = ({ isOpen, onClose, task, onSave }) => {
+  const [formData, setFormData] = useState({
+    title: "",
+    tag: "",
+    priority: "Medium",
+    description: "",
+    assignee: "Sophie",
+    status: "Completed",
+  });
+
+  useEffect(() => {
+    if (task) {
+      setFormData({
+        title: task.name || "",
+        tag: task.tag || "Internal",
+        priority: task.priority ? task.priority.charAt(0).toUpperCase() + task.priority.slice(1) : "Medium",
+        description: task.description || "",
+        assignee: task.assignee || "Sophie",
+        status: task.status || "Completed",
+      });
+    } else {
+      setFormData({
+        title: "",
+        tag: "",
+        priority: "Medium",
+        description: "",
+        assignee: "Sophie",
+        status: "Completed",
+      });
+    }
+  }, [task]);
+
+  if (!isOpen) return null;
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleSubmit = () => {
+    if (onSave) {
+      onSave(formData);
+    }
+    onClose();
+  };
+
+  const annotations = ["Onhold", "Inprogress", "Completed", "Pending", "Inprogress"];
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+      <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 sticky top-0 bg-white z-10">
+          <h2 className="text-base font-semibold text-gray-800">Edit Todo</h2>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        {/* Body */}
+        <div className="px-6 py-5 space-y-4">
+          {/* Todo Title */}
+          <div>
+            <label className="block text-xs font-medium text-gray-700 mb-1">Todo Title</label>
+            <input
+              type="text"
+              name="title"
+              value={formData.title}
+              onChange={handleChange}
+              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+              placeholder="Enter todo title"
+            />
+          </div>
+
+          {/* Tag & Priority - Side by side */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">Tag</label>
+              <select
+                name="tag"
+                value={formData.tag}
+                onChange={handleChange}
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 bg-white"
+              >
+                <option value="">Select Tag</option>
+                <option value="Internal">Internal</option>
+                <option value="External">External</option>
+                <option value="Team">Team</option>
+                <option value="Client">Client</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">Priority</label>
+              <select
+                name="priority"
+                value={formData.priority}
+                onChange={handleChange}
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 bg-white"
+              >
+                <option value="Low">Low</option>
+                <option value="Medium">Medium</option>
+                <option value="High">High</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Description */}
+          <div>
+            <label className="block text-xs font-medium text-gray-700 mb-1">Descriptions</label>
+            <div className="border border-gray-300 rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-orange-500">
+              <div className="flex items-center gap-1 px-3 py-1.5 bg-gray-50 border-b border-gray-200">
+                <button className="text-sm text-gray-600 hover:text-gray-800 px-1.5 py-0.5 rounded hover:bg-gray-200 transition-colors">14</button>
+                <button className="text-sm font-bold text-gray-600 hover:text-gray-800 px-1.5 py-0.5 rounded hover:bg-gray-200 transition-colors">B</button>
+                <button className="text-sm italic text-gray-600 hover:text-gray-800 px-1.5 py-0.5 rounded hover:bg-gray-200 transition-colors">I</button>
+                <button className="text-sm underline text-gray-600 hover:text-gray-800 px-1.5 py-0.5 rounded hover:bg-gray-200 transition-colors">U</button>
+                <button className="text-sm text-gray-600 hover:text-gray-800 px-1.5 py-0.5 rounded hover:bg-gray-200 transition-colors">S</button>
+                <button className="text-sm text-gray-600 hover:text-gray-800 px-1.5 py-0.5 rounded hover:bg-gray-200 transition-colors">[ ]</button>
+              </div>
+              <textarea
+                name="description"
+                value={formData.description}
+                onChange={handleChange}
+                rows="3"
+                className="w-full px-3 py-2 text-sm border-0 focus:outline-none resize-none"
+                placeholder="Enter description..."
+              />
+            </div>
+          </div>
+
+          {/* Add Assignee */}
+          <div>
+            <label className="block text-xs font-medium text-gray-700 mb-1">Add Assignee</label>
+            <div className="flex items-center gap-2">
+              <img src="https://randomuser.me/api/portraits/women/68.jpg" alt="Sophie" className="w-8 h-8 rounded-full object-cover" />
+              <input
+                type="text"
+                name="assignee"
+                value={formData.assignee}
+                onChange={handleChange}
+                className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                placeholder="Enter assignee name"
+              />
+            </div>
+          </div>
+
+          {/* Status */}
+          <div>
+            <label className="block text-xs font-medium text-gray-700 mb-1">Status</label>
+            <select
+              name="status"
+              value={formData.status}
+              onChange={handleChange}
+              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 bg-white"
+            >
+              <option value="Pending">Pending</option>
+              <option value="In Progress">In Progress</option>
+              <option value="Completed">Completed</option>
+              <option value="On Hold">On Hold</option>
+            </select>
+          </div>
+        </div>
+
+        {/* Footer with Cancel/Submit and Priority/Time */}
+        <div className="border-t border-gray-200">
+          {/* Priority & Time row */}
+          <div className="flex items-center justify-between px-6 py-2 bg-gray-50">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-medium text-gray-700">Priority</span>
+              <span className="text-xs text-orange-500 font-medium">{formData.priority}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-gray-500">65/120 Hrs</span>
+            </div>
+          </div>
+
+          {/* Annotations */}
+          <div className="px-6 py-2 border-t border-gray-100 bg-gray-50/50">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-xs font-medium text-gray-700">Annotations</span>
+              {annotations.map((item, index) => (
+                <span 
+                  key={index} 
+                  className={`text-xs px-2 py-0.5 rounded-full ${
+                    index === 0 ? "bg-yellow-100 text-yellow-700" :
+                    index === 1 ? "bg-blue-100 text-blue-700" :
+                    index === 2 ? "bg-green-100 text-green-700" :
+                    index === 3 ? "bg-gray-100 text-gray-700" :
+                    "bg-purple-100 text-purple-700"
+                  }`}
+                >
+                  {item}
+                </span>
+              ))}
+            </div>
+          </div>
+
+          {/* Buttons */}
+          <div className="flex items-center justify-end gap-3 px-6 py-3 border-t border-gray-200 bg-gray-50 rounded-b-xl">
+            <button onClick={onClose} className="px-4 py-1.5 text-sm text-gray-600 hover:text-gray-800 font-medium transition-colors">Cancel</button>
+            <button onClick={handleSubmit} className="px-5 py-1.5 text-sm bg-orange-500 hover:bg-orange-600 text-white font-medium rounded-lg transition-colors">Submit</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ========== EDIT PROJECT MODAL ==========
+const EditProjectModal = ({ isOpen, onClose, project, onSave }) => {
+  const [formData, setFormData] = useState({
+    projectName: project?.name || "",
+    client: project?.client || "",
+    startDate: project?.startDate || "",
+    endDate: project?.dueDate || "",
+    priority: project?.priority || "Select",
+    projectValue: "",
+    priceType: "",
+    description: project?.description || "",
+  });
+  const [uploadedImage, setUploadedImage] = useState(null);
+  const [selectedFile, setSelectedFile] = useState(null);
+  const fileInputRef = useRef(null);
+
+  useEffect(() => {
+    if (project) {
+      setFormData({
+        projectName: project.name || "",
+        client: project.client || "",
+        startDate: project.startDate || "",
+        endDate: project.dueDate || "",
+        priority: project.priority || "Select",
+        projectValue: "",
+        priceType: "",
+        description: project.description || "",
+      });
+    }
+  }, [project]);
+
+  if (!isOpen) return null;
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      if (file.size > 4 * 1024 * 1024) {
+        alert("Image should be below 4 MB");
+        return;
+      }
+      const reader = new FileReader();
+      reader.onloadend = () => setUploadedImage(reader.result);
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleFileUpload = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setSelectedFile(file.name);
+    }
+  };
+
+  const handleSave = () => {
+    const updatedProject = {
+      ...project,
+      name: formData.projectName,
+      client: formData.client,
+      startDate: formData.startDate,
+      dueDate: formData.endDate,
+      priority: formData.priority,
+      description: formData.description,
+    };
+    onSave(updatedProject);
+    onClose();
+  };
+
+  const memberAvatars = [
+    "https://randomuser.me/api/portraits/men/32.jpg",
+    "https://randomuser.me/api/portraits/women/65.jpg",
+    "https://randomuser.me/api/portraits/men/45.jpg",
+    "https://randomuser.me/api/portraits/women/68.jpg",
+  ];
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+      <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 sticky top-0 bg-white z-10">
+          <div>
+            <h2 className="text-base font-semibold text-gray-800">Edit Project</h2>
+            <p className="text-xs text-gray-400">Project ID: {project?.projectId || "PRO-0004"}</p>
+          </div>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        {/* Body */}
+        <div className="px-6 py-5 space-y-5">
+          {/* Basic Information */}
+          <div>
+            <h3 className="text-sm font-semibold text-gray-700 mb-3">Basic Information</h3>
+            
+            {/* Members */}
+            <div className="mb-4">
+              <label className="block text-xs text-gray-500 mb-2">Members</label>
+              <div className="flex items-center gap-2">
+                {memberAvatars.map((avatar, i) => (
+                  <img key={i} src={avatar} alt={`Member ${i+1}`} className="w-9 h-9 rounded-full border-2 border-white shadow-sm object-cover" />
+                ))}
+                <button className="w-9 h-9 rounded-full border-2 border-dashed border-gray-300 flex items-center justify-center text-gray-400 hover:border-orange-400 hover:text-orange-400 transition-colors">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            {/* Upload Project Logo */}
+            <div className="mb-4">
+              <label className="block text-xs text-gray-500 mb-2">Upload Project Logo</label>
+              <div className="flex items-center gap-4">
+                <div className="w-16 h-16 rounded-lg bg-gray-100 border-2 border-dashed border-gray-300 flex items-center justify-center overflow-hidden flex-shrink-0">
+                  {uploadedImage ? (
+                    <img src={uploadedImage} alt="Project Logo" className="w-full h-full object-cover" />
+                  ) : (
+                    <span className="text-2xl text-gray-400">📷</span>
+                  )}
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500 mb-1.5">Image should be below 4 mb</p>
+                  <div className="flex gap-2">
+                    <label className="px-3 py-1 text-xs bg-orange-500 text-white rounded-lg cursor-pointer hover:bg-orange-600 transition-colors">
+                      Upload
+                      <input type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
+                    </label>
+                    <button onClick={() => setUploadedImage(null)} className="px-3 py-1 text-xs bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors">
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Project Name & Client */}
+            <div className="grid grid-cols-2 gap-4 mb-3">
+              <InputField 
+                label="Project Name" 
+                name="projectName" 
+                value={formData.projectName} 
+                onChange={handleChange}
+                placeholder="Enter Project Name"
+              />
+              <InputField 
+                label="Client" 
+                name="client" 
+                value={formData.client} 
+                onChange={handleChange}
+                placeholder="Enter Client Name"
+              />
+            </div>
+
+            {/* Start Date & End Date */}
+            <div className="grid grid-cols-2 gap-4 mb-3">
+              <div>
+                <label className="block text-xs text-gray-500 mb-1">Start Date</label>
+                <input 
+                  type="date" 
+                  name="startDate"
+                  value={formData.startDate}
+                  onChange={handleChange}
+                  className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-gray-500 mb-1">End Date</label>
+                <input 
+                  type="date" 
+                  name="endDate"
+                  value={formData.endDate}
+                  onChange={handleChange}
+                  className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                />
+              </div>
+            </div>
+
+            {/* Priority, Project Value & Price Type */}
+            <div className="grid grid-cols-3 gap-4 mb-3">
+              <div>
+                <label className="block text-xs text-gray-500 mb-1">Priority</label>
+                <select 
+                  name="priority"
+                  value={formData.priority}
+                  onChange={handleChange}
+                  className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 bg-white"
+                >
+                  <option value="Select">Select</option>
+                  <option value="High">High</option>
+                  <option value="Medium">Medium</option>
+                  <option value="Low">Low</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs text-gray-500 mb-1">Project Value</label>
+                <input 
+                  type="text" 
+                  name="projectValue"
+                  value={formData.projectValue}
+                  onChange={handleChange}
+                  placeholder="$"
+                  className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-gray-500 mb-1">Price Type</label>
+                <select 
+                  name="priceType"
+                  value={formData.priceType}
+                  onChange={handleChange}
+                  className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 bg-white"
+                >
+                  <option value="">Select</option>
+                  <option value="Fixed">Fixed</option>
+                  <option value="Hourly">Hourly</option>
+                  <option value="Monthly">Monthly</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Description with toolbar */}
+            <div className="mb-3">
+              <label className="block text-xs text-gray-500 mb-1">Description</label>
+              <div className="border border-gray-300 rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-orange-500">
+                <div className="flex items-center gap-1 px-3 py-1.5 bg-gray-50 border-b border-gray-200">
+                  <button className="text-sm text-gray-600 hover:text-gray-800 px-1.5 py-0.5 rounded hover:bg-gray-200 transition-colors">14</button>
+                  <button className="text-sm font-bold text-gray-600 hover:text-gray-800 px-1.5 py-0.5 rounded hover:bg-gray-200 transition-colors">B</button>
+                  <button className="text-sm italic text-gray-600 hover:text-gray-800 px-1.5 py-0.5 rounded hover:bg-gray-200 transition-colors">I</button>
+                  <button className="text-sm underline text-gray-600 hover:text-gray-800 px-1.5 py-0.5 rounded hover:bg-gray-200 transition-colors">U</button>
+                  <button className="text-sm text-gray-600 hover:text-gray-800 px-1.5 py-0.5 rounded hover:bg-gray-200 transition-colors">S</button>
+                </div>
+                <textarea 
+                  name="description"
+                  value={formData.description}
+                  onChange={handleChange}
+                  rows="4"
+                  className="w-full px-3 py-2 text-sm border-0 focus:outline-none resize-none"
+                  placeholder="Enter project description..."
+                />
+              </div>
+            </div>
+
+            {/* Upload Files */}
+            <div>
+              <label className="block text-xs text-gray-500 mb-1">Upload Files</label>
+              <div className="flex items-center gap-3">
+                <label className="px-4 py-1.5 text-sm bg-gray-200 text-gray-700 rounded-lg cursor-pointer hover:bg-gray-300 transition-colors">
+                  Choose File
+                  <input type="file" className="hidden" onChange={handleFileUpload} />
+                </label>
+                <span className="text-sm text-gray-400">{selectedFile || "No file chosen"}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="flex items-center justify-between px-6 py-3 border-t border-gray-200 bg-gray-50 rounded-b-xl">
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-gray-400">{project?.timeSpent || "65/120 Hrs"}</span>
+          </div>
+          <div className="flex items-center gap-3">
+            <button onClick={onClose} className="px-4 py-1.5 text-sm text-gray-600 hover:text-gray-800 font-medium transition-colors">Cancel</button>
+            <button onClick={handleSave} className="px-5 py-1.5 text-sm bg-orange-500 hover:bg-orange-600 text-white font-medium rounded-lg transition-colors">Save</button>
+          </div>
+        </div>
+
+        {/* Activate Windows */}
+        <div className="px-6 py-2 border-t border-gray-200 flex items-center justify-between bg-white rounded-b-xl">
+          <span className="text-xs text-gray-400">⚠ Activate Windows</span>
+          <button className="text-xs text-blue-500 hover:text-blue-600 transition-colors">Go to Settings to activate Windows.</button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ========== PRIORITY STYLES ==========
 const priorityStyles = { high: { dot: "bg-red-500" }, medium: { dot: "bg-orange-400" }, low: { dot: "bg-green-500" } };
 
+const getStatusColor = (status) => {
+  switch(status) {
+    case "Completed": return "bg-green-100 text-green-600";
+    case "In Progress": return "bg-purple-100 text-purple-600";
+    case "Pending": return "bg-orange-100 text-orange-600";
+    case "On Hold": return "bg-yellow-100 text-yellow-600";
+    default: return "bg-gray-100 text-gray-600";
+  }
+};
+
+// ========== PROJECT DETAILS PAGE ==========
 const ProjectDetailsPage = ({ project, onBack }) => {
-  const [openSections, setOpenSections] = useState({ tasks: true, images: true, files: true, notes: true, activity: true });
+  const [openSections, setOpenSections] = useState({ 
+    tasks: true, 
+    images: true, 
+    files: true, 
+    notes: true, 
+    activity: true,
+    invoices: true 
+  });
   const toggle = (key) => setOpenSections(prev => ({ ...prev, [key]: !prev[key] }));
+  
+  const [invoices, setInvoices] = useState([
+    { id: "#INV-123", date: "11 Sep 2025, 05:35 pm", amount: "$6,598", title: "Phase 2 Completion", statuses: ["Paid", "Hold"] },
+    { id: "#INV-124", date: "14 Sep 2025, 05:35 pm", amount: "$3,312", title: "Advance for Project", statuses: ["Paid", "Hold"] },
+    { id: "#INV-125", date: "15 Sep 2025, 05:35 pm", amount: "$4,154", title: "Changes & design Alignments", statuses: ["Paid", "Hold"] },
+    { id: "#INV-126", date: "16 Sep 2025, 05:35 pm", amount: "$658", title: "Added New Functionality", statuses: ["Paid", "Unpaid"] },
+    { id: "#INV-127", date: "17 Sep 2025, 05:35 pm", amount: "$1,259", title: "Phase 1 Completion", statuses: ["Unpaid"] },
+  ]);
+
+  const [editingInvoice, setEditingInvoice] = useState(null);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleteIndex, setDeleteIndex] = useState(null);
+  const [selectedPriority, setSelectedPriority] = useState(project.priority || "High");
+  const [showPriorityDropdown, setShowPriorityDropdown] = useState(false);
+  const [showEditProjectModal, setShowEditProjectModal] = useState(false);
+  const [activeTaskMenu, setActiveTaskMenu] = useState(null);
+  const [showEditTodoModal, setShowEditTodoModal] = useState(false);
+  const [showAddTodoModal, setShowAddTodoModal] = useState(false);
+  const [selectedTaskIndex, setSelectedTaskIndex] = useState(null);
+  const [selectedTaskData, setSelectedTaskData] = useState(null);
+  const priorityDropdownRef = useRef(null);
+  const taskMenuRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (priorityDropdownRef.current && !priorityDropdownRef.current.contains(event.target)) {
+        setShowPriorityDropdown(false);
+      }
+      if (taskMenuRef.current && !taskMenuRef.current.contains(event.target)) {
+        setActiveTaskMenu(null);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const [tasks, setTasks] = useState(project.tasks || []);
+
+  const handleToggleTask = (index) => {
+    const newTasks = [...tasks];
+    newTasks[index].status = newTasks[index].status === "Completed" ? "Pending" : "Completed";
+    setTasks(newTasks);
+  };
+
+  const handleTaskMenuClick = (index, e) => {
+    e.stopPropagation();
+    setActiveTaskMenu(activeTaskMenu === index ? null : index);
+  };
+
+  const handleTaskAction = (action, index) => {
+    if (action === "Edit") {
+      setSelectedTaskIndex(index);
+      setSelectedTaskData(tasks[index]);
+      setShowEditTodoModal(true);
+      setActiveTaskMenu(null);
+    } else if (action === "Delete") {
+      const taskName = tasks[index].name;
+      const newTasks = tasks.filter((_, i) => i !== index);
+      setTasks(newTasks);
+      setActiveTaskMenu(null);
+      alert(`Task deleted: "${taskName}"`);
+    } else if (action === "View") {
+      alert(`View task: "${tasks[index].name}"`);
+      setActiveTaskMenu(null);
+    }
+  };
+
+  const handleSaveTodo = (formData) => {
+    if (selectedTaskIndex !== null) {
+      const newTasks = [...tasks];
+      newTasks[selectedTaskIndex] = {
+        ...newTasks[selectedTaskIndex],
+        name: formData.title,
+        tag: formData.tag,
+        description: formData.description,
+        assignee: formData.assignee,
+        priority: formData.priority.toLowerCase(),
+        status: formData.status,
+        statusColor: getStatusColor(formData.status),
+      };
+      setTasks(newTasks);
+      alert(`Task updated: "${formData.title}"`);
+    }
+    setShowEditTodoModal(false);
+    setSelectedTaskIndex(null);
+    setSelectedTaskData(null);
+  };
+
+  const handleAddTodo = (formData) => {
+    const newTask = {
+      name: formData.title,
+      tag: formData.tag,
+      priority: formData.priority.toLowerCase(),
+      description: formData.description,
+      assignee: formData.assignee,
+      status: formData.status,
+      statusColor: getStatusColor(formData.status),
+    };
+    setTasks(prev => [...prev, newTask]);
+    alert(`New task added: "${formData.title}"`);
+  };
+
+  const handleEditInvoice = (index) => {
+    setEditingInvoice({ ...invoices[index], index });
+    setShowEditModal(true);
+  };
+
+  const handleSaveInvoice = () => {
+    if (editingInvoice) {
+      const newInvoices = [...invoices];
+      newInvoices[editingInvoice.index] = {
+        id: editingInvoice.id,
+        date: editingInvoice.date,
+        amount: editingInvoice.amount,
+        title: editingInvoice.title,
+        statuses: editingInvoice.statuses,
+      };
+      setInvoices(newInvoices);
+      setShowEditModal(false);
+      setEditingInvoice(null);
+    }
+  };
+
+  const handleDeleteInvoice = (index) => {
+    setDeleteIndex(index);
+    setShowDeleteConfirm(true);
+  };
+
+  const confirmDelete = () => {
+    if (deleteIndex !== null) {
+      const newInvoices = invoices.filter((_, i) => i !== deleteIndex);
+      setInvoices(newInvoices);
+      setShowDeleteConfirm(false);
+      setDeleteIndex(null);
+    }
+  };
+
+  const toggleStatus = (invoiceIndex, statusIndex) => {
+    const newInvoices = [...invoices];
+    const status = newInvoices[invoiceIndex].statuses[statusIndex];
+    if (status === "Paid") {
+      newInvoices[invoiceIndex].statuses[statusIndex] = "Hold";
+    } else if (status === "Hold") {
+      newInvoices[invoiceIndex].statuses[statusIndex] = "Unpaid";
+    } else {
+      newInvoices[invoiceIndex].statuses[statusIndex] = "Paid";
+    }
+    setInvoices(newInvoices);
+  };
+
+  const handlePriorityChange = (priority) => {
+    setSelectedPriority(priority);
+    setShowPriorityDropdown(false);
+  };
+
+  const getPriorityColor = (priority) => {
+    switch(priority) {
+      case "High": return "text-red-500";
+      case "Medium": return "text-orange-400";
+      case "Low": return "text-green-500";
+      default: return "text-gray-500";
+    }
+  };
+
+  const handleEditProject = () => {
+    setShowEditProjectModal(true);
+  };
+
+  const handleSaveProject = (updatedProject) => {
+    Object.assign(project, updatedProject);
+    setSelectedPriority(updatedProject.priority || "High");
+    alert("Project updated successfully!");
+  };
+
   if (!project) return null;
 
   return (
@@ -313,22 +1307,57 @@ const ProjectDetailsPage = ({ project, onBack }) => {
           <div className="bg-white rounded-xl border border-gray-200 p-5">
             <h3 className="text-sm font-semibold text-gray-700 mb-3">Project Details</h3>
             <div className="space-y-3 text-sm">
-              {[{ label: "Client", value: project.client }, { label: "Project Total Cost", value: project.totalCost }, { label: "Hours of Work", value: project.hoursOfWork }, { label: "Created on", value: project.createdOn }, { label: "Started on", value: project.startDate }, { label: "Due Date", value: project.dueDate, overdue: project.overdue }, { label: "Created by", value: project.createdBy, avatar: true }, { label: "Priority", value: project.priority, priority: true }].map((item, i) => (
+              {[{ label: "Client", value: project.client }, { label: "Project Total Cost", value: project.totalCost }, { label: "Hours of Work", value: project.hoursOfWork }, { label: "Created on", value: project.createdOn }, { label: "Started on", value: project.startDate }, { label: "Due Date", value: project.dueDate, overdue: project.overdue }, { label: "Created by", value: project.createdBy, avatar: true }].map((item, i) => (
                 <div key={i} className={`flex items-center justify-between ${i > 0 ? 'border-t border-gray-50 pt-2.5' : ''}`}>
                   <span className="text-xs text-gray-400">{item.label}</span>
                   {item.overdue ? <span className="flex items-center gap-1.5"><span className="text-gray-700 font-medium">{item.value}</span><span className="bg-red-500 text-white text-[10px] px-1.5 py-0.5 rounded font-semibold">!</span></span>
                   : item.avatar ? <span className="flex items-center gap-1.5 text-gray-700 font-medium"><span className="w-5 h-5 rounded-full bg-orange-200 text-orange-700 text-[10px] flex items-center justify-center font-bold">{item.value[0]}</span>{item.value}</span>
-                  : item.priority ? <span className="flex items-center gap-1 text-red-500 font-medium text-xs bg-red-50 px-2 py-1 rounded-full">🚩 {item.value}</span>
                   : <span className="text-gray-700 font-medium">{item.value}</span>}
                 </div>
               ))}
+              
+              <div className="flex items-center justify-between border-t border-gray-50 pt-2.5">
+                <span className="text-xs text-gray-400">Priority</span>
+                <div className="relative" ref={priorityDropdownRef}>
+                  <button onClick={() => setShowPriorityDropdown(!showPriorityDropdown)} className="flex items-center gap-1 text-gray-700 font-medium text-xs bg-gray-50 px-2 py-1 rounded-full hover:bg-gray-100 transition-colors">
+                    <span className={`w-1.5 h-1.5 rounded-full ${selectedPriority === "High" ? "bg-red-500" : selectedPriority === "Medium" ? "bg-orange-400" : "bg-green-500"}`}></span>
+                    <span className={getPriorityColor(selectedPriority)}>{selectedPriority}</span>
+                    <svg className="w-3 h-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+                  </button>
+                  {showPriorityDropdown && (
+                    <div className="absolute right-0 mt-1 w-36 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-20">
+                      {["High", "Medium", "Low"].map((priority) => (
+                        <button key={priority} onClick={() => handlePriorityChange(priority)} className={`w-full flex items-center gap-2 px-3 py-2 text-left text-xs hover:bg-gray-50 transition-colors ${selectedPriority === priority ? "bg-orange-50" : ""}`}>
+                          <span className={`w-1.5 h-1.5 rounded-full ${priority === "High" ? "bg-red-500" : priority === "Medium" ? "bg-orange-400" : "bg-green-500"}`}></span>
+                          <span className={priority === "High" ? "text-red-500" : priority === "Medium" ? "text-orange-400" : "text-green-500"}>{priority}</span>
+                          {selectedPriority === priority && <svg className="w-3 h-3 ml-auto text-orange-500" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
+          
           <div className="bg-white rounded-xl border border-gray-200 p-5">
             <h3 className="text-sm font-semibold text-gray-700 mb-3">Tasks Details</h3>
             <div className="space-y-3">
-              <div><p className="text-xs text-gray-400 mb-1">Tasks Done</p><p className="text-base font-semibold text-gray-800">{project.tasks.filter(t => t.status === "Completed").length} / {project.tasks.length}</p></div>
-              <div className="border-t border-gray-50 pt-3"><p className="text-xs text-gray-400">{Math.round((project.tasks.filter(t => t.status === "Completed").length / project.tasks.length) * 100)}% Completed</p><div className="w-full bg-gray-100 rounded-full h-1.5 mt-1.5"><div className="bg-orange-500 h-1.5 rounded-full" style={{ width: `${Math.round((project.tasks.filter(t => t.status === "Completed").length / project.tasks.length) * 100)}%` }}></div></div></div>
+              <div><p className="text-xs text-gray-400 mb-1">Tasks Done</p><p className="text-base font-semibold text-gray-800">{tasks.filter(t => t.status === "Completed").length} / {tasks.length}</p></div>
+              <div className="space-y-1.5 pt-1">
+                {["high", "medium", "low"].map(p => (
+                  <div key={p} className="flex items-center justify-between">
+                    <span className="text-xs text-gray-400 flex items-center gap-1"><span className={`w-1.5 h-1.5 rounded-full ${priorityStyles[p].dot}`}></span> {p.charAt(0).toUpperCase() + p.slice(1)}</span>
+                    <span className="text-xs font-medium text-gray-700">{tasks.filter(t => t.priority === p).length}</span>
+                  </div>
+                ))}
+              </div>
+              <div className="border-t border-gray-50 pt-3">
+                <p className="text-xs text-gray-400">{tasks.length > 0 ? Math.round((tasks.filter(t => t.status === "Completed").length / tasks.length) * 100) : 0}% Completed</p>
+                <div className="w-full bg-gray-100 rounded-full h-1.5 mt-1.5">
+                  <div className="bg-orange-500 h-1.5 rounded-full" style={{ width: `${tasks.length > 0 ? Math.round((tasks.filter(t => t.status === "Completed").length / tasks.length) * 100) : 0}%` }}></div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -339,7 +1368,7 @@ const ProjectDetailsPage = ({ project, onBack }) => {
           <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
             <div className="flex items-center justify-between px-5 py-4">
               <div className="flex items-center gap-3"><div className={`w-10 h-10 rounded-full ${project.iconBg} flex items-center justify-center text-lg text-white`}>{project.icon}</div><div><p className="text-base font-semibold text-gray-800">{project.name}</p><p className="text-xs text-gray-400">Project Id: <span className="text-orange-500">{project.projectId}</span></p></div></div>
-              <button className="flex items-center gap-1.5 bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors">✎ Edit Project</button>
+              <button onClick={handleEditProject} className="flex items-center gap-1.5 bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors">✎ Edit Project</button>
             </div>
             <div className="px-5 pb-4 space-y-3 text-sm">
               {[{ label: "Status", value: project.status, color: project.statusColor }, { label: "Team", value: project.team, team: true }, { label: "Team Lead", value: project.teamLead }, { label: "Project Manager", value: project.projectManager }, { label: "Tags", value: project.tags, tags: true }].map((item, i) => (
@@ -363,13 +1392,34 @@ const ProjectDetailsPage = ({ project, onBack }) => {
             </button>
             {openSections.tasks && (
               <div className="border-t border-gray-100">
-                {project.tasks.map((task, i) => (
+                {tasks.map((task, i) => (
                   <div key={i} className="flex items-center justify-between px-4 py-3 border-b border-gray-50 last:border-0 hover:bg-gray-50 transition-colors">
-                    <div className="flex items-center gap-3 min-w-0"><span className="text-gray-300 text-xs">⋮⋮</span><input type="checkbox" defaultChecked={task.status === "Completed"} readOnly className="w-4 h-4 rounded accent-orange-500" /><span className={`text-sm text-gray-700 truncate ${task.status === "Completed" ? "line-through text-gray-400" : ""}`}>{task.name}</span></div>
-                    <div className="flex items-center gap-3 flex-shrink-0"><span className={`text-xs font-medium px-2.5 py-1 rounded-full ${task.statusColor}`}>{task.status}</span><span className={`w-2 h-2 rounded-full ${priorityStyles[task.priority]?.dot}`}></span><span className="text-gray-400 text-sm cursor-pointer">⋮</span></div>
+                    <div className="flex items-center gap-3 min-w-0">
+                      <span className="text-gray-300 text-xs">⋮⋮</span>
+                      <input type="checkbox" checked={task.status === "Completed"} onChange={() => handleToggleTask(i)} className="w-4 h-4 rounded accent-orange-500 cursor-pointer" />
+                      <span className={`text-sm text-gray-700 truncate ${task.status === "Completed" ? "line-through text-gray-400" : ""}`}>{task.name}</span>
+                    </div>
+                    <div className="flex items-center gap-3 flex-shrink-0">
+                      <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${task.statusColor}`}>{task.status}</span>
+                      <span className={`w-2 h-2 rounded-full ${priorityStyles[task.priority]?.dot}`}></span>
+                      <div className="relative" ref={taskMenuRef}>
+                        <button onClick={(e) => handleTaskMenuClick(i, e)} className="text-gray-400 hover:text-gray-600 transition-colors p-1 rounded hover:bg-gray-100">
+                          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z"/></svg>
+                        </button>
+                        {activeTaskMenu === i && (
+                          <div className="absolute right-0 mt-1 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-30">
+                            {["Edit", "Delete", "View"].map((action) => (
+                              <button key={action} onClick={() => handleTaskAction(action, i)} className="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
+                                <span className="text-gray-400">{action === "Edit" && "✎"}{action === "Delete" && "🗑️"}{action === "View" && "👁️"}</span>{action}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
                   </div>
                 ))}
-                <button className="w-full text-left px-4 py-3 text-sm text-orange-500 hover:bg-orange-50 transition-colors border-t border-dashed border-orange-200">+ New task</button>
+                <button onClick={() => setShowAddTodoModal(true)} className="w-full text-left px-4 py-3 text-sm text-orange-500 hover:bg-orange-50 transition-colors border-t border-dashed border-orange-200">+ New task</button>
               </div>
             )}
           </div>
@@ -417,6 +1467,289 @@ const ProjectDetailsPage = ({ project, onBack }) => {
               </button>
               {openSections.activity && <div className="px-5 pb-5 border-t border-gray-100 pt-4 space-y-4">{project.activity.map((act, i) => <div key={i} className="flex items-start gap-3"><span className={`w-2.5 h-2.5 rounded-full mt-1.5 flex-shrink-0 ${act.color}`}></span><div><p className="text-sm text-gray-700">{act.text}</p><p className="text-xs text-gray-400 mt-1">{act.time}</p></div></div>)}</div>}
             </div>
+          </div>
+
+          {/* Invoices */}
+          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+            <button onClick={() => toggle('invoices')} className="w-full flex items-center justify-between px-5 py-3.5 hover:bg-gray-50 transition-colors">
+              <span className="text-base font-medium text-gray-700">Invoices</span>
+              <span className="text-gray-400 text-sm">{openSections.invoices ? "▲" : "▼"}</span>
+            </button>
+            {openSections.invoices && (
+              <div className="px-5 pb-5 border-t border-gray-100 pt-4">
+                <div className="space-y-3">
+                  {invoices.map((invoice, idx) => (
+                    <div key={idx} className="border border-gray-200 rounded-lg p-4 hover:shadow-sm transition-shadow">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1"><div className="flex items-center gap-3 mb-1"><span className="text-sm font-semibold text-gray-800">{invoice.title}</span><span className="text-xs text-gray-400">{invoice.id}</span></div><p className="text-xs text-gray-400">{invoice.date}</p></div>
+                        <div className="text-right"><p className="text-base font-bold text-gray-800">{invoice.amount}</p><div className="flex items-center gap-2 mt-1 justify-end">{invoice.statuses.map((status, si) => (
+                          <span key={si} className={`text-xs px-2.5 py-0.5 rounded-full font-medium cursor-pointer hover:opacity-80 transition-opacity ${status === "Paid" ? "bg-green-100 text-green-600" : status === "Hold" ? "bg-yellow-100 text-yellow-600" : "bg-red-100 text-red-600"}`} onClick={() => toggleStatus(idx, si)}>{status}</span>
+                        ))}</div></div>
+                      </div>
+                      <div className="flex items-center justify-end gap-2 mt-3 pt-2 border-t border-gray-100">
+                        <button onClick={() => handleEditInvoice(idx)} className="text-xs text-blue-500 hover:text-blue-700 transition-colors flex items-center gap-1">✎ Edit</button>
+                        <span className="text-gray-300">|</span>
+                        <button onClick={() => handleDeleteInvoice(idx)} className="text-xs text-red-500 hover:text-red-700 transition-colors flex items-center gap-1">✕ Delete</button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      <EditProjectModal isOpen={showEditProjectModal} onClose={() => setShowEditProjectModal(false)} project={project} onSave={handleSaveProject} />
+      <EditTodoModal isOpen={showEditTodoModal} onClose={() => { setShowEditTodoModal(false); setSelectedTaskIndex(null); setSelectedTaskData(null); }} task={selectedTaskData} onSave={handleSaveTodo} />
+      <AddNewTodoModal isOpen={showAddTodoModal} onClose={() => setShowAddTodoModal(false)} onSave={handleAddTodo} />
+
+      {showEditModal && editingInvoice && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between px-5 py-3.5 border-b border-gray-200 sticky top-0 bg-white z-10">
+              <h2 className="text-base font-semibold text-gray-800">Edit Invoice</h2>
+              <button onClick={() => { setShowEditModal(false); setEditingInvoice(null); }} className="text-gray-400 hover:text-gray-600 transition-colors">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+              </button>
+            </div>
+            <div className="px-5 py-4 space-y-4">
+              <InputField label="Invoice ID" name="id" value={editingInvoice.id} onChange={(e) => setEditingInvoice({ ...editingInvoice, id: e.target.value })} placeholder="Enter Invoice ID" />
+              <InputField label="Title" name="title" value={editingInvoice.title} onChange={(e) => setEditingInvoice({ ...editingInvoice, title: e.target.value })} placeholder="Enter Invoice Title" />
+              <InputField label="Date" name="date" value={editingInvoice.date} onChange={(e) => setEditingInvoice({ ...editingInvoice, date: e.target.value })} placeholder="Enter Date" />
+              <InputField label="Amount" name="amount" value={editingInvoice.amount} onChange={(e) => setEditingInvoice({ ...editingInvoice, amount: e.target.value })} placeholder="Enter Amount" />
+              <div><label className="block text-xs text-gray-500 mb-1">Statuses (comma separated)</label><input type="text" value={editingInvoice.statuses.join(", ")} onChange={(e) => setEditingInvoice({ ...editingInvoice, statuses: e.target.value.split(",").map(s => s.trim()) })} className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500" placeholder="Paid, Hold, Unpaid" /></div>
+            </div>
+            <div className="flex items-center justify-end gap-3 px-5 py-3 border-t border-gray-200 bg-gray-50 rounded-b-xl">
+              <button onClick={() => { setShowEditModal(false); setEditingInvoice(null); }} className="px-4 py-1.5 text-sm text-gray-600 hover:text-gray-800 font-medium transition-colors">Cancel</button>
+              <button onClick={handleSaveInvoice} className="px-5 py-1.5 text-sm bg-orange-500 hover:bg-orange-600 text-white font-medium rounded-lg transition-colors">Save</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-md">
+            <div className="px-5 py-4 border-b border-gray-200"><h2 className="text-base font-semibold text-gray-800">Confirm Delete</h2></div>
+            <div className="px-5 py-4"><p className="text-sm text-gray-600">Are you sure you want to delete this invoice? This action cannot be undone.</p></div>
+            <div className="flex items-center justify-end gap-3 px-5 py-3 border-t border-gray-200 bg-gray-50 rounded-b-xl">
+              <button onClick={() => { setShowDeleteConfirm(false); setDeleteIndex(null); }} className="px-4 py-1.5 text-sm text-gray-600 hover:text-gray-800 font-medium transition-colors">Cancel</button>
+              <button onClick={confirmDelete} className="px-5 py-1.5 text-sm bg-red-500 hover:bg-red-600 text-white font-medium rounded-lg transition-colors">Delete</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// ========== ASSET DETAILS PAGE ==========
+const AssetDetailsPage = ({ asset, onBack }) => {
+  const [openSections, setOpenSections] = useState({
+    overview: true,
+    specifications: true,
+    images: true,
+    history: true,
+    documents: true
+  });
+  const toggle = (key) => setOpenSections(prev => ({ ...prev, [key]: !prev[key] }));
+
+  const [maintenanceRecords] = useState([
+    { date: "15 Jan 2025", type: "Regular Maintenance", status: "Completed", performedBy: "John Doe", notes: "Cleaned and updated drivers" },
+    { date: "20 Feb 2025", type: "Hardware Check", status: "Completed", performedBy: "Jane Smith", notes: "Replaced battery" },
+    { date: "10 Mar 2025", type: "Software Update", status: "In Progress", performedBy: "Mike Johnson", notes: "Installing latest OS updates" },
+  ]);
+
+  const [documents] = useState([
+    { name: "Warranty_Certificate.pdf", size: "2.4 MB", date: "12 Jan 2022" },
+    { name: "Invoice_Receipt.pdf", size: "1.8 MB", date: "15 Jan 2022" },
+    { name: "User_Manual.pdf", size: "5.2 MB", date: "20 Jan 2022" },
+  ]);
+
+  const [assetStatus, setAssetStatus] = useState("Active");
+  const statusOptions = ["Active", "In Use", "Under Maintenance", "Retired", "Lost/Stolen"];
+
+  const handleStatusChange = (status) => {
+    setAssetStatus(status);
+    alert(`Asset status updated to: ${status}`);
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-50 font-sans p-6">
+      <button onClick={onBack} className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-800 transition-colors mb-4">
+        <span>‹</span> Back to List
+      </button>
+
+      <div className="flex gap-6">
+        {/* Left Sidebar */}
+        <div className="w-[320px] flex-shrink-0 space-y-4">
+          <div className="bg-white rounded-xl border border-gray-200 p-6">
+            <div className="flex items-center gap-4 mb-4">
+              <div className="w-16 h-16 rounded-full bg-orange-100 flex items-center justify-center text-3xl">{asset.icon || "💻"}</div>
+              <div>
+                <h2 className="text-xl font-bold text-gray-800">{asset.name}</h2>
+                <p className="text-sm text-gray-400">{asset.id}</p>
+                <p className="text-sm font-semibold text-red-500">{asset.assetId}</p>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex items-center justify-between py-2 border-b border-gray-100">
+                <span className="text-sm text-gray-400">Status</span>
+                <select value={assetStatus} onChange={(e) => handleStatusChange(e.target.value)} className="text-sm font-medium border border-gray-300 rounded-lg px-3 py-1 focus:outline-none focus:ring-2 focus:ring-orange-500 bg-white">
+                  {statusOptions.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                </select>
+              </div>
+              <div className="flex items-center justify-between py-2 border-b border-gray-100"><span className="text-sm text-gray-400">Type</span><span className="text-sm font-medium text-gray-700">{asset.type}</span></div>
+              <div className="flex items-center justify-between py-2 border-b border-gray-100"><span className="text-sm text-gray-400">Brand</span><span className="text-sm font-medium text-gray-700">{asset.brand}</span></div>
+              <div className="flex items-center justify-between py-2 border-b border-gray-100"><span className="text-sm text-gray-400">Category</span><span className="text-sm font-medium text-gray-700">{asset.category}</span></div>
+              <div className="flex items-center justify-between py-2 border-b border-gray-100"><span className="text-sm text-gray-400">Serial No</span><span className="text-sm font-medium text-gray-700">{asset.serialNo}</span></div>
+              <div className="flex items-center justify-between py-2 border-b border-gray-100"><span className="text-sm text-gray-400">Cost</span><span className="text-sm font-bold text-gray-800">{asset.cost}</span></div>
+              <div className="flex items-center justify-between py-2 border-b border-gray-100"><span className="text-sm text-gray-400">Vendor</span><span className="text-sm font-medium text-gray-700">{asset.vendor}</span></div>
+              <div className="flex items-center justify-between py-2 border-b border-gray-100">
+                <span className="text-sm text-gray-400">Assigned To</span>
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-full bg-orange-200 flex items-center justify-center text-xs font-semibold text-orange-700">{asset.assignedBy?.split(" ").map(n => n[0]).join("") || "AS"}</div>
+                  <span className="text-sm font-medium text-gray-700">{asset.assignedBy}</span>
+                </div>
+              </div>
+              <div className="flex items-center justify-between py-2 border-b border-gray-100"><span className="text-sm text-gray-400">Assigned On</span><span className="text-sm font-medium text-gray-700">{asset.assignedOn}</span></div>
+            </div>
+
+            <div className="mt-4 pt-4 border-t border-gray-200 flex gap-3">
+              <button className="flex-1 bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium py-2 rounded-lg transition-colors">✎ Edit</button>
+              <button className="flex-1 bg-red-500 hover:bg-red-600 text-white text-sm font-medium py-2 rounded-lg transition-colors">⚠ Raise Issue</button>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-xl border border-gray-200 p-5">
+            <h3 className="text-sm font-semibold text-gray-700 mb-3">Warranty & Location</h3>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between py-2 border-b border-gray-100"><span className="text-xs text-gray-400">Warranty Period</span><span className="text-sm font-medium text-gray-700">{asset.warranty}</span></div>
+              <div className="flex items-center justify-between py-2"><span className="text-xs text-gray-400">Location</span><span className="text-sm font-medium text-gray-700">{asset.location}</span></div>
+            </div>
+            <div className="mt-3 pt-3 border-t border-gray-100">
+              <div className="w-full bg-gray-100 rounded-full h-2"><div className="bg-orange-500 h-2 rounded-full" style={{ width: "65%" }}></div></div>
+              <div className="flex items-center justify-between mt-1"><span className="text-xs text-gray-400">Warranty Remaining</span><span className="text-xs font-medium text-orange-500">65%</span></div>
+            </div>
+          </div>
+        </div>
+
+        {/* Main Content */}
+        <div className="flex-1 space-y-4 min-w-0">
+          {/* Overview */}
+          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+            <button onClick={() => toggle('overview')} className="w-full flex items-center justify-between px-5 py-3.5 hover:bg-gray-50 transition-colors">
+              <span className="text-base font-medium text-gray-700">Overview</span>
+              <span className="text-gray-400 text-sm">{openSections.overview ? "▲" : "▼"}</span>
+            </button>
+            {openSections.overview && (
+              <div className="px-5 pb-5 border-t border-gray-100 pt-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="bg-gray-50 rounded-lg p-4"><p className="text-xs text-gray-400">Total Assets</p><p className="text-2xl font-bold text-gray-800">1,247</p><span className="text-xs text-green-500">↑ 12%</span></div>
+                  <div className="bg-gray-50 rounded-lg p-4"><p className="text-xs text-gray-400">Active Assets</p><p className="text-2xl font-bold text-gray-800">892</p><span className="text-xs text-green-500">↑ 8%</span></div>
+                  <div className="bg-gray-50 rounded-lg p-4"><p className="text-xs text-gray-400">Under Maintenance</p><p className="text-2xl font-bold text-gray-800">156</p><span className="text-xs text-yellow-500">→ 0%</span></div>
+                  <div className="bg-gray-50 rounded-lg p-4"><p className="text-xs text-gray-400">Retired Assets</p><p className="text-2xl font-bold text-gray-800">199</p><span className="text-xs text-red-500">↓ 3%</span></div>
+                </div>
+                <div className="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-100">
+                  <p className="text-sm text-gray-700"><strong>Description:</strong> {asset.type} device assigned to {asset.assignedBy} for daily work purposes. Currently in good working condition with regular maintenance.</p>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Specifications */}
+          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+            <button onClick={() => toggle('specifications')} className="w-full flex items-center justify-between px-5 py-3.5 hover:bg-gray-50 transition-colors">
+              <span className="text-base font-medium text-gray-700">Specifications</span>
+              <span className="text-gray-400 text-sm">{openSections.specifications ? "▲" : "▼"}</span>
+            </button>
+            {openSections.specifications && (
+              <div className="px-5 pb-5 border-t border-gray-100 pt-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="border border-gray-200 rounded-lg p-3"><p className="text-xs text-gray-400">Processor</p><p className="text-sm font-medium text-gray-700">Intel Core i7-12700H</p></div>
+                  <div className="border border-gray-200 rounded-lg p-3"><p className="text-xs text-gray-400">RAM</p><p className="text-sm font-medium text-gray-700">32 GB DDR5</p></div>
+                  <div className="border border-gray-200 rounded-lg p-3"><p className="text-xs text-gray-400">Storage</p><p className="text-sm font-medium text-gray-700">1 TB NVMe SSD</p></div>
+                  <div className="border border-gray-200 rounded-lg p-3"><p className="text-xs text-gray-400">Graphics</p><p className="text-sm font-medium text-gray-700">NVIDIA RTX 3060</p></div>
+                  <div className="border border-gray-200 rounded-lg p-3"><p className="text-xs text-gray-400">Display</p><p className="text-sm font-medium text-gray-700">15.6" 4K UHD</p></div>
+                  <div className="border border-gray-200 rounded-lg p-3"><p className="text-xs text-gray-400">OS</p><p className="text-sm font-medium text-gray-700">Windows 11 Pro</p></div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Images */}
+          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+            <button onClick={() => toggle('images')} className="w-full flex items-center justify-between px-5 py-3.5 hover:bg-gray-50 transition-colors">
+              <span className="text-base font-medium text-gray-700">Images</span>
+              <span className="text-gray-400 text-sm">{openSections.images ? "▲" : "▼"}</span>
+            </button>
+            {openSections.images && (
+              <div className="px-5 pb-5 border-t border-gray-100 pt-4">
+                <div className="flex gap-3 flex-wrap">
+                  {asset.images?.map((img, i) => (
+                    <div key={i} className="w-32 h-32 rounded-lg overflow-hidden border border-gray-200 flex-shrink-0 hover:shadow-md transition-shadow cursor-pointer">
+                      <img src={img} alt={`Asset ${i + 1}`} className="w-full h-full object-cover" />
+                    </div>
+                  ))}
+                </div>
+                <button className="mt-3 text-sm text-orange-500 hover:text-orange-600 transition-colors">+ Add more images</button>
+              </div>
+            )}
+          </div>
+
+          {/* Maintenance History */}
+          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+            <button onClick={() => toggle('history')} className="w-full flex items-center justify-between px-5 py-3.5 hover:bg-gray-50 transition-colors">
+              <span className="text-base font-medium text-gray-700">Maintenance History</span>
+              <span className="text-gray-400 text-sm">{openSections.history ? "▲" : "▼"}</span>
+            </button>
+            {openSections.history && (
+              <div className="px-5 pb-5 border-t border-gray-100 pt-4">
+                <div className="space-y-3">
+                  {maintenanceRecords.map((record, idx) => (
+                    <div key={idx} className="border border-gray-200 rounded-lg p-4 hover:shadow-sm transition-shadow">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-3 mb-1">
+                            <span className="text-sm font-semibold text-gray-800">{record.type}</span>
+                            <span className={`text-xs px-2.5 py-0.5 rounded-full font-medium ${record.status === "Completed" ? "bg-green-100 text-green-600" : record.status === "In Progress" ? "bg-yellow-100 text-yellow-600" : "bg-red-100 text-red-600"}`}>{record.status}</span>
+                          </div>
+                          <p className="text-xs text-gray-400">{record.date} • Performed by: {record.performedBy}</p>
+                          <p className="text-sm text-gray-600 mt-2">{record.notes}</p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <button className="mt-3 text-sm text-orange-500 hover:text-orange-600 transition-colors">+ Add maintenance record</button>
+              </div>
+            )}
+          </div>
+
+          {/* Documents */}
+          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+            <button onClick={() => toggle('documents')} className="w-full flex items-center justify-between px-5 py-3.5 hover:bg-gray-50 transition-colors">
+              <span className="text-base font-medium text-gray-700">Documents</span>
+              <span className="text-gray-400 text-sm">{openSections.documents ? "▲" : "▼"}</span>
+            </button>
+            {openSections.documents && (
+              <div className="px-5 pb-5 border-t border-gray-100 pt-4">
+                <div className="space-y-2">
+                  {documents.map((doc, idx) => (
+                    <div key={idx} className="flex items-center justify-between border border-gray-200 rounded-lg p-3 hover:bg-gray-50 transition-colors">
+                      <div className="flex items-center gap-3">
+                        <span className="text-xl text-blue-500">📄</span>
+                        <div><p className="text-sm font-medium text-gray-700">{doc.name}</p><p className="text-xs text-gray-400">{doc.size} • Uploaded: {doc.date}</p></div>
+                      </div>
+                      <button className="text-sm text-orange-500 hover:text-orange-600 transition-colors">Download</button>
+                    </div>
+                  ))}
+                </div>
+                <button className="mt-3 text-sm text-orange-500 hover:text-orange-600 transition-colors">+ Upload document</button>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -539,24 +1872,17 @@ const ChatPage = ({ onBack }) => {
 // ========== BANK & STATUTORY MODAL ==========
 const BankStatutoryModal = ({ isOpen, onClose, onSave }) => {
   const [formData, setFormData] = useState({
-    // Basic Salary Information
     salaryBasis: '',
     salaryAmount: '',
     paymentType: '',
-    
-    // PF Information
     pfContribution: '',
     pfNo: '',
     employeePfRate: '',
     totalPfRate: '',
-    
-    // ESI Information
     esiContribution: '',
     esiNumber: '',
     employeeEsiRate: '',
     totalEsiRate: '',
-    
-    // Experience
     additionalRate: '',
     totalRate: ''
   });
@@ -592,21 +1918,10 @@ const BankStatutoryModal = ({ isOpen, onClose, onSave }) => {
 
   const SelectField = ({ label, name, value, options, required, error, onChange }) => (
     <div>
-      <label className="block text-xs text-gray-500 mb-1">
-        {label} {required && <span className="text-red-500">*</span>}
-      </label>
-      <select
-        name={name}
-        value={value}
-        onChange={onChange}
-        className={`w-full px-3 py-1.5 text-sm border ${
-          error ? 'border-red-500' : 'border-gray-300'
-        } rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 bg-white`}
-      >
+      <label className="block text-xs text-gray-500 mb-1">{label} {required && <span className="text-red-500">*</span>}</label>
+      <select name={name} value={value} onChange={onChange} className={`w-full px-3 py-1.5 text-sm border ${error ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 bg-white`}>
         <option value="">Select</option>
-        {options.map((opt) => (
-          <option key={opt} value={opt}>{opt}</option>
-        ))}
+        {options.map((opt) => <option key={opt} value={opt}>{opt}</option>)}
       </select>
       {error && <p className="text-xs text-red-500 mt-1">{error}</p>}
     </div>
@@ -614,202 +1929,48 @@ const BankStatutoryModal = ({ isOpen, onClose, onSave }) => {
 
   const InputFieldBS = ({ label, name, value, placeholder, required, error, onChange, type = "text", disabled = false }) => (
     <div>
-      <label className="block text-xs text-gray-500 mb-1">
-        {label} {required && <span className="text-red-500">*</span>}
-      </label>
-      <input
-        type={type}
-        name={name}
-        value={value}
-        onChange={onChange}
-        placeholder={placeholder}
-        disabled={disabled}
-        className={`w-full px-3 py-1.5 text-sm border ${
-          error ? 'border-red-500' : 'border-gray-300'
-        } rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 ${
-          disabled ? 'bg-gray-100 cursor-not-allowed' : ''
-        }`}
-      />
+      <label className="block text-xs text-gray-500 mb-1">{label} {required && <span className="text-red-500">*</span>}</label>
+      <input type={type} name={name} value={value} onChange={onChange} placeholder={placeholder} disabled={disabled} className={`w-full px-3 py-1.5 text-sm border ${error ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 ${disabled ? 'bg-gray-100 cursor-not-allowed' : ''}`} />
       {error && <p className="text-xs text-red-500 mt-1">{error}</p>}
     </div>
   );
 
-  const SectionHeader = ({ title }) => (
-    <h3 className="text-sm font-semibold text-gray-700 mb-2.5">{title}</h3>
-  );
+  const SectionHeader = ({ title }) => <h3 className="text-sm font-semibold text-gray-700 mb-2.5">{title}</h3>;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
       <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-        {/* Header */}
         <div className="flex items-center justify-between px-5 py-3.5 border-b border-gray-200 sticky top-0 bg-white z-10">
           <h2 className="text-base font-semibold text-gray-800">Bank & Statutory</h2>
-          <button 
-            onClick={onClose} 
-            className="text-gray-400 hover:text-gray-600 transition-colors"
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg></button>
         </div>
-
-        {/* Body */}
         <div className="px-5 py-4 space-y-5">
-          {/* Basic Salary Information */}
-          <div>
-            <SectionHeader title="Basic Salary Information" />
-            <div className="grid grid-cols-3 gap-3">
-              <SelectField
-                label="Salary basis"
-                name="salaryBasis"
-                value={formData.salaryBasis}
-                options={["Monthly", "Weekly", "Daily", "Hourly"]}
-                required
-                error={errors.salaryBasis}
-                onChange={handleChange}
-              />
-              <InputFieldBS
-                label="Salary basis"
-                name="salaryAmount"
-                value={formData.salaryAmount}
-                placeholder="$"
-                onChange={handleChange}
-              />
-              <SelectField
-                label="Payment type"
-                name="paymentType"
-                value={formData.paymentType}
-                options={["Bank Transfer", "Cash", "Check"]}
-                onChange={handleChange}
-              />
-            </div>
-          </div>
-
-          {/* PF Information */}
-          <div>
-            <SectionHeader title="PF Information" />
-            <div className="grid grid-cols-3 gap-3">
-              <SelectField
-                label="PF contribution"
-                name="pfContribution"
-                value={formData.pfContribution}
-                options={["Yes", "No"]}
-                required
-                error={errors.pfContribution}
-                onChange={handleChange}
-              />
-              <InputFieldBS
-                label="PF No"
-                name="pfNo"
-                value={formData.pfNo}
-                placeholder=""
-                onChange={handleChange}
-              />
-              <InputFieldBS
-                label="Employee PF rate"
-                name="employeePfRate"
-                value={formData.employeePfRate}
-                placeholder=""
-                onChange={handleChange}
-              />
-              <InputFieldBS
-                label="Total rate"
-                name="totalPfRate"
-                value={formData.totalPfRate}
-                placeholder=""
-                onChange={handleChange}
-              />
-            </div>
-          </div>
-
-          {/* ESI Information */}
-          <div>
-            <SectionHeader title="ESI Information" />
-            <div className="grid grid-cols-3 gap-3">
-              <SelectField
-                label="ESI contribution"
-                name="esiContribution"
-                value={formData.esiContribution}
-                options={["Yes", "No"]}
-                required
-                error={errors.esiContribution}
-                onChange={handleChange}
-              />
-              <InputFieldBS
-                label="ESI Number"
-                name="esiNumber"
-                value={formData.esiNumber}
-                placeholder=""
-                onChange={handleChange}
-              />
-              <InputFieldBS
-                label="Employee ESI rate"
-                name="employeeEsiRate"
-                value={formData.employeeEsiRate}
-                placeholder=""
-                required
-                error={errors.employeeEsiRate}
-                onChange={handleChange}
-              />
-              <InputFieldBS
-                label="Total rate"
-                name="totalEsiRate"
-                value={formData.totalEsiRate}
-                placeholder=""
-                onChange={handleChange}
-              />
-            </div>
-          </div>
-
-          {/* Experience */}
-          <div>
-            <SectionHeader title="Experience" />
-            <div className="grid grid-cols-3 gap-3">
-              <SelectField
-                label="Additional rate"
-                name="additionalRate"
-                value={formData.additionalRate}
-                options={["Yes", "No"]}
-                onChange={handleChange}
-              />
-              <InputFieldBS
-                label="Total rate"
-                name="totalRate"
-                value={formData.totalRate}
-                placeholder=""
-                onChange={handleChange}
-              />
-            </div>
-          </div>
+          <div><SectionHeader title="Basic Salary Information" /><div className="grid grid-cols-3 gap-3">
+            <SelectField label="Salary basis" name="salaryBasis" value={formData.salaryBasis} options={["Monthly", "Weekly", "Daily", "Hourly"]} required error={errors.salaryBasis} onChange={handleChange} />
+            <InputFieldBS label="Salary basis" name="salaryAmount" value={formData.salaryAmount} placeholder="$" onChange={handleChange} />
+            <SelectField label="Payment type" name="paymentType" value={formData.paymentType} options={["Bank Transfer", "Cash", "Check"]} onChange={handleChange} />
+          </div></div>
+          <div><SectionHeader title="PF Information" /><div className="grid grid-cols-3 gap-3">
+            <SelectField label="PF contribution" name="pfContribution" value={formData.pfContribution} options={["Yes", "No"]} required error={errors.pfContribution} onChange={handleChange} />
+            <InputFieldBS label="PF No" name="pfNo" value={formData.pfNo} placeholder="" onChange={handleChange} />
+            <InputFieldBS label="Employee PF rate" name="employeePfRate" value={formData.employeePfRate} placeholder="" onChange={handleChange} />
+            <InputFieldBS label="Total rate" name="totalPfRate" value={formData.totalPfRate} placeholder="" onChange={handleChange} />
+          </div></div>
+          <div><SectionHeader title="ESI Information" /><div className="grid grid-cols-3 gap-3">
+            <SelectField label="ESI contribution" name="esiContribution" value={formData.esiContribution} options={["Yes", "No"]} required error={errors.esiContribution} onChange={handleChange} />
+            <InputFieldBS label="ESI Number" name="esiNumber" value={formData.esiNumber} placeholder="" onChange={handleChange} />
+            <InputFieldBS label="Employee ESI rate" name="employeeEsiRate" value={formData.employeeEsiRate} placeholder="" required error={errors.employeeEsiRate} onChange={handleChange} />
+            <InputFieldBS label="Total rate" name="totalEsiRate" value={formData.totalEsiRate} placeholder="" onChange={handleChange} />
+          </div></div>
+          <div><SectionHeader title="Experience" /><div className="grid grid-cols-3 gap-3">
+            <SelectField label="Additional rate" name="additionalRate" value={formData.additionalRate} options={["Yes", "No"]} onChange={handleChange} />
+            <InputFieldBS label="Total rate" name="totalRate" value={formData.totalRate} placeholder="" onChange={handleChange} />
+          </div></div>
         </div>
-
-        {/* Footer with Cancel/Save buttons and Windows activation */}
-        <div className="border-t border-gray-200">
-          <div className="flex items-center justify-between px-5 py-3">
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-gray-400">8 tasks • 15 Completed</span>
-              <span className="text-xs text-gray-300">|</span>
-              <button className="text-xs text-blue-500 hover:text-blue-600 transition-colors">
-                Go to Settings to activate Windows.
-              </button>
-            </div>
-            <div className="flex items-center gap-3">
-              <button 
-                onClick={onClose} 
-                className="px-4 py-1.5 text-sm text-gray-600 hover:text-gray-800 font-medium transition-colors"
-              >
-                Cancel
-              </button>
-              <button 
-                onClick={handleSubmit} 
-                className="px-5 py-1.5 text-sm bg-orange-500 hover:bg-orange-600 text-white font-medium rounded-lg transition-colors"
-              >
-                Save
-              </button>
-            </div>
-          </div>
-        </div>
+        <div className="border-t border-gray-200"><div className="flex items-center justify-between px-5 py-3">
+          <div className="flex items-center gap-2"><span className="text-xs text-gray-400">8 tasks • 15 Completed</span><span className="text-xs text-gray-300">|</span><button className="text-xs text-blue-500 hover:text-blue-600 transition-colors">Go to Settings to activate Windows.</button></div>
+          <div className="flex items-center gap-3"><button onClick={onClose} className="px-4 py-1.5 text-sm text-gray-600 hover:text-gray-800 font-medium transition-colors">Cancel</button><button onClick={handleSubmit} className="px-5 py-1.5 text-sm bg-orange-500 hover:bg-orange-600 text-white font-medium rounded-lg transition-colors">Save</button></div>
+        </div></div>
       </div>
     </div>
   );
@@ -842,10 +2003,7 @@ const EmergencyContactModal = ({ isOpen, onClose, onSave, emergencyContacts }) =
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
       <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg max-h-[85vh] overflow-y-auto">
-        <div className="flex items-center justify-between px-5 py-3.5 border-b border-gray-200 sticky top-0 bg-white z-10">
-          <h2 className="text-base font-semibold text-gray-800">Emergency Contact</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12"/></svg></button>
-        </div>
+        <div className="flex items-center justify-between px-5 py-3.5 border-b border-gray-200 sticky top-0 bg-white z-10"><h2 className="text-base font-semibold text-gray-800">Emergency Contact</h2><button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12"/></svg></button></div>
         <div className="px-5 py-4 space-y-4">
           <div><h3 className="text-sm font-semibold text-gray-700 mb-2">Primary</h3><div className="space-y-3"><InputField label="Name *" name="primaryName" value={form.primaryName} onChange={handleChange} error={errors.primaryName} placeholder="Enter Name" /><InputField label="Phone No 1 *" name="primaryPhone" value={form.primaryPhone} onChange={handleChange} error={errors.primaryPhone} placeholder="Enter Phone Number" /><InputField label="Relationship" name="primaryRelation" value={form.primaryRelation} onChange={handleChange} placeholder="Enter Relationship" /></div></div>
           <div className="border-t border-gray-200 pt-3"><h3 className="text-sm font-semibold text-gray-700 mb-2">Secondary Contact Details</h3><div className="space-y-3"><InputField label="Name *" name="secondaryName" value={form.secondaryName} onChange={handleChange} error={errors.secondaryName} placeholder="Enter Name" /><InputField label="Phone No 1 *" name="secondaryPhone1" value={form.secondaryPhone1} onChange={handleChange} error={errors.secondaryPhone1} placeholder="Enter Phone Number" /><InputField label="Phone No 2" name="secondaryPhone2" value={form.secondaryPhone2} onChange={handleChange} placeholder="Enter Alternate Phone Number" /><InputField label="Relationship" name="secondaryRelation" value={form.secondaryRelation} onChange={handleChange} placeholder="Enter Relationship" /></div></div>
@@ -882,10 +2040,7 @@ const PersonalInfoModal = ({ isOpen, onClose, onSave, employeeData }) => {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
       <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg max-h-[85vh] overflow-y-auto">
-        <div className="flex items-center justify-between px-5 py-3.5 border-b border-gray-200 sticky top-0 bg-white z-10">
-          <h2 className="text-base font-semibold text-gray-800">Edit Personal Info</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12"/></svg></button>
-        </div>
+        <div className="flex items-center justify-between px-5 py-3.5 border-b border-gray-200 sticky top-0 bg-white z-10"><h2 className="text-base font-semibold text-gray-800">Edit Personal Info</h2><button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12"/></svg></button></div>
         <div className="px-5 py-4 space-y-4">
           <div className="flex items-center gap-3 pb-3 border-b border-gray-100"><div className="w-12 h-12 rounded-full bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center text-white text-base font-bold">{employeeData?.name?.split(" ").map(n => n[0]).join("").slice(0, 2) || "SP"}</div><div><h3 className="text-sm font-semibold text-gray-800">{employeeData?.name || "Stephan Peralt"}</h3><div className="flex items-center gap-2 text-xs text-gray-500"><span>{employeeData?.role || "Software Developer"}</span><span className="text-gray-300">|</span><span>{employeeData?.experience || "10+ years"}</span></div></div></div>
           <div className="space-y-3">
@@ -999,10 +2154,7 @@ const AssetInfoModal = ({ isOpen, onClose, asset }) => {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 sticky top-0 bg-white z-10">
-          <h2 className="text-lg font-semibold text-gray-800">Asset Information</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors"><svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12"/></svg></button>
-        </div>
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 sticky top-0 bg-white z-10"><h2 className="text-lg font-semibold text-gray-800">Asset Information</h2><button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors"><svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12"/></svg></button></div>
         <div className="px-6 py-5 space-y-5">
           <div className="flex items-center gap-4 pb-4 border-b border-gray-100"><div className="w-16 h-16 rounded-full bg-orange-100 flex items-center justify-center text-3xl">{asset?.icon || "💻"}</div><div><h3 className="text-xl font-bold text-gray-800">{asset?.name}</h3><p className="text-sm text-gray-400">{asset?.id}</p><p className="text-sm font-semibold text-red-500">{asset?.assetId}</p></div></div>
           <div className="grid grid-cols-2 gap-4">
@@ -1027,10 +2179,7 @@ const RaiseIssueModal = ({ isOpen, onClose, asset }) => {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 sticky top-0 bg-white z-10">
-          <h2 className="text-lg font-semibold text-gray-800">Raise Issue</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors"><svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12"/></svg></button>
-        </div>
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 sticky top-0 bg-white z-10"><h2 className="text-lg font-semibold text-gray-800">Raise Issue</h2><button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors"><svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12"/></svg></button></div>
         <div className="px-6 py-5 space-y-5">
           <div className="flex items-center gap-3 pb-3 border-b border-gray-100"><div className="w-12 h-12 rounded-full bg-orange-100 flex items-center justify-center text-2xl">{asset?.icon || "💻"}</div><div><p className="text-sm font-semibold text-gray-800">{asset?.name}</p><p className="text-xs text-gray-400">{asset?.id}</p><p className="text-xs font-semibold text-red-500">{asset?.assetId}</p></div></div>
           <div><label className="block text-sm font-medium text-gray-700 mb-2">Description <span className="text-red-500">*</span></label><textarea value={description} onChange={(e) => { setDescription(e.target.value); if (error) setError(""); }} rows="6" className={`w-full px-4 py-3 text-sm border ${error ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 resize-none`} placeholder="Describe the issue in detail..." />{error && <p className="text-xs text-red-500 mt-1">{error}</p>}</div>
@@ -1120,8 +2269,8 @@ export default function EmployeeDetails() {
   const [view, setView] = useState("profile");
   const [activeTab, setActiveTab] = useState("Projects");
   const [selectedProjectName, setSelectedProjectName] = useState(null);
-  const [modals, setModals] = useState({ bank: false, edit: false, bankDetails: false, family: false, education: false, experience: false, personalInfo: false, emergencyContact: false, assetInfo: false, raiseIssue: false });
   const [selectedAsset, setSelectedAsset] = useState(null);
+  const [modals, setModals] = useState({ bank: false, edit: false, bankDetails: false, family: false, education: false, experience: false, personalInfo: false, emergencyContact: false, assetInfo: false, raiseIssue: false });
   const [selectedIndex, setSelectedIndex] = useState({ education: null, experience: null });
   const [state, setState] = useState({ bankDetails: employeeData.bankDetails, familyMembers: employeeData.familyMembers, educationDetails: employeeData.educationDetails, experienceDetails: employeeData.experienceDetails, emergencyContacts: employeeData.emergencyContacts });
   const emp = employeeData;
@@ -1134,6 +2283,7 @@ export default function EmployeeDetails() {
   const handleViewAssetInfo = (asset) => { setSelectedAsset(asset); toggleModal('assetInfo'); };
   const handleRaiseIssue = (asset) => { setSelectedAsset(asset); toggleModal('raiseIssue'); };
   const openProjectDetails = (projectName) => { setSelectedProjectName(projectName); setView("project"); };
+  const openAssetDetails = (asset) => { setSelectedAsset(asset); setView("asset"); };
 
   const saveHandler = (key, updater) => (data, index) => {
     const newData = Array.isArray(state[key]) ? [...state[key]] : { ...state[key] };
@@ -1150,6 +2300,7 @@ export default function EmployeeDetails() {
 
   if (view === "chat") return <ChatPage onBack={() => setView("profile")} />;
   if (view === "project") return <ProjectDetailsPage project={projectDetailsData[selectedProjectName]} onBack={() => setView("profile")} />;
+  if (view === "asset") return <AssetDetailsPage asset={selectedAsset} onBack={() => setView("profile")} />;
 
   return (
     <div className="min-h-screen bg-gray-50 font-sans p-6">
@@ -1210,15 +2361,12 @@ export default function EmployeeDetails() {
           <div className="bg-white rounded-xl border border-gray-200 p-5">
             <div className="flex gap-6 border-b border-gray-100 mb-4">{["Projects", "Assets"].map(tab => <button key={tab} onClick={() => setActiveTab(tab)} className={`pb-2.5 text-base font-medium transition-colors ${activeTab === tab ? "text-orange-500 border-b-2 border-orange-500" : "text-gray-400 hover:text-gray-600"}`}>{tab}</button>)}</div>
             {activeTab === "Projects" && <div className="flex flex-wrap gap-4">{emp.projects.map(p => <ProjectCard key={p.name} project={p} onClick={() => openProjectDetails(p.name)} />)}</div>}
-            {activeTab === "Assets" && <div className="flex flex-wrap gap-4">{emp.assets.map((asset, i) => <AssetCard key={i} asset={asset} onViewInfo={() => handleViewAssetInfo(asset)} onRaiseIssue={() => handleRaiseIssue(asset)} />)}</div>}
+            {activeTab === "Assets" && <div className="flex flex-wrap gap-4">{emp.assets.map((asset, i) => <AssetCard key={i} asset={asset} onViewInfo={() => openAssetDetails(asset)} onRaiseIssue={() => handleRaiseIssue(asset)} />)}</div>}
           </div>
         </div>
       </div>
 
-      <BankStatutoryModal isOpen={modals.bank} onClose={() => toggleModal('bank')} onSave={(data) => {
-        console.log("Bank & Statutory details saved:", data);
-        alert("Bank & Statutory details saved successfully!");
-      }} />
+      <BankStatutoryModal isOpen={modals.bank} onClose={() => toggleModal('bank')} onSave={(data) => { console.log("Bank & Statutory details saved:", data); alert("Bank & Statutory details saved successfully!"); }} />
       <RaiseIssueModal isOpen={modals.raiseIssue} onClose={() => toggleModal('raiseIssue')} asset={selectedAsset} />
       <AssetInfoModal isOpen={modals.assetInfo} onClose={() => toggleModal('assetInfo')} asset={selectedAsset} />
       <EmergencyContactModal isOpen={modals.emergencyContact} onClose={() => toggleModal('emergencyContact')} onSave={saveHandler('emergencyContacts', (d) => d)} emergencyContacts={state.emergencyContacts} />

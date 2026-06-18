@@ -74,7 +74,7 @@ const LeavePolicyModal = ({ open, leave, onClose, onSave }) => {
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-white w-[500px] rounded shadow-xl overflow-hidden">
+      <div className="bg-white w-125 rounded shadow-xl overflow-hidden">
         {/* Header */}
         <div className="flex justify-between items-center px-5 py-5 border-b border-gray-200">
           <h2 className="text-[20px] font-bold text-[#25314C]">
