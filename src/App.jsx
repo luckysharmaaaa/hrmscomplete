@@ -12,6 +12,11 @@ import Login from "./pages/Login";
 import Roles from "./pages/Roles";
 import LeaveSetting from "./pages/LeaveSetting";
 import RolesPermissions from "./pages/RolesPermissions";
+import AttendanceEmployee from "./pages/AttendanceEmployee";
+import HolidayCalender from "./pages/HolidayCalender";
+import WfhManagement from "./pages/WfhManagement";
+import AttendanceAdmin from "./pages/AttendanceAdmin";
+import Modules from "./pages/Modules";
 
 function Layout() {
   const location = useLocation();
@@ -23,7 +28,7 @@ function Layout() {
 
       <div className="flex">
         {/* Sidebar */}
-        <Sidebar className="bg-base-100" />
+        <Sidebar />
 
         {/* Main Content */}
         <main className="flex-1 ml-64 mt-20 p-5 min-h-screen">
@@ -37,6 +42,14 @@ function Layout() {
             <Route path="/profile" element={<Profile />} />
             <Route path="/leave-setting" element={<LeaveSetting />} />
             <Route path="/rolespermissions" element={<RolesPermissions />} />
+            <Route path="/attendance-admin" element={<AttendanceAdmin />} />
+            <Route
+              path="/attendance-employee"
+              element={<AttendanceEmployee />}
+            />
+            <Route path="/holiday-calender" element={<HolidayCalender />} />
+            <Route path="/wfh-management" element={<WfhManagement />} />
+            <Route path="/modules" element={<Modules />} />
           </Routes>
         </main>
       </div>

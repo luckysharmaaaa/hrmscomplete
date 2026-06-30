@@ -15,6 +15,7 @@ import {
   BadgeCheck,
   LogOut,
   Home,
+  Layers,
 } from "lucide-react";
 
 import logo_img from "../assets/images/logo.svg";
@@ -250,6 +251,17 @@ function Sidebar() {
             >
               <BadgeCheck size={17} className="shrink-0" />
               Roles
+            </Link>
+          </li>
+
+          {/* Modules */}
+          <li>
+            <Link
+              to="/modules"
+              className={navItem("/modules", Layers, "Modules")}
+            >
+              <Layers size={17} className="shrink-0" />
+              Modules
             </Link>
           </li>
         </ul>
