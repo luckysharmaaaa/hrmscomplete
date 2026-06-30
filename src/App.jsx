@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route ,useLocation } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 
 import Sidebar from "./components/Sidebar";
 import Navbar from "./components/Navbar";
@@ -9,13 +9,13 @@ import Dashboard from "./pages/Dashboard";
 import User from "./pages/User";
 import Profile from "./pages/Profile";
 import Login from "./pages/Login";
-import Roles from "./pages/Roles"
+import Roles from "./pages/Roles";
 import LeaveSetting from "./pages/LeaveSetting";
 import RolesPermissions from "./pages/RolesPermissions";
 
 function Layout() {
   const location = useLocation();
-  const hideNavbar = location.pathname==="/profile"
+  const hideNavbar = location.pathname === "/profile";
   return (
     <div className="min-h-screen bg-slate-100">
       {/* Navbar */}
@@ -23,7 +23,7 @@ function Layout() {
 
       <div className="flex">
         {/* Sidebar */}
-        <Sidebar />
+        <Sidebar className="bg-base-100" />
 
         {/* Main Content */}
         <main className="flex-1 ml-64 mt-20 p-5 min-h-screen">
@@ -33,10 +33,10 @@ function Layout() {
             <Route path="/leave-history" element={<LeaveHistory />} />
             <Route path="/user" element={<User />} />
             <Route className="flex-1" path="/profile" element={<Profile />} />
-            <Route path = "/roles" element = {<Roles/>}/>
+            <Route path="/roles" element={<Roles />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/leave-setting" element={<LeaveSetting />} />
-            <Route path = "/rolespermissions" element = {<RolesPermissions/>}/>
+            <Route path="/rolespermissions" element={<RolesPermissions />} />
           </Routes>
         </main>
       </div>

@@ -8,13 +8,15 @@ export const googleLogin = async () => {
     const result = await signInWithPopup(auth, googleProvider);
 
     const user = result.user;
+    const idToken = await user.getIdToken();
 
-    console.log("Google User:", user);
+    // console.log("Google User:", user);
+    // console.log("ID Token", idToken);
 
     // Generate FCM Token
     const fcmToken = await generateFCMToken();
 
-    console.log("FCM Token:", fcmToken);
+    // console.log("FCM Token:", fcmToken);
 
     const response = await axios.post(
       "http://localhost:5000/v1/users/user_authentication",
