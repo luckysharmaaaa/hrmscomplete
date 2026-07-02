@@ -64,30 +64,28 @@ const Profile = () => {
   };
 
   return (
-    <div className="w-full min-h-screen bg-slate-100 ">
+    <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-start justify-between px-6 py-1">
+      <div className="flex items-start justify-between">
         <div>
           <h1 className="text-3xl font-bold text-[#0F265C]">Profile</h1>
 
-          <div className="flex items-center gap-2 mt-3 text-sm text-gray-500">
-            <FiHome size={14} />
-            <FiChevronRight size={14} />
+          <div className="flex items-center gap-1.5 mt-1 text-xs text-gray-400">
             <span>Pages</span>
-            <FiChevronRight size={14} />
-            <span className="font-medium text-[#0F265C]">Profile</span>
+            <FiChevronRight size={12} className="shrink-0" />
+            <span className="text-orange-500 font-medium">Profile</span>
           </div>
         </div>
 
         <div className="flex items-center gap-3">
-          <button className="w-10 h-10 flex items-center justify-center bg-[#FF7A21] border border-gray-300 rounded-md">
+          <button className="w-10 h-10 flex items-center justify-center bg-[#FF7A21] border border-gray-300 rounded-md text-white">
             <FiChevronsUp size={16} />
           </button>
         </div>
       </div>
 
       {/* Main Content */}
-      <div className="px-6 pb-6">
+      <div>
         <form
           onSubmit={handleSubmit}
           className="bg-white rounded-lg shadow-sm p-6 border border-gray-200"

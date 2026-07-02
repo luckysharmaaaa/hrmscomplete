@@ -13,19 +13,17 @@ const User = () => {
   const [openDrawer, setOpenDrawer] = useState(false);
 
   return (
-    <div className="w-full min-h-screen bg-slate-100">
+    <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-start justify-between px-6 py-5">
+      <div className="flex items-start justify-between">
         {/* Left */}
         <div>
-          <h1 className="text-4xl font-bold text-[#0F265C]">Users</h1>
+          <h1 className="text-3xl font-bold text-[#0F265C]">Users</h1>
 
-          <div className="flex items-center gap-2 mt-3 text-sm text-gray-500">
-            <FiHome size={14} />
-            <FiChevronRight size={14} />
+          <div className="flex items-center gap-1.5 mt-1 text-xs text-gray-400">
             <span>User Management</span>
-            <FiChevronRight size={14} />
-            <span className="font-medium text-[#0F265C]">Users</span>
+            <FiChevronRight size={12} className="shrink-0" />
+            <span className="text-orange-500 font-medium">Users</span>
           </div>
         </div>
 
@@ -44,10 +42,10 @@ const User = () => {
 
             <ul
               tabIndex={0}
-              className="dropdown-content z-1 menu p-2 shadow bg-white rounded-box w-56"
+              className="dropdown-content z-10 menu p-2 shadow bg-white rounded-box w-56 animate-fade-in"
             >
               <li>
-                <button className="text-black! bg-white! hover:bg-gray-100! active:bg-gray-100! focus:bg-gray-100!">
+                <button className="text-black bg-white hover:bg-gray-100 transition">
                   <PictureAsPdfOutlinedIcon
                     fontSize="small"
                     sx={{ color: "#ef4444" }}
@@ -57,7 +55,7 @@ const User = () => {
               </li>
 
               <li>
-                <button className="text-black! bg-white! hover:bg-gray-100! active:bg-gray-100! focus:bg-gray-100!">
+                <button className="text-black bg-white hover:bg-gray-100 transition">
                   <TableChartOutlinedIcon
                     fontSize="small"
                     sx={{ color: "#16a34a" }}
@@ -70,7 +68,7 @@ const User = () => {
 
           {/* Add User */}
           <button
-            className="btn bg-orange-500 hover:bg-orange-600 border-none text-white"
+            className="flex items-center gap-2 px-4 py-2.5 bg-orange-500 hover:bg-orange-600 text-white text-sm font-semibold rounded-lg hover:shadow-md transition shadow-sm"
             onClick={() => setOpenDrawer(true)}
           >
             <AddIcon fontSize="small" />
@@ -80,7 +78,7 @@ const User = () => {
       </div>
 
       {/* Table Section */}
-      <div className="px-6 pb-6">
+      <div>
         <UserTable />
         <AddUserDrawer open={openDrawer} onClose={() => setOpenDrawer(false)} />
       </div>

@@ -3,8 +3,8 @@ import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import Sidebar from "./components/Sidebar";
 import Navbar from "./components/Navbar";
 
-import ApplyLeave from "./pages/ApplyLeave";
-import LeaveHistory from "./pages/LeaveHistory";
+import ApplyLeave from "./pages/LeaveAdmin";
+import LeaveHistory from "./pages/LeaveEmployee";
 import Dashboard from "./pages/Dashboard";
 import User from "./pages/User";
 import Profile from "./pages/Profile";
@@ -17,6 +17,8 @@ import HolidayCalender from "./pages/HolidayCalender";
 import WfhManagement from "./pages/WfhManagement";
 import AttendanceAdmin from "./pages/AttendanceAdmin";
 import Modules from "./pages/Modules";
+import LeaveEmployee from "./pages/LeaveEmployee";
+import LeaveAdmin from "./pages/LeaveAdmin";
 
 function Layout() {
   const location = useLocation();
@@ -34,8 +36,8 @@ function Layout() {
         <main className="flex-1 ml-64 mt-20 p-5 min-h-screen">
           <Routes>
             <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/apply-leave" element={<ApplyLeave />} />
-            <Route path="/leave-history" element={<LeaveHistory />} />
+            <Route path="/leave-admin" element={<LeaveAdmin />} />
+            <Route path="/leave-employee" element={<LeaveEmployee />} />
             <Route path="/user" element={<User />} />
             <Route className="flex-1" path="/profile" element={<Profile />} />
             <Route path="/roles" element={<Roles />} />

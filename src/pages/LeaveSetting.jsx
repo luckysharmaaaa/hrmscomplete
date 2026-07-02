@@ -91,18 +91,16 @@ const LeaveSettings = () => {
   };
 
   return (
-    <div className="w-full min-h-screen bg-slate-100">
+    <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-start justify-between px-6 py-5">
+      <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-4xl font-bold text-[#0F265C]">Leave Settings</h1>
+          <h1 className="text-3xl font-bold text-[#0F265C]">Leave Settings</h1>
 
-          <div className="flex items-center gap-2 mt-3 text-sm text-gray-500">
-            <FiHome size={14} />
-            <FiChevronRight size={14} />
+          <div className="flex items-center gap-1.5 mt-1 text-xs text-gray-400">
             <span>Leave</span>
-            <FiChevronRight size={14} />
-            <span className="font-medium text-[#0F265C]">Leave Settings</span>
+            <FiChevronRight size={12} className="shrink-0" />
+            <span className="text-orange-500 font-medium">Leave Settings</span>
           </div>
         </div>
 
@@ -116,7 +114,7 @@ const LeaveSettings = () => {
       </div>
 
       {/* Leave Cards */}
-      <div className="px-6">
+      <div>
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
           {leaveTypes.map((leave) => (
             <div

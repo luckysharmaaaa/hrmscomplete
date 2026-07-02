@@ -31,7 +31,6 @@ const UserTable = () => {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editUser, setEditUser] = useState(null);
 
-  // ── Date Range ────────────────────────────────────────────────────
   const today = new Date();
   const [appliedRange, setAppliedRange] = useState([
     {
@@ -40,6 +39,36 @@ const UserTable = () => {
       key: "selection",
     },
   ]);
+  const [sortBy, setSortBy] = useState("This Year");
+
+  const handleSortByChange = (option) => {
+    setSortBy(option);
+    if (option === "Custom Range") return;
+
+    const baseToday = new Date("2026-06-30"); // reference anchor
+    let start = new Date(baseToday);
+    let end = new Date(baseToday);
+
+    if (option === "Last 7 Days") {
+      start.setDate(baseToday.getDate() - 7);
+    } else if (option === "Last 30 Days") {
+      start.setDate(baseToday.getDate() - 30);
+    } else if (option === "Last 90 Days") {
+      start.setDate(baseToday.getDate() - 90);
+    } else if (option === "This Year") {
+      start = new Date(baseToday.getFullYear(), 0, 1);
+      end = new Date(baseToday.getFullYear(), 11, 31);
+    }
+
+    setAppliedRange([
+      {
+        startDate: start,
+        endDate: end,
+        key: "selection",
+      },
+    ]);
+    setCurrentPage(1);
+  };
 
   const handleDeleteUser = () => {
     if (!deleteTarget) return;
@@ -113,6 +142,7 @@ const UserTable = () => {
             value={appliedRange}
             onChange={(newRange) => {
               setAppliedRange(newRange);
+              setSortBy("");
               setCurrentPage(1);
             }}
             defaultPreset="This Year"
@@ -147,10 +177,19 @@ const UserTable = () => {
           </select>
 
           {/* Sort */}
-          <select className="select select-bordered select-xs text-sm h-10 min-h-0 rounded-lg min-w-40 bg-white text-black">
-            <option>Sort By : Last 7 Days</option>
-            <option>Sort By : Last 30 Days</option>
-            <option>Sort By : Last 90 Days</option>
+          <select
+            value={sortBy}
+            onChange={(e) => handleSortByChange(e.target.value)}
+            className="select select-bordered select-sm text-sm h-10 min-h-0 rounded-lg min-w-40 bg-white text-black"
+          >
+            <option value="" disabled hidden>
+              Sort By
+            </option>
+            {["Last 7 Days", "Last 30 Days", "Last 90 Days", "This Year"].map((opt) => (
+              <option key={opt} value={opt}>
+                Sort By : {opt}
+              </option>
+            ))}
           </select>
         </div>
       </div>

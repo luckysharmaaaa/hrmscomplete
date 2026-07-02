@@ -4,6 +4,7 @@ import * as Yup from "yup";
 import CloseIcon from "@mui/icons-material/Close";
 import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
 import VisibilityIcon from "@mui/icons-material/Visibility";
+import { User } from "lucide-react";
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 const PERMISSION_KEYS = [
@@ -141,21 +142,33 @@ const AddUserDrawer = ({ open, onClose }) => {
       {open && (
         <div
           onClick={handleClose}
-          className="fixed inset-0 bg-black/40 z-90"
+          className="fixed inset-0 bg-black/40 z-[999]"
         />
       )}
 
       {/* Drawer panel */}
       <div
-        className={`fixed top-0 right-0 h-full w-200 bg-white z-100 transition-transform duration-300 overflow-y-auto ${
+        className={`fixed top-0 right-0 h-full w-200 bg-white z-[1000] transition-transform duration-300 overflow-y-auto shadow-2xl ${
           open ? "translate-x-0" : "translate-x-full"
         }`}
       >
         {/* Header */}
-        <div className="flex items-center justify-between p-5 border-b">
-          <h2 className="text-3xl font-bold text-[#0F265C]">Add User</h2>
+        <div className="flex items-center justify-between p-5 border-b border-gray-100 bg-white">
+          <div className="flex items-center gap-3.5">
+            <div className="p-2.5 bg-orange-50 text-orange-500 rounded-xl shrink-0 shadow-sm border border-orange-100/30">
+              <User size={22} />
+            </div>
+            <div>
+              <h2 className="text-2xl font-bold text-[#0F265C] tracking-tight leading-tight">
+                Add User
+              </h2>
+              <p className="text-xs text-gray-400 font-medium mt-1">
+                Create a new user profile and allocate module access permissions
+              </p>
+            </div>
+          </div>
           <button
-            onClick={onClose}
+            onClick={handleClose}
             className="w-8 h-8 flex items-center justify-center rounded-md border border-gray-200 text-gray-400 hover:bg-red-50 hover:border-red-200 hover:text-red-500 transition-all text-base cursor-pointer"
           >
             ✕

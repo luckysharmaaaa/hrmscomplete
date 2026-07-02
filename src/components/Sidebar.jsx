@@ -18,8 +18,6 @@ import {
   Layers,
 } from "lucide-react";
 
-import logo_img from "../assets/images/logo.svg";
-
 function Sidebar() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -46,8 +44,16 @@ function Sidebar() {
   return (
     <div className="w-64 h-screen bg-white border-r border-gray-100 fixed left-0 top-0 overflow-y-auto flex flex-col shadow-sm">
       {/* ── Logo ── */}
-      <div className="px-6 py-[18px] border-b border-gray-100 shrink-0">
-        <img src={logo_img} alt="Logo" className="w-36 object-contain" />
+      <div className="px-6 py-[10px] border-b border-gray-100 shrink-0 flex justify-center items-center">
+        <Link to="/dashboard">
+          <img
+            src={
+              "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQAELKul0RWF1DETWIo4sQbDSdQSMas6MlqGT2LGAtAsg&s"
+            }
+            alt="Logo"
+            className="h-20 w-auto object-contain hover:scale-105 transition-transform duration-200 cursor-pointer mix-blend-multiply"
+          />
+        </Link>
       </div>
 
       {/* ── Navigation ── */}
@@ -93,34 +99,34 @@ function Sidebar() {
 
                       <div className="collapse-content p-0">
                         <ul className="ml-8 border-l-2 border-gray-100 pl-3 space-y-[2px] pb-1">
-                          {/* Apply Leave */}
+                          {/* leave-admin*/}
                           <li>
                             <Link
-                              to="/apply-leave"
-                              className={subNavItem("/apply-leave")}
+                              to="/leave-admin"
+                              className={subNavItem("/leave-admin")}
                             >
                               <span className="flex items-center gap-2">
                                 <ClipboardCheck
                                   size={13}
                                   className="shrink-0 opacity-60"
                                 />
-                                Apply Leave
+                                {"Leave(Admin)"}
                               </span>
                             </Link>
                           </li>
 
-                          {/* Leave History */}
+                          {/* Leave Employee */}
                           <li>
                             <Link
-                              to="/leave-history"
-                              className={subNavItem("/leave-history")}
+                              to="/leave-employee"
+                              className={subNavItem("/leave-employee")}
                             >
                               <span className="flex items-center gap-2">
                                 <History
                                   size={13}
                                   className="shrink-0 opacity-60"
                                 />
-                                Leave History
+                                Leave(Employee)
                               </span>
                             </Link>
                           </li>
