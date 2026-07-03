@@ -99,7 +99,9 @@ export default function LeaveAdmin() {
           <nav className="flex items-center gap-1.5 mt-1 text-xs text-gray-400">
             <span>Attendance</span>
             <ChevronRight size={12} />
-            <span className="text-orange-500 font-medium">Leaves</span>
+            <span className="text-orange-500 font-medium">
+              {"Leaves(Admin)"}
+            </span>
           </nav>
         </div>
         <div className="flex items-center gap-2">

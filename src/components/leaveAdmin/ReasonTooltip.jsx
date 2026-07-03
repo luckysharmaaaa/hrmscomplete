@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Info } from "lucide-react";
 
-// ── Tooltip for Leave Reason ──────────────────────────────────---------------
+// ── Tooltip for Leave Reason ──────────────────────────────────
 export default function ReasonTooltip({ reason }) {
   const [show, setShow] = useState(false);
   return (

@@ -7,7 +7,7 @@ import {
   CalendarCheck,
   ClipboardList,
   ClipboardCheck,
-  History,
+  CalendarClock,
   Settings2,
   Users,
   ShieldCheck,
@@ -122,7 +122,7 @@ function Sidebar() {
                               className={subNavItem("/leave-employee")}
                             >
                               <span className="flex items-center gap-2">
-                                <History
+                                <CalendarClock
                                   size={13}
                                   className="shrink-0 opacity-60"
                                 />
