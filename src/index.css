@@ -1,0 +1,12 @@
+@import "tailwindcss";
+@plugin "daisyui";
+
+:root {
+  color: #111827;
+  background-color: #f8fafc;
+}
+
+
+.fav-icon {
+  background-color: white;
+}
