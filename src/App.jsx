@@ -1,10 +1,15 @@
 import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
+<<<<<<< HEAD
 
 import Sidebar from "./components/Sidebar";
 import Navbar from "./components/Navbar";
 
 import ApplyLeave from "./pages/LeaveAdmin";
 import LeaveHistory from "./pages/LeaveEmployee";
+=======
+import Sidebar from "./components/Sidebar";
+import Navbar from "./components/Navbar";
+>>>>>>> main
 import Dashboard from "./pages/Dashboard";
 import User from "./pages/User";
 import Profile from "./pages/Profile";
@@ -19,6 +24,13 @@ import AttendanceAdmin from "./pages/AttendanceAdmin";
 import Modules from "./pages/Modules";
 import LeaveEmployee from "./pages/LeaveEmployee";
 import LeaveAdmin from "./pages/LeaveAdmin";
+<<<<<<< HEAD
+=======
+import EmployeeList from "./pages/EmployeeList";
+import EmployeeDetail from "./pages/EmployeeDetail";
+import Department from "./pages/Department";
+import Designation from "./pages/Designation";
+>>>>>>> main
 
 function Layout() {
   const location = useLocation();
@@ -36,6 +48,11 @@ function Layout() {
         <main className="flex-1 ml-64 mt-20 p-5 min-h-screen">
           <Routes>
             <Route path="/dashboard" element={<Dashboard />} />
+<<<<<<< HEAD
+=======
+            <Route path="/department" element={<Department />} />
+            <Route path="/designations" element={<Designation />} />
+>>>>>>> main
             <Route path="/leave-admin" element={<LeaveAdmin />} />
             <Route path="/leave-employee" element={<LeaveEmployee />} />
             <Route path="/user" element={<User />} />
@@ -52,6 +69,11 @@ function Layout() {
             <Route path="/holiday-calender" element={<HolidayCalender />} />
             <Route path="/wfh-management" element={<WfhManagement />} />
             <Route path="/modules" element={<Modules />} />
+<<<<<<< HEAD
+=======
+            <Route path="/employee-list" element={<EmployeeList />} />
+            <Route path="/employee/:id" element={<EmployeeDetail />} />
+>>>>>>> main
           </Routes>
         </main>
       </div>

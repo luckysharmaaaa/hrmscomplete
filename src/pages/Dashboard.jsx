@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import React from 'react'
 
 function Dashboard() {
@@ -7,3 +8,12 @@ function Dashboard() {
 }
 
 export default Dashboard
+=======
+import React from "react";
+
+function Dashboard() {
+  return <div>Dashboard Page</div>;
+}
+
+export default Dashboard;
+>>>>>>> main
