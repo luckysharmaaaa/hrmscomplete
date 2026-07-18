@@ -1,140 +1,513 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
+import axios from "axios";
+import {
+  FiChevronDown,
+  FiChevronRight,
+} from "react-icons/fi";
 
-const modulesData = [
-  "Employee",
-  "Holidays",
-  "Leaves",
-  "Events",
-  "Sales",
-  "Training",
-  "Reports",
-  "Tickets",
-  "Payroll",
-];
+const BASE_URL = "http://localhost:5000/api/v1";
 
-const permissionsList = [
-  "allowAll",
-  "read",
-  "write",
-  "create",
+const permissionColumns = [
+  "view",
+  "add",
+  "edit",
+  "approved",
   "delete",
-  "import",
-  "export",
 ];
 
-const RolePermissionTable = () => {
-  const [permissions, setPermissions] = useState(
-    modulesData.map((module) => ({
-      module,
-      allowAll: false,
-      read: false,
-      write: false,
-      create: false,
-      delete: false,
-      import: false,
-      export: false,
-    }))
-  );
+const RolePermissionTable = ({
+  role,
+  selectedModules,
+  setSelectedModules,
+  permissions,
+  setPermissions,
+}) => {
 
-  const handlePermissionChange = (
-    moduleIndex,
-    permission
-  ) => {
-    const updatedPermissions = [...permissions];
+  const [modules, setModules] = useState([]);
 
-    if (permission === "allowAll") {
-      const newValue =
-        !updatedPermissions[moduleIndex].allowAll;
+  const [expanded, setExpanded] = useState({});
 
-      permissionsList.forEach((item) => {
-        updatedPermissions[moduleIndex][item] =
-          newValue;
-      });
-    } else {
-      updatedPermissions[moduleIndex][permission] =
-        !updatedPermissions[moduleIndex][permission];
+  const [loading, setLoading] = useState(false);
 
-      const allChecked = permissionsList
-        .filter((item) => item !== "allowAll")
-        .every(
-          (item) =>
-            updatedPermissions[moduleIndex][item]
-        );
+  // ============================
+  // Load Modules
+  // ============================
 
-      updatedPermissions[moduleIndex].allowAll =
-        allChecked;
+  useEffect(() => {
+    loadModules();
+  }, []);
+
+  // ============================
+  // Load Role Permissions
+  // ============================
+
+  useEffect(() => {
+    if (role?.id) {
+      loadRoleData(role.id);
     }
+  }, [role]);
 
-    setPermissions(updatedPermissions);
+  // ============================
+  // Get Modules
+  // ============================
+
+  const loadModules = async () => {
+    try {
+
+      setLoading(true);
+
+      const res = await axios.get(
+        `${BASE_URL}/modules`
+      );
+
+      const list = res.data.data || [];
+
+      const tree = buildTree(list);
+
+      setModules(tree);
+
+      const expandState = {};
+
+      const expandAll = (items) => {
+
+        items.forEach((item) => {
+
+          expandState[item.id] = true;
+
+          if (item.children.length) {
+            expandAll(item.children);
+          }
+
+        });
+
+      };
+
+      expandAll(tree);
+
+      setExpanded(expandState);
+
+    } catch (error) {
+
+      console.error(error);
+
+    } finally {
+
+      setLoading(false);
+
+    }
   };
 
-  return (
-    <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-      {/* Header */}
-      <div className="px-5 py-4 border-b border-gray-200 flex justify-between items-center">
-        <h2 className="text-lg font-semibold text-[#0F265C]">
-          Permissions
-        </h2>
+  // ============================
+  // Load Existing Mapping
+  // ============================
 
-        <p className="text-sm text-gray-600">
-          Role Name :
-          <span className="font-semibold text-black ml-1">
-            Admin
-          </span>
-        </p>
+  const loadRoleData = async (roleId) => {
+
+    try {
+
+      const [moduleRes, permissionRes] =
+        await Promise.all([
+
+          axios.get(
+            `${BASE_URL}/role-module-mapping/${roleId}`
+          ),
+
+          axios.get(
+            `${BASE_URL}/role-permissions/${roleId}`
+          ),
+
+        ]);
+
+      // -------------------------
+      // Selected Modules
+      // -------------------------
+
+      console.log("Module API Response:", moduleRes.data);
+
+      const moduleIds = Array.isArray(moduleRes.data.data)
+        ? moduleRes.data.data.map((item) => item.moduleId)
+        : [];
+
+      console.log("moduleIds:", moduleIds);
+
+      setSelectedModules(moduleIds);
+
+      // -------------------------
+      // Permissions
+      // -------------------------
+
+      const permissionObject = {};
+
+      permissionRes.data.data.forEach((item) => {
+
+        if (!permissionObject[item.moduleId]) {
+
+          permissionObject[item.moduleId] = {};
+
+        }
+
+        permissionObject[item.moduleId][item.action] = true;
+
+      });
+
+      setPermissions(permissionObject);
+
+    } catch (error) {
+
+      console.error(error);
+
+    }
+
+  };
+  // ============================
+  // Build Module Tree
+  // ============================
+
+  const buildTree = (list) => {
+
+    const map = {};
+
+    list.forEach((item) => {
+
+      map[item.id] = {
+        ...item,
+        children: [],
+      };
+
+    });
+
+    const roots = [];
+
+    list.forEach((item) => {
+
+      if (
+        item.parentId &&
+        map[item.parentId]
+      ) {
+
+        map[item.parentId].children.push(
+          map[item.id]
+        );
+
+      } else {
+
+        roots.push(map[item.id]);
+
+      }
+
+    });
+
+    return roots;
+
+  };
+
+  // ============================
+  // Expand / Collapse
+  // ============================
+
+  const toggleExpand = (id) => {
+
+    setExpanded((prev) => ({
+
+      ...prev,
+
+      [id]: !prev[id],
+
+    }));
+
+  };
+
+  // ============================
+  // Check Module Selected
+  // ============================
+
+  const isModuleSelected = (moduleId) => {
+
+    return selectedModules.includes(moduleId);
+
+  };
+
+  // ============================
+  // Check Permission
+  // ============================
+
+  const hasPermission = (
+    moduleId,
+    action
+  ) => {
+
+    return (
+      permissions[moduleId]?.[action] ||
+      false
+    );
+
+  };
+
+  // ============================
+  // Toggle Module
+  // ============================
+
+  const toggleModule = (moduleId) => {
+    if (selectedModules.includes(moduleId)) {
+
+      setSelectedModules(
+        selectedModules.filter((id) => id !== moduleId)
+      );
+
+      // Remove all permissions of this module
+      setPermissions((prev) => {
+        const copy = { ...prev };
+        delete copy[moduleId];
+        return copy;
+      });
+
+    } else {
+
+      setSelectedModules([
+        ...selectedModules,
+        moduleId,
+      ]);
+
+    }
+  };
+
+  // ============================
+  // Toggle Permission
+  // ============================
+
+  const togglePermission = (
+    moduleId,
+    action
+  ) => {
+
+    setPermissions((prev) => ({
+
+      ...prev,
+
+      [moduleId]: {
+
+        ...prev[moduleId],
+
+        [action]:
+          !prev[moduleId]?.[action],
+
+      },
+
+    }));
+
+  };
+  // ============================
+  // Render Tree Rows
+  // ============================
+
+  const renderRows = (
+    items,
+    level = 0
+  ) => {
+
+    return items.map((module) => (
+
+      <React.Fragment key={module.id}>
+
+        <tr className="hover:bg-gray-50">
+
+          {/* Module */}
+
+          <td>
+
+            <div
+              className="flex items-center"
+              style={{
+                paddingLeft: `${level * 24}px`,
+              }}
+            >
+
+              {module.children.length > 0 ? (
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    toggleExpand(module.id)
+                  }
+                  className="mr-2"
+                >
+
+                  {expanded[module.id] ? (
+
+                    <FiChevronDown size={16} />
+
+                  ) : (
+
+                    <FiChevronRight size={16} />
+
+                  )}
+
+                </button>
+
+              ) : (
+
+                <div className="w-6 mr-2" />
+
+              )}
+
+              <input
+                type="checkbox"
+                className="checkbox checkbox-sm checkbox-primary mr-3"
+                checked={isModuleSelected(module.id)}
+                onChange={() =>
+                  toggleModule(module.id)
+                }
+              />
+
+              <span
+                className={
+                  level === 0
+                    ? "font-semibold"
+                    : ""
+                }
+              >
+                {module.moduleName}
+              </span>
+
+            </div>
+
+          </td>
+
+          {/* Permission Columns */}
+
+          {permissionColumns.map((action) => (
+
+            <td
+              key={action}
+              className="text-center"
+            >
+
+              <input
+                type="checkbox"
+                className="checkbox checkbox-sm checkbox-primary"
+                checked={hasPermission(
+                  module.id,
+                  action
+                )}
+                disabled={
+                  !isModuleSelected(module.id)
+                }
+                onChange={() =>
+                  togglePermission(
+                    module.id,
+                    action
+                  )
+                }
+              />
+
+            </td>
+
+          ))}
+
+        </tr>
+
+        {/* Children */}
+
+        {expanded[module.id] &&
+          module.children.length > 0 &&
+          renderRows(
+            module.children,
+            level + 1
+          )}
+
+      </React.Fragment>
+
+    ));
+
+  };
+  // ============================
+  // Loading
+  // ============================
+
+  if (loading) {
+
+    return (
+
+      <div className="flex justify-center items-center h-64">
+
+        <span className="loading loading-spinner loading-lg text-orange-500"></span>
+
       </div>
 
-      {/* Table */}
-      <div className="overflow-x-auto">
-        <table className="table w-full">
+    );
+
+  }
+
+  // ============================
+  // UI
+  // ============================
+
+  return (
+
+    <div className="rounded-xl border border-gray-200 bg-white">
+
+      <div className="overflow-y-scroll flex-1 mb-10">
+
+        <table className="table table-pin-rows w-full">
+
           <thead className="bg-gray-100">
+
             <tr>
-              <th>Modules</th>
-              <th>Allow All</th>
-              <th>Read</th>
-              <th>Write</th>
-              <th>Create</th>
-              <th>Delete</th>
-              <th>Import</th>
-              <th>Export</th>
+
+              <th className="min-w-87.5">
+                Module
+              </th>
+
+              {permissionColumns.map((item) => (
+
+                <th
+                  key={item}
+                  className="text-center capitalize"
+                >
+                  {item}
+                </th>
+
+              ))}
+
             </tr>
+
           </thead>
 
           <tbody>
-            {permissions.map(
-              (item, moduleIndex) => (
-                <tr key={item.module}>
-                  <td className="font-medium">
-                    {item.module}
-                  </td>
 
-                  {permissionsList.map(
-                    (permission) => (
-                      <td key={permission}>
-                        <input
-                          type="checkbox"
-                          className="checkbox checkbox-sm"
-                          checked={
-                            item[permission]
-                          }
-                          onChange={() =>
-                            handlePermissionChange(
-                              moduleIndex,
-                              permission
-                            )
-                          }
-                        />
-                      </td>
-                    )
-                  )}
-                </tr>
-              )
+            {modules.length === 0 ? (
+
+              <tr>
+
+                <td
+                  colSpan={
+                    permissionColumns.length + 1
+                  }
+                  className="text-center py-10 text-gray-500"
+                >
+
+                  No Modules Found
+
+                </td>
+
+              </tr>
+
+            ) : (
+
+              renderRows(modules)
+
             )}
+
           </tbody>
+
         </table>
+
       </div>
+
     </div>
+
   );
+
 };
 
 export default RolePermissionTable;

@@ -245,14 +245,21 @@ function ModuleFormModal({ isOpen, onClose, editData, allModules, onSave }) {
 
       <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 z-10">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-orange-50 rounded-lg">
-              <Layers size={18} className="text-orange-500" />
+        <div className="flex items-center justify-between p-5 border-b border-gray-100 bg-white">
+          <div className="flex items-center gap-3.5">
+            <div className="p-2.5 bg-orange-50 text-orange-500 rounded-xl shrink-0 shadow-sm border border-orange-100/30">
+              <Layers size={22} />
             </div>
-            <h2 className="font-semibold text-gray-800 text-base">
-              {editData ? "Edit Module" : "Add New Module"}
-            </h2>
+            <div>
+              <h2 className="text-2xl font-bold text-[#0F265C] tracking-tight leading-tight">
+                {editData ? "Edit Module" : "Add Module"}
+              </h2>
+              <p className="text-xs text-gray-400 font-medium mt-1">
+                {editData
+                  ? "Update configuration parameters for this module"
+                  : "Register a new feature module in the system"}
+              </p>
+            </div>
           </div>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition p-1 rounded-lg hover:bg-gray-100">
             <X size={18} />
@@ -335,20 +342,20 @@ function ModuleFormModal({ isOpen, onClose, editData, allModules, onSave }) {
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 border border-gray-200 text-gray-600 py-2.5 rounded-lg text-sm font-medium hover:bg-gray-50 transition"
+              className="px-6 py-2.5 border border-gray-300 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-100 bg-white transition"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="flex-1 bg-orange-500 text-white py-2.5 rounded-lg text-sm font-semibold hover:bg-orange-600 transition shadow-sm"
+              className="px-6 py-2.5 bg-orange-500 hover:bg-orange-600 text-white rounded-lg text-sm font-semibold transition shadow-sm"
             >
-              {editData ? "Save Changes" : "Add Module"}
+              {editData ? "Update Module" : "Add Module"}
             </button>
           </div>
         </form>
       </div>
-    </div>
+      </div>
   );
 }
 
@@ -365,7 +372,9 @@ function DeleteConfirmModal({ module, onClose, onConfirm }) {
           <div className="p-3 bg-red-50 rounded-full">
             <AlertTriangle size={24} className="text-red-500" />
           </div>
-          <h3 className="text-base font-semibold text-gray-800">Delete Module?</h3>
+          <h3 className="text-base font-semibold text-gray-800">
+            Delete Module?
+          </h3>
           <p className="text-sm text-gray-500">
             Are you sure you want to delete{" "}
             <span className="font-semibold text-gray-700">"{module.moduleName}"</span>? This action cannot be undone.
@@ -377,6 +386,10 @@ function DeleteConfirmModal({ module, onClose, onConfirm }) {
             Cancel
           </button>
           <button
+            onClick={() => {
+              onConfirm(module.id);
+              onClose();
+            }}
             onClick={() => {
               onConfirm(module.id);
               onClose();
@@ -507,7 +520,9 @@ export default function Modules() {
       <div className="bg-white rounded-xl shadow-sm border border-gray-100">
         {/* Toolbar: title + search box */}
         <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between gap-4">
-          <h2 className="text-sm font-semibold text-gray-700 shrink-0">Module Tree</h2>
+          <h2 className="text-sm font-semibold text-gray-700 shrink-0">
+            Module Tree
+          </h2>
           <div className="flex items-center gap-2 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-500 w-64">
             <Search size={14} className="shrink-0 text-gray-400" />
             <input
@@ -540,7 +555,10 @@ export default function Modules() {
             <tbody className="divide-y divide-gray-50">
               {tree.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="text-center py-12 text-gray-400 text-sm">
+                  <td
+                    colSpan={6}
+                    className="text-center py-12 text-gray-400 text-sm"
+                  >
                     No modules found.
                   </td>
                 </tr>

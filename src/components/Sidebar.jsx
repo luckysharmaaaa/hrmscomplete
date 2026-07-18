@@ -18,8 +18,6 @@ import {
   Layers,
 } from "lucide-react";
 
-import logo_img from "../assets/images/logo.svg";
-
 function Sidebar() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -44,10 +42,18 @@ function Sidebar() {
     }`;
 
   return (
-    <div className="w-64 h-screen bg-white border-r border-gray-100 fixed left-0 top-0 overflow-y-auto flex flex-col shadow-sm">
+    <div className="w-64 h-screen bg-white border-r border-gray-100 fixed left-0 top-0 overflow-y-auto flex flex-col  shadow-sm">
       {/* ── Logo ── */}
-      <div className="px-6 py-[18px] border-b border-gray-100 shrink-0">
-        <img src={logo_img} alt="Logo" className="w-36 object-contain" />
+      <div className="px-6 py-2.5 border-b border-gray-100 shrink-0 flex justify-center items-center">
+        <Link to="/dashboard">
+          <img
+            src={
+              "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQAELKul0RWF1DETWIo4sQbDSdQSMas6MlqGT2LGAtAsg&s"
+            }
+            alt="Logo"
+            className="h-20 w-auto object-contain hover:scale-105 transition-transform duration-200 cursor-pointer mix-blend-multiply"
+          />
+        </Link>
       </div>
 
       {/* ── Navigation ── */}
@@ -57,7 +63,7 @@ function Sidebar() {
           Main Menu
         </p>
 
-        <ul className="space-y-[3px]">
+        <ul className="space-y-0.75">
           {/* Dashboard */}
           <li>
             <Link
@@ -74,53 +80,53 @@ function Sidebar() {
             <div className="collapse collapse-arrow bg-white rounded-lg">
               <input type="checkbox" defaultChecked />
 
-              <div className="collapse-title flex items-center gap-3 px-4 py-[9px] text-[13.5px] font-medium text-gray-800 min-h-0">
+              <div className="collapse-title flex items-center gap-3 px-4 py-2.25 text-[13.5px] font-medium text-gray-800 min-h-0">
                 <FileText size={17} className="shrink-0 text-gray-500" />
                 Attendance
               </div>
 
               <div className="collapse-content p-0">
-                <ul className="space-y-[2px] pb-1">
+                <ul className="space-y-0.5 pb-1">
                   {/* ── Leave (Child Collapse) ── */}
                   <li>
                     <div className="collapse collapse-arrow bg-white rounded-lg">
                       <input type="checkbox" defaultChecked />
 
-                      <div className="collapse-title flex items-center gap-3 pl-8 pr-4 py-[7px] text-[13px] font-medium text-gray-500 min-h-0">
+                      <div className="collapse-title flex items-center gap-3 pl-8 pr-4 py-1.75 text-[13px] font-medium text-gray-500 min-h-0">
                         <ClipboardList size={15} className="shrink-0" />
                         Leave
                       </div>
 
                       <div className="collapse-content p-0">
-                        <ul className="ml-8 border-l-2 border-gray-100 pl-3 space-y-[2px] pb-1">
-                          {/* Apply Leave */}
+                        <ul className="ml-8 border-l-2 border-gray-100 pl-3 space-y-0.5 pb-1">
+                          {/* leave-admin*/}
                           <li>
                             <Link
-                              to="/apply-leave"
-                              className={subNavItem("/apply-leave")}
+                              to="/leave-admin"
+                              className={subNavItem("/leave-admin")}
                             >
                               <span className="flex items-center gap-2">
                                 <ClipboardCheck
                                   size={13}
                                   className="shrink-0 opacity-60"
                                 />
-                                Apply Leave
+                                {"Leave(Admin)"}
                               </span>
                             </Link>
                           </li>
 
-                          {/* Leave History */}
+                          {/* Leave Employee */}
                           <li>
                             <Link
-                              to="/leave-history"
-                              className={subNavItem("/leave-history")}
+                              to="/leave-employee"
+                              className={subNavItem("/leave-employee")}
                             >
                               <span className="flex items-center gap-2">
                                 <History
                                   size={13}
                                   className="shrink-0 opacity-60"
                                 />
-                                Leave History
+                                Leave(Employee)
                               </span>
                             </Link>
                           </li>
@@ -149,7 +155,7 @@ function Sidebar() {
                   <li>
                     <Link
                       to="/attendance-admin"
-                      className={`flex items-center gap-3 pl-8 pr-4 py-[7px] rounded-lg text-[13px] transition-all duration-150 ${
+                      className={`flex items-center gap-3 pl-8 pr-4 py-1.75 rounded-lg text-[13px] transition-all duration-150 ${
                         isActive("/attendance-admin")
                           ? activeClass
                           : "text-gray-500 hover:bg-orange-50 hover:text-orange-500"
@@ -164,7 +170,7 @@ function Sidebar() {
                   <li>
                     <Link
                       to="/attendance-employee"
-                      className={`flex items-center gap-3 pl-8 pr-4 py-[7px] rounded-lg text-[13px] transition-all duration-150 ${
+                      className={`flex items-center gap-3 pl-8 pr-4 py-1.75 rounded-lg text-[13px] transition-all duration-150 ${
                         isActive("/attendance-employee")
                           ? activeClass
                           : "text-gray-500 hover:bg-orange-50 hover:text-orange-500"
@@ -179,7 +185,7 @@ function Sidebar() {
                   <li>
                     <Link
                       to="/holiday-calender"
-                      className={`flex items-center gap-3 pl-8 pr-4 py-[7px] rounded-lg text-[13px] transition-all duration-150 ${
+                      className={`flex items-center gap-3 pl-8 pr-4 py-1.75 rounded-lg text-[13px] transition-all duration-150 ${
                         isActive("/holiday-calender")
                           ? activeClass
                           : "text-gray-500 hover:bg-orange-50 hover:text-orange-500"
@@ -194,7 +200,7 @@ function Sidebar() {
                   <li>
                     <Link
                       to="/wfh-management"
-                      className={`flex items-center gap-3 pl-8 pr-4 py-[7px] rounded-lg text-[13px] transition-all duration-150 ${
+                      className={`flex items-center gap-3 pl-8 pr-4 py-1.75 rounded-lg text-[13px] transition-all duration-150 ${
                         isActive("/wfh-management")
                           ? activeClass
                           : "text-gray-500 hover:bg-orange-50 hover:text-orange-500"
@@ -217,7 +223,7 @@ function Sidebar() {
             </Link>
           </li>
 
-          {/* Roles & Permissions */}
+          {/* Roles & Permissions
           <li>
             <Link
               to="/rolespermissions"
@@ -230,7 +236,7 @@ function Sidebar() {
               <ShieldCheck size={17} className="shrink-0" />
               Roles &amp; Permissions
             </Link>
-          </li>
+          </li> */}
 
           {/* Profile */}
           <li>
@@ -271,7 +277,7 @@ function Sidebar() {
       <div className="shrink-0 px-3 py-4 border-t border-gray-100">
         <button
           onClick={() => navigate("/")}
-          className="w-full flex items-center gap-3 px-4 py-[9px] rounded-lg text-[13.5px] text-red-400 hover:bg-red-50 hover:text-red-500 transition-all duration-150 font-medium"
+          className="w-full flex items-center gap-3 px-4 py-2.25 rounded-lg text-[13.5px] text-red-400 hover:bg-red-50 hover:text-red-500 transition-all duration-150 font-medium"
         >
           <LogOut size={17} className="shrink-0" />
           Logout

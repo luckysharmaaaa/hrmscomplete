@@ -3,7 +3,7 @@ import { Bell, Mail, Search, Settings } from "lucide-react";
 
 function Navbar() {
   return (
-    <nav className="fixed top-0 left-64 right-0 h-18 bg-white border-b border-gray-200 px-8 flex items-center justify-between z-50">
+    <nav className="fixed top-0 left-64 right-0 h-18 bg-white border-b border-gray-200 px-8 flex items-center justify-between z-30">
       {/* Search Box */}
       <div className="relative w-[320px]">
         <Search
