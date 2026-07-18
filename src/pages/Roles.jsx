@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
+import api from "../services/api";
 import { FiChevronRight } from "react-icons/fi";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -37,63 +37,45 @@ const Roles = () => {
   // Get All Roles
   // ======================================
 
+  // ======================================
+  // Get All Roles
+  // ======================================
+
   const fetchRoles = async () => {
-
     try {
-
       setLoading(true);
 
-      const response = await axios.get(
-        `${BASE_URL}/roles`
-      );
+      const response = await api.get("/roles");
 
-      if (response.data.success) {
-
-        const formattedRoles =
-          response.data.data.map((item) => ({
-
-            id: item.id,
-
-            roleName: item.roleName,
-
-            roleCode: item.roleCode,
-
-            description: item.description,
-
-            status:
-              item.status === "1"
-                ? "Active"
-                : "Inactive",
-
-            createdAt: item.createdAt
-              ? new Date(
-                item.createdAt * 1000
-              ).toLocaleDateString(
-                "en-GB",
-                {
-                  day: "2-digit",
-                  month: "short",
-                  year: "numeric",
-                }
-              )
-              : "-",
-
-          }));
+      if (response.data?.success) {
+        const formattedRoles = response.data.data.map((item) => ({
+          id: item.id,
+          roleName: item.roleName,
+          roleCode: item.roleCode,
+          description: item.description,
+          status: item.status === "1" || item.status === 1 ? "Active" : "Inactive",
+          createdAt: item.createdAt
+            ? new Date(item.createdAt * 1000).toLocaleDateString("en-GB", {
+              day: "2-digit",
+              month: "short",
+              year: "numeric",
+            })
+            : "-",
+        }));
 
         setRoles(formattedRoles);
-
+      } else {
+        setRoles([]);
       }
-
     } catch (error) {
+      console.error("Fetch Roles Error:", error);
 
-      console.error(error);
-
+      toast.error(
+        error.response?.data?.message || "Failed to fetch roles."
+      );
     } finally {
-
       setLoading(false);
-
     }
-
   };
 
   useEffect(() => {
@@ -140,30 +122,14 @@ const Roles = () => {
       // ==================================
 
       if (editRole) {
-
         roleId = editRole.id;
 
-        await axios.put(
-
-          `${BASE_URL}/roles/update/${roleId}`,
-
-          {
-
-            roleName: roleData.roleName,
-
-            roleCode: roleData.roleCode,
-
-            description: roleData.description,
-
-            status:
-              roleData.status === "Active"
-                ? "1"
-                : "0",
-
-          }
-
-        );
-
+        await api.put(`/roles/update/${roleId}`, {
+          roleName: roleData.roleName,
+          roleCode: roleData.roleCode,
+          description: roleData.description,
+          status: roleData.status === "Active" ? "1" : "0",
+        });
       }
 
       // ==================================
@@ -171,33 +137,17 @@ const Roles = () => {
       // ==================================
 
       else {
+        const response = await api.post("/roles/add", {
+          roleName: roleData.roleName,
+          roleCode: roleData.roleCode,
+          description: roleData.description,
+          status: roleData.status === "Active" ? "1" : "0",
+        });
 
-        const response = await axios.post(
+        roleId = response.data?.data?.id;
 
-          `${BASE_URL}/roles/add`,
-
-          {
-
-            roleName: roleData.roleName,
-
-            roleCode: roleData.roleCode,
-
-            description: roleData.description,
-
-            status:
-              roleData.status === "Active"
-                ? "1"
-                : "0",
-
-          }
-
-        );
-
-        roleId = response.data.data.id;
-
-        console.log(response)
-        console.log(roleId)
-
+        console.log("Create Role Response:", response.data);
+        console.log("Role ID:", roleId);
       }
 
       console.log(roleId)
@@ -262,195 +212,188 @@ const Roles = () => {
   }
 
 
-// ======================================
-// Delete Role
-// ======================================
+  // ======================================
+  // Delete Role
+  // ======================================
 
-const handleDeleteRole = async (id) => {
-
+  const handleDeleteRole = async (id) => {
   try {
+    await api.delete(`/roles/delete/${id}`);
 
-    await axios.delete(
-      `${BASE_URL}/roles/delete/${id}`
-    );
+    await fetchRoles();
 
-    fetchRoles();
-
+    toast.success("Role deleted successfully!");
   } catch (error) {
+    console.error("Delete Role Error:", error);
 
-    console.error(error);
-
-    alert(
-      error.response?.data?.message ||
-      "Unable to delete role."
+    toast.error(
+      error.response?.data?.message || "Unable to delete role."
     );
-
   }
-
 };
 
-// ======================================
-// Close Drawer
-// ======================================
+  // ======================================
+  // Close Drawer
+  // ======================================
 
-const handleCloseDrawer = () => {
+  const handleCloseDrawer = () => {
 
-  setOpenDrawer(false);
+    setOpenDrawer(false);
 
-  setEditRole(null);
+    setEditRole(null);
 
-};
+  };
 
-// ======================================
-// JSX
-// ======================================
+  // ======================================
+  // JSX
+  // ======================================
 
-return (
+  return (
 
-  <div className="space-y-6 overflow-hidden ">
+    <div className="space-y-6 overflow-hidden ">
 
-    {/* Header */}
+      {/* Header */}
 
-    <div className="flex items-start justify-between">
+      <div className="flex items-start justify-between">
 
-      <div>
+        <div>
 
-        <h1 className="text-3xl font-bold text-[#0F265C]">
-
-          Roles
-
-        </h1>
-
-        <div className="flex items-center gap-1.5 mt-1 text-xs text-gray-400">
-
-          <span>User Management</span>
-
-          <FiChevronRight size={12} />
-
-          <span className="text-orange-500 font-medium">
+          <h1 className="text-3xl font-bold text-[#0F265C]">
 
             Roles
 
-          </span>
+          </h1>
+
+          <div className="flex items-center gap-1.5 mt-1 text-xs text-gray-400">
+
+            <span>User Management</span>
+
+            <FiChevronRight size={12} />
+
+            <span className="text-orange-500 font-medium">
+
+              Roles
+
+            </span>
+
+          </div>
+
+        </div>
+
+        {/* Right Buttons */}
+
+        <div className="flex items-center gap-3">
+
+          {/* Export */}
+
+          <div className="dropdown dropdown-end">
+
+            <label
+              tabIndex={0}
+              className="btn bg-orange-500 hover:bg-orange-600 border-none text-white"
+            >
+
+              <DescriptionOutlinedIcon fontSize="small" />
+
+              Export
+
+              <KeyboardArrowDownIcon fontSize="small" />
+
+            </label>
+
+            <ul
+              tabIndex={0}
+              className="dropdown-content z-10 menu p-2 shadow bg-white rounded-box w-56"
+            >
+
+              <li>
+
+                <button>
+
+                  <PictureAsPdfOutlinedIcon
+                    fontSize="small"
+                    sx={{ color: "#ef4444" }}
+                  />
+
+                  Export as PDF
+
+                </button>
+
+              </li>
+
+              <li>
+
+                <button>
+
+                  <TableChartOutlinedIcon
+                    fontSize="small"
+                    sx={{ color: "#16a34a" }}
+                  />
+
+                  Export as Excel
+
+                </button>
+
+              </li>
+
+            </ul>
+
+          </div>
+
+          {/* Add Role */}
+
+          <button
+            onClick={handleOpenDrawer}
+            className="flex items-center gap-2 px-4 py-2.5 bg-orange-500 hover:bg-orange-600 text-white rounded-lg"
+          >
+
+            <AddIcon fontSize="small" />
+
+            Add Role
+
+          </button>
 
         </div>
 
       </div>
 
-      {/* Right Buttons */}
+      {/* Loading */}
 
-      <div className="flex items-center gap-3">
+      {
 
-        {/* Export */}
+        loading ? (
 
-        <div className="dropdown dropdown-end">
+          <div className="flex justify-center py-20">
 
-          <label
-            tabIndex={0}
-            className="btn bg-orange-500 hover:bg-orange-600 border-none text-white"
-          >
+            <span className="loading loading-spinner loading-lg text-orange-500"></span>
 
-            <DescriptionOutlinedIcon fontSize="small" />
+          </div>
 
-            Export
+        ) : (<RolesTable
+          roles={roles}
+          setRoles={setRoles}
+          onEditRole={handleEditRole}
+          onDeleteRole={handleDeleteRole}
+        />
 
-            <KeyboardArrowDownIcon fontSize="small" />
+        )
 
-          </label>
+      }
 
-          <ul
-            tabIndex={0}
-            className="dropdown-content z-10 menu p-2 shadow bg-white rounded-box w-56"
-          >
+      {/* ====================================== */}
+      {/* Add / Edit Drawer */}
+      {/* ====================================== */}
 
-            <li>
-
-              <button>
-
-                <PictureAsPdfOutlinedIcon
-                  fontSize="small"
-                  sx={{ color: "#ef4444" }}
-                />
-
-                Export as PDF
-
-              </button>
-
-            </li>
-
-            <li>
-
-              <button>
-
-                <TableChartOutlinedIcon
-                  fontSize="small"
-                  sx={{ color: "#16a34a" }}
-                />
-
-                Export as Excel
-
-              </button>
-
-            </li>
-
-          </ul>
-
-        </div>
-
-        {/* Add Role */}
-
-        <button
-          onClick={handleOpenDrawer}
-          className="flex items-center gap-2 px-4 py-2.5 bg-orange-500 hover:bg-orange-600 text-white rounded-lg"
-        >
-
-          <AddIcon fontSize="small" />
-
-          Add Role
-
-        </button>
-
-      </div>
+      <AddRoles
+        open={openDrawer}
+        onClose={handleCloseDrawer}
+        onAddRole={handleAddRole}
+        editRole={editRole}
+      />
 
     </div>
 
-    {/* Loading */}
-
-    {
-
-      loading ? (
-
-        <div className="flex justify-center py-20">
-
-          <span className="loading loading-spinner loading-lg text-orange-500"></span>
-
-        </div>
-
-      ) : (<RolesTable
-        roles={roles}
-        setRoles={setRoles}
-        onEditRole={handleEditRole}
-        onDeleteRole={handleDeleteRole}
-      />
-
-      )
-
-    }
-
-    {/* ====================================== */}
-    {/* Add / Edit Drawer */}
-    {/* ====================================== */}
-
-    <AddRoles
-      open={openDrawer}
-      onClose={handleCloseDrawer}
-      onAddRole={handleAddRole}
-      editRole={editRole}
-    />
-
-  </div>
-
-);
+  );
 };
 
 
