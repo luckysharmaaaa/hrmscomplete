@@ -1,9 +1,3 @@
-<<<<<<< HEAD
-import React from "react";
-
-const AttendanceEmployee = () => {
-  return <div>AttendanceEmployee</div>;
-=======
 import React, { useState } from "react";
 import {
   ChevronRight,
@@ -113,7 +107,6 @@ const AttendanceEmployee = () => {
       />
     </div>
   );
->>>>>>> main
 };
 
 export default AttendanceEmployee;

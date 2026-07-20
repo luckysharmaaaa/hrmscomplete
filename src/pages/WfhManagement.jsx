@@ -1,12 +1,3 @@
-<<<<<<< HEAD
-import React from "react";
-
-const WfhManagement = () => {
-  return <div>WfhManagement</div>;
-};
-
-export default WfhManagement;
-=======
 import React, { useState } from "react";
 import {
   ChevronRight,
@@ -261,4 +252,3 @@ export default function WfhManagement() {
     </div>
   );
 }
->>>>>>> main

@@ -1,12 +1,3 @@
-<<<<<<< HEAD
-import React from "react";
-
-const HolidayCalender = () => {
-  return <div>HolidayCalender</div>;
-};
-
-export default HolidayCalender;
-=======
 import { useState } from "react";
 import { Palmtree, CalendarRange } from "lucide-react";
 import HolidayHeader from "../components/HolidayCalender/HolidayHeader";
@@ -112,4 +103,3 @@ export default function HolidayCalendar() {
     </div>
   );
 }
->>>>>>> main

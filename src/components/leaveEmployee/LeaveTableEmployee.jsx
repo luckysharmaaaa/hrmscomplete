@@ -36,11 +36,7 @@ export default function LeaveTableEmployee({
       {/* Toolbar top row */}
       <div className="px-5 py-4 border-b border-gray-100 flex flex-wrap items-center justify-between gap-3">
         <h2 className="text-sm font-bold text-gray-700">Leave List</h2>
-<<<<<<< HEAD
-        <div className="flex flex-wrap items-center gap-2">
-=======
         <div className=" flex flex-wrap items-center gap-2 ">
->>>>>>> main
           {/* Date Range */}
           <DateRangePickerButton
             value={dateRange}
@@ -249,13 +245,8 @@ export default function LeaveTableEmployee({
         <div className="flex items-center gap-1">
           <button
             onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
-<<<<<<< HEAD
-            disabled={currentPage === 1}
-            className="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition"
-=======
             disabled={currentPage === 1} 
           className="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition"
->>>>>>> main
           >
             <ChevronLeft size={14} />
           </button>

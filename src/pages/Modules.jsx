@@ -250,11 +250,7 @@ function ModuleRow({ node, level = 0, modules, onEdit, onDelete, onToggle }) {
 
         {/* Actions */}
         <td className="px-5 py-3">
-<<<<<<< HEAD
-          <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition">
-=======
           <div className="flex items-center gap-2 transition">
->>>>>>> main
             <button
               onClick={() => onEdit(node)}
               className="p-1.5 rounded-lg hover:bg-orange-50 hover:text-orange-500 text-gray-400 transition"
@@ -316,13 +312,9 @@ function ModuleModal({ open, onClose, editData, modules }) {
       <div
         onClick={onClose}
         className={`fixed inset-0 bg-black/40 z-[999] transition-opacity duration-300 ${
-<<<<<<< HEAD
-          open ? "opacity-100 visible" : "opacity-0 invisible pointer-events-none"
-=======
           open
             ? "opacity-100 visible"
             : "opacity-0 invisible pointer-events-none"
->>>>>>> main
         }`}
       />
 
@@ -368,13 +360,9 @@ function ModuleModal({ open, onClose, editData, modules }) {
               <input
                 required
                 value={form.moduleName}
-<<<<<<< HEAD
-                onChange={(e) => setForm({ ...form, moduleName: e.target.value })}
-=======
                 onChange={(e) =>
                   setForm({ ...form, moduleName: e.target.value })
                 }
->>>>>>> main
                 placeholder="e.g. Leave Management"
                 className="w-full border border-gray-200 rounded-lg px-3.5 py-2.5 text-sm text-gray-700 outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100 transition bg-white"
               />
@@ -433,13 +421,9 @@ function ModuleModal({ open, onClose, editData, modules }) {
             {/* Status */}
             <div className="flex items-center justify-between bg-gray-50 rounded-xl px-4 py-3 border border-gray-100">
               <div>
-<<<<<<< HEAD
-                <p className="text-sm font-semibold text-gray-700">Active Status</p>
-=======
                 <p className="text-sm font-semibold text-gray-700">
                   Active Status
                 </p>
->>>>>>> main
                 <p className="text-xs text-gray-400">
                   Module will appear in navigation when active
                 </p>
@@ -451,14 +435,10 @@ function ModuleModal({ open, onClose, editData, modules }) {
                 }
               >
                 {form.status === "1" ? (
-<<<<<<< HEAD
-                  <ToggleRight size={32} className="text-green-500 transition" />
-=======
                   <ToggleRight
                     size={32}
                     className="text-green-500 transition"
                   />
->>>>>>> main
                 ) : (
                   <ToggleLeft size={32} className="text-gray-300 transition" />
                 )}

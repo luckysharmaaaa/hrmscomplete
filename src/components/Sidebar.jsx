@@ -16,11 +16,8 @@ import {
   LogOut,
   Home,
   Layers,
-<<<<<<< HEAD
-=======
   Building2,
   Briefcase,
->>>>>>> main
 } from "lucide-react";
 
 function Sidebar() {
@@ -46,8 +43,6 @@ function Sidebar() {
         : "text-gray-600 hover:bg-orange-50 hover:text-orange-500"
     }`;
 
-<<<<<<< HEAD
-=======
   const subLink = (path) =>
     `flex items-center gap-3 pl-8 pr-4 py-[7px] rounded-lg text-[13px] transition-all duration-150 ${
       isActive(path)
@@ -55,7 +50,6 @@ function Sidebar() {
         : "text-gray-500 hover:bg-orange-50 hover:text-orange-500"
     }`;
 
->>>>>>> main
   return (
     <div className="w-64 h-screen bg-white border-r border-gray-100 fixed left-0 top-0 overflow-y-auto flex flex-col shadow-sm">
       {/* ── Logo ── */}
@@ -73,10 +67,6 @@ function Sidebar() {
 
       {/* ── Navigation ── */}
       <nav className="flex-1 px-3 py-5 overflow-y-auto">
-<<<<<<< HEAD
-        {/* Section label */}
-=======
->>>>>>> main
         <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3 px-2">
           Main Menu
         </p>
@@ -117,10 +107,6 @@ function Sidebar() {
 
                       <div className="collapse-content p-0">
                         <ul className="ml-8 border-l-2 border-gray-100 pl-3 space-y-[2px] pb-1">
-<<<<<<< HEAD
-                          {/* leave-admin*/}
-=======
->>>>>>> main
                           <li>
                             <Link
                               to="/leave-admin"
@@ -131,19 +117,10 @@ function Sidebar() {
                                   size={13}
                                   className="shrink-0 opacity-60"
                                 />
-<<<<<<< HEAD
-                                {"Leave(Admin)"}
-                              </span>
-                            </Link>
-                          </li>
-
-                          {/* Leave Employee */}
-=======
                                 Leave(Admin)
                               </span>
                             </Link>
                           </li>
->>>>>>> main
                           <li>
                             <Link
                               to="/leave-employee"
@@ -158,11 +135,6 @@ function Sidebar() {
                               </span>
                             </Link>
                           </li>
-<<<<<<< HEAD
-
-                          {/* Leave Settings */}
-=======
->>>>>>> main
                           <li>
                             <Link
                               to="/leave-setting"
@@ -186,15 +158,7 @@ function Sidebar() {
                   <li>
                     <Link
                       to="/attendance-admin"
-<<<<<<< HEAD
-                      className={`flex items-center gap-3 pl-8 pr-4 py-[7px] rounded-lg text-[13px] transition-all duration-150 ${
-                        isActive("/attendance-admin")
-                          ? activeClass
-                          : "text-gray-500 hover:bg-orange-50 hover:text-orange-500"
-                      }`}
-=======
                       className={subLink("/attendance-admin")}
->>>>>>> main
                     >
                       <CalendarCheck size={15} className="shrink-0" />
                       Attendance (Admin)
@@ -205,15 +169,7 @@ function Sidebar() {
                   <li>
                     <Link
                       to="/attendance-employee"
-<<<<<<< HEAD
-                      className={`flex items-center gap-3 pl-8 pr-4 py-[7px] rounded-lg text-[13px] transition-all duration-150 ${
-                        isActive("/attendance-employee")
-                          ? activeClass
-                          : "text-gray-500 hover:bg-orange-50 hover:text-orange-500"
-                      }`}
-=======
                       className={subLink("/attendance-employee")}
->>>>>>> main
                     >
                       <CalendarDays size={15} className="shrink-0" />
                       Attendance (Employee)
@@ -224,15 +180,7 @@ function Sidebar() {
                   <li>
                     <Link
                       to="/holiday-calender"
-<<<<<<< HEAD
-                      className={`flex items-center gap-3 pl-8 pr-4 py-[7px] rounded-lg text-[13px] transition-all duration-150 ${
-                        isActive("/holiday-calender")
-                          ? activeClass
-                          : "text-gray-500 hover:bg-orange-50 hover:text-orange-500"
-                      }`}
-=======
                       className={subLink("/holiday-calender")}
->>>>>>> main
                     >
                       <CalendarDays size={15} className="shrink-0" />
                       Holiday Calendar
@@ -243,15 +191,7 @@ function Sidebar() {
                   <li>
                     <Link
                       to="/wfh-management"
-<<<<<<< HEAD
-                      className={`flex items-center gap-3 pl-8 pr-4 py-[7px] rounded-lg text-[13px] transition-all duration-150 ${
-                        isActive("/wfh-management")
-                          ? activeClass
-                          : "text-gray-500 hover:bg-orange-50 hover:text-orange-500"
-                      }`}
-=======
                       className={subLink("/wfh-management")}
->>>>>>> main
                     >
                       <Home size={15} className="shrink-0" />
                       WFH Management
@@ -262,8 +202,6 @@ function Sidebar() {
             </div>
           </li>
 
-<<<<<<< HEAD
-=======
           {/* ── Employees (Parent Collapse) ── */}
           <li>
             <div className="collapse collapse-arrow bg-white rounded-lg">
@@ -304,7 +242,6 @@ function Sidebar() {
             </div>
           </li>
 
->>>>>>> main
           {/* Users */}
           <li>
             <Link to="/user" className={navItem("/user", Users, "Users")}>

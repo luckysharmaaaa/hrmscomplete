@@ -92,11 +92,7 @@ const LeaveEmployee = () => {
   const handleAddLeave = (newRecord) => {
     if (editItem) {
       setLeaves((prev) =>
-<<<<<<< HEAD
-        prev.map((r) => (r.id === newRecord.id ? newRecord : r))
-=======
         prev.map((r) => (r.id === newRecord.id ? newRecord : r)),
->>>>>>> main
       );
     } else {
       setLeaves((prev) => [newRecord, ...prev]);
@@ -174,11 +170,7 @@ const LeaveEmployee = () => {
           </div>
         </div>
         <LeaveStatCardsEmployee />
-<<<<<<< HEAD
-        
-=======
 
->>>>>>> main
         {/* Table */}
         <LeaveTableEmployee
           paginated={paginated}
