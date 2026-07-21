@@ -1,13 +1,16 @@
 import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import Sidebar from "./components/Sidebar";
 import Navbar from "./components/Navbar";
+
+// import ApplyLeave from "./pages/LeaveAdmin";
+// import LeaveHistory from "./pages/LeaveEmployee";
 import Dashboard from "./pages/Dashboard";
 import User from "./pages/User";
 import Profile from "./pages/Profile";
 import Login from "./pages/Login";
 import Roles from "./pages/Roles";
 import LeaveSetting from "./pages/LeaveSetting";
-import RolesPermissions from "./pages/RolesPermissions";
+// import RolePermission from "./pages/RolePermission";
 import AttendanceEmployee from "./pages/AttendanceEmployee";
 import HolidayCalender from "./pages/HolidayCalender";
 import WfhManagement from "./pages/WfhManagement";
@@ -19,6 +22,8 @@ import EmployeeList from "./pages/EmployeeList";
 import EmployeeDetail from "./pages/EmployeeDetail";
 import Department from "./pages/Department";
 import Designation from "./pages/Designation";
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 function Layout() {
   const location = useLocation();
@@ -45,7 +50,7 @@ function Layout() {
             <Route path="/roles" element={<Roles />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/leave-setting" element={<LeaveSetting />} />
-            <Route path="/rolespermissions" element={<RolesPermissions />} />
+            {/* <Route path="/role-permission" element={<RolePermission />} /> */}
             <Route path="/attendance-admin" element={<AttendanceAdmin />} />
             <Route
               path="/attendance-employee"
@@ -57,6 +62,16 @@ function Layout() {
             <Route path="/employee-list" element={<EmployeeList />} />
             <Route path="/employee/:id" element={<EmployeeDetail />} />
           </Routes>
+
+          <ToastContainer
+            position="top-right"
+            autoClose={3000}
+            hideProgressBar={false}
+            newestOnTop
+            closeOnClick
+            pauseOnHover
+            theme="light"
+          />
         </main>
       </div>
     </div>

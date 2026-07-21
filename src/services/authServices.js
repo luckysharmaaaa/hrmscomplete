@@ -1,37 +1,43 @@
-import { signInWithPopup } from "firebase/auth";
-import { auth, googleProvider } from "../firebase-config/firebase";
-import { generateFCMToken } from "../firebase-config/fcm";
-import axios from "axios";
+import api from "./api";
 
-export const googleLogin = async () => {
+// ==============================
+// Login
+// ==============================
+export const login = async (loginData) => {
   try {
-    const result = await signInWithPopup(auth, googleProvider);
+    const response = await api.post("/auth/login", loginData);
 
-    const user = result.user;
-    const idToken = await user.getIdToken();
+    if (response.data?.data?.accessToken) {
+      localStorage.setItem("token", response.data.data.accessToken);
 
-    // console.log("Google User:", user);
-    // console.log("ID Token", idToken);
-
-    // Generate FCM Token
-    const fcmToken = await generateFCMToken();
-
-    // console.log("FCM Token:", fcmToken);
-
-    const response = await axios.post(
-      "http://localhost:5000/v1/users/user_authentication",
-      {
-        email: user.email,
-        fcm: fcmToken,
-      },
-      {
-        withCredentials: true,
-      },
-    );
+      localStorage.setItem(
+        "user",
+        JSON.stringify(response.data.data.user)
+      );
+    }
 
     return response.data;
   } catch (error) {
-    console.error("Google Login Error:", error);
-    throw error;
+    throw (
+      error.response?.data || {
+        success: false,
+        message: "Something went wrong",
+      }
+    );
   }
+};
+
+// ==============================
+// Logout
+// ==============================
+export const logout = () => {
+  localStorage.removeItem("token");
+  localStorage.removeItem("user");
+};
+
+// ==============================
+// Get Token
+// ==============================
+export const getToken = () => {
+  return localStorage.getItem("token");
 };

@@ -6,8 +6,7 @@ import { useNavigate } from "react-router-dom";
 
 import { FaFacebookF, FaApple } from "react-icons/fa";
 import { Mail, EyeOff, Eye } from "lucide-react";
-import { googleLogin } from "../services/authServices";
-
+import { login } from "../services/authServices";
 function Login() {
   const navigate = useNavigate();
 
@@ -70,25 +69,25 @@ function Login() {
   };
 
   // Submit Form
-  const handleSubmit = (e) => {
-    e.preventDefault();
+  const handleSubmit = async (e) => {
+  e.preventDefault();
 
-    if (validateForm()) {
-      console.log("Login Data:", formData);
+  if (!validateForm()) return;
 
-      // alert("Login Successful!");
+  try {
+    const response = await login({
+      email: formData.email,
+      password: formData.password,
+    });
 
-      // Reset Form
-      setFormData({
-        email: "",
-        password: "",
-        rememberMe: false,
-      });
+    console.log(response);
 
-      setErrors({});
-    }
-  };
-
+    navigate("/dashboard");
+  } catch (error) {
+    console.log(error);
+    alert(error.message || "Login Failed");
+  }
+};
   return (
     <div className="flex h-screen overflow-hidden bg-white">
       {/* LEFT SIDE IMAGE */}
@@ -196,7 +195,7 @@ function Login() {
           {/* Sign In Button */}
           <button
             className="w-full h-9 bg-orange-500 hover:bg-orange-600 text-white rounded-lg font-medium text-sm transition flex items-center justify-center"
-            onClick={() => navigate("profile")}
+            // onClick={() => navigate("profile")}
           >
             Sign In
           </button>

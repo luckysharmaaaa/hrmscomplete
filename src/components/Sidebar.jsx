@@ -51,7 +51,7 @@ function Sidebar() {
     }`;
 
   return (
-    <div className="w-64 h-screen bg-white border-r border-gray-100 fixed left-0 top-0 overflow-y-auto flex flex-col shadow-sm">
+    <div className="w-64 h-screen bg-white border-r border-gray-100 fixed left-0 top-0 overflow-y-auto flex flex-col  shadow-sm">
       {/* ── Logo ── */}
       <div className="px-6 py-[10px] border-b border-gray-100 shrink-0 flex justify-center items-center">
         <Link to="/dashboard">
@@ -71,7 +71,7 @@ function Sidebar() {
           Main Menu
         </p>
 
-        <ul className="space-y-[3px]">
+        <ul className="space-y-0.75">
           {/* Dashboard */}
           <li>
             <Link
@@ -88,19 +88,19 @@ function Sidebar() {
             <div className="collapse collapse-arrow bg-white rounded-lg">
               <input type="checkbox" defaultChecked />
 
-              <div className="collapse-title flex items-center gap-3 px-4 py-[9px] text-[13.5px] font-medium text-gray-800 min-h-0">
+              <div className="collapse-title flex items-center gap-3 px-4 py-2.25 text-[13.5px] font-medium text-gray-800 min-h-0">
                 <FileText size={17} className="shrink-0 text-gray-500" />
                 Attendance
               </div>
 
               <div className="collapse-content p-0">
-                <ul className="space-y-[2px] pb-1">
+                <ul className="space-y-0.5 pb-1">
                   {/* ── Leave (Child Collapse) ── */}
                   <li>
                     <div className="collapse collapse-arrow bg-white rounded-lg">
                       <input type="checkbox" defaultChecked />
 
-                      <div className="collapse-title flex items-center gap-3 pl-8 pr-4 py-[7px] text-[13px] font-medium text-gray-500 min-h-0">
+                      <div className="collapse-title flex items-center gap-3 pl-8 pr-4 py-1.75 text-[13px] font-medium text-gray-500 min-h-0">
                         <ClipboardList size={15} className="shrink-0" />
                         Leave
                       </div>
@@ -232,7 +232,10 @@ function Sidebar() {
                     </Link>
                   </li>
                   <li>
-                    <Link to="/designations" className={subLink("/designations")}>
+                    <Link
+                      to="/designations"
+                      className={subLink("/designations")}
+                    >
                       <Briefcase size={15} className="shrink-0" />
                       Designations
                     </Link>
@@ -250,7 +253,7 @@ function Sidebar() {
             </Link>
           </li>
 
-          {/* Roles & Permissions */}
+          {/* Roles & Permissions
           <li>
             <Link
               to="/rolespermissions"
@@ -263,7 +266,7 @@ function Sidebar() {
               <ShieldCheck size={17} className="shrink-0" />
               Roles &amp; Permissions
             </Link>
-          </li>
+          </li> */}
 
           {/* Profile */}
           <li>
@@ -304,7 +307,7 @@ function Sidebar() {
       <div className="shrink-0 px-3 py-4 border-t border-gray-100">
         <button
           onClick={() => navigate("/")}
-          className="w-full flex items-center gap-3 px-4 py-[9px] rounded-lg text-[13.5px] text-red-400 hover:bg-red-50 hover:text-red-500 transition-all duration-150 font-medium"
+          className="w-full flex items-center gap-3 px-4 py-2.25 rounded-lg text-[13.5px] text-red-400 hover:bg-red-50 hover:text-red-500 transition-all duration-150 font-medium"
         >
           <LogOut size={17} className="shrink-0" />
           Logout

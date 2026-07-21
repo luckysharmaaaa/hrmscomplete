@@ -1,5 +1,14 @@
 import React, { useState, useEffect, useRef } from "react";
-import { X, Calendar, EyeOff, Eye, Image as ImageIcon, UserPlus, Search, Download } from "lucide-react";
+import {
+  X,
+  Calendar,
+  EyeOff,
+  Eye,
+  Image as ImageIcon,
+  UserPlus,
+  Search,
+  Download,
+} from "lucide-react";
 import { useFormik } from "formik";
 import * as Yup from "yup";
 import { EMPLOYEE_DATA } from "./employeeData";
@@ -158,8 +167,12 @@ function ImportEmployeeModal({ open, onClose, onSelect }) {
 }
 
 // ── Add Employee Drawer ───────────────────────────────────────────────────────
-export default function AddEmployeeDrawer({ open, onClose, editData, onSubmit }) {
-
+export default function AddEmployeeDrawer({
+  open,
+  onClose,
+  editData,
+  onSubmit,
+}) {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [profileImage, setProfileImage] = useState(null);
@@ -241,7 +254,9 @@ export default function AddEmployeeDrawer({ open, onClose, editData, onSubmit })
   // Lock body scroll when drawer open
   useEffect(() => {
     document.body.style.overflow = open ? "hidden" : "unset";
-    return () => { document.body.style.overflow = "unset"; };
+    return () => {
+      document.body.style.overflow = "unset";
+    };
   }, [open]);
 
   // ── Import handler ───────────────────────────────────────────
@@ -331,8 +346,8 @@ export default function AddEmployeeDrawer({ open, onClose, editData, onSubmit })
               isDisabled
                 ? "bg-gray-50 border-gray-200 text-gray-500 cursor-not-allowed"
                 : hasError
-                ? "border-red-500 focus:border-red-500 focus:ring-1 focus:ring-red-500"
-                : "border-gray-200 focus:border-orange-400 focus:ring-1 focus:ring-orange-400"
+                  ? "border-red-500 focus:border-red-500 focus:ring-1 focus:ring-red-500"
+                  : "border-gray-200 focus:border-orange-400 focus:ring-1 focus:ring-orange-400"
             } ${
               type === "date"
                 ? "[&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:right-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:cursor-pointer"
@@ -353,9 +368,16 @@ export default function AddEmployeeDrawer({ open, onClose, editData, onSubmit })
           )}
           {isDisabled && (
             <div className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-300 pointer-events-none">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
-                <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+              <svg
+                width="12"
+                height="12"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                <path d="M7 11V7a5 5 0 0 1 10 0v4" />
               </svg>
             </div>
           )}
@@ -388,8 +410,8 @@ export default function AddEmployeeDrawer({ open, onClose, editData, onSubmit })
               isDisabled
                 ? "bg-gray-50 border-gray-200 text-gray-500 cursor-not-allowed"
                 : hasError
-                ? "border-red-500 focus:border-red-500 focus:ring-1 focus:ring-red-500"
-                : "border-gray-200 focus:border-orange-400 focus:ring-1 focus:ring-orange-400"
+                  ? "border-red-500 focus:border-red-500 focus:ring-1 focus:ring-red-500"
+                  : "border-gray-200 focus:border-orange-400 focus:ring-1 focus:ring-orange-400"
             }`}
           >
             <option value="">Select</option>
@@ -398,7 +420,16 @@ export default function AddEmployeeDrawer({ open, onClose, editData, onSubmit })
             ))}
           </select>
           <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <svg
+              width="12"
+              height="12"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
               <path d="m6 9 6 6 6-6" />
             </svg>
           </div>
@@ -432,7 +463,6 @@ export default function AddEmployeeDrawer({ open, onClose, editData, onSubmit })
         <div className="drawer-side">
           <label onClick={onClose} className="drawer-overlay"></label>
           <div className="bg-white h-full w-[480px] sm:w-[600px] md:w-[700px] flex flex-col shadow-2xl">
-
             {/* ── Header ── */}
             <div className="flex items-center justify-between p-5 border-b border-gray-100">
               <div className="flex items-center gap-3.5">
@@ -465,189 +495,252 @@ export default function AddEmployeeDrawer({ open, onClose, editData, onSubmit })
             </div>
 
             {/* ── Form Content ── */}
-            <form onSubmit={formik.handleSubmit} className="flex-1 overflow-y-auto">
+            <form
+              onSubmit={formik.handleSubmit}
+              className="flex-1 overflow-y-auto"
+            >
               <div className="p-6 space-y-6">
-
-                  {/* Profile Image + Import Employee */}
-                  <div className="flex items-start justify-between gap-4">
-                    {/* Left: avatar + upload */}
-                    <div className="flex items-center gap-5">
-                      <div className="w-24 h-24 rounded-full border border-dashed border-gray-300 bg-gray-50 flex items-center justify-center overflow-hidden shrink-0">
-                        {profileImage ? (
-                          <img
-                            src={profileImage}
-                            alt="Profile"
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          <ImageIcon size={24} className="text-gray-300" />
-                        )}
-                      </div>
-                      <div>
-                        <h3 className="text-sm font-bold text-[#0F265C] mb-1">
-                          Upload Profile Image
-                        </h3>
-                        <p className="text-xs text-gray-500 mb-3">
-                          Image should be below 4 mb
-                        </p>
-                        <div className="flex gap-2">
-                          <input
-                            type="file"
-                            ref={fileInputRef}
-                            onChange={handleImageUpload}
-                            accept="image/*"
-                            className="hidden"
-                          />
-                          <button
-                            type="button"
-                            onClick={() => fileInputRef.current?.click()}
-                            className="px-4 py-1.5 bg-orange-500 text-white text-sm font-semibold rounded hover:bg-orange-600 transition"
-                          >
-                            Upload
-                          </button>
-                          <button
-                            type="button"
-                            onClick={handleCancelImage}
-                            className="px-4 py-1.5 bg-white border border-gray-200 text-gray-700 text-sm font-semibold rounded hover:bg-gray-50 transition"
-                          >
-                            Cancel
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Right: Import Employee button */}
-                    <div className="shrink-0 flex flex-col items-end gap-2">
-                      <button
-                        type="button"
-                        onClick={() => setImportModalOpen(true)}
-                        className="flex items-center gap-2 px-4 py-2 border border-orange-400 text-orange-500 text-sm font-semibold rounded-lg hover:bg-orange-50 transition"
-                      >
-                        <Download size={15} />
-                        Import Employee
-                      </button>
-                      {importedFrom && (
-                        <div className="flex items-center gap-1.5">
-                          <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-                          <span className="text-[11px] text-green-600 font-medium">
-                            Fields auto-filled &amp; locked
-                          </span>
-                          <button
-                            type="button"
-                            onClick={() => setImportedFrom(false)}
-                            className="text-[11px] text-gray-400 underline hover:text-gray-600 ml-1"
-                          >
-                            Unlock
-                          </button>
-                        </div>
+                {/* Profile Image + Import Employee */}
+                <div className="flex items-start justify-between gap-4">
+                  {/* Left: avatar + upload */}
+                  <div className="flex items-center gap-5">
+                    <div className="w-24 h-24 rounded-full border border-dashed border-gray-300 bg-gray-50 flex items-center justify-center overflow-hidden shrink-0">
+                      {profileImage ? (
+                        <img
+                          src={profileImage}
+                          alt="Profile"
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <ImageIcon size={24} className="text-gray-300" />
                       )}
                     </div>
+                    <div>
+                      <h3 className="text-sm font-bold text-[#0F265C] mb-1">
+                        Upload Profile Image
+                      </h3>
+                      <p className="text-xs text-gray-500 mb-3">
+                        Image should be below 4 mb
+                      </p>
+                      <div className="flex gap-2">
+                        <input
+                          type="file"
+                          ref={fileInputRef}
+                          onChange={handleImageUpload}
+                          accept="image/*"
+                          className="hidden"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => fileInputRef.current?.click()}
+                          className="px-4 py-1.5 bg-orange-500 text-white text-sm font-semibold rounded hover:bg-orange-600 transition"
+                        >
+                          Upload
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleCancelImage}
+                          className="px-4 py-1.5 bg-white border border-gray-200 text-gray-700 text-sm font-semibold rounded hover:bg-gray-50 transition"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
                   </div>
 
-
-
-                  {/* Form Grid */}
-                  <div className="grid grid-cols-2 gap-x-6 gap-y-5">
-                    {field("First Name", "firstName", "text", true, null, null, true)}
-                    {field("Last Name", "lastName", "text", false, null, null, true)}
-                    {field("Email", "email", "email", true, null, null, true)}
-                    {field("Phone Number", "phone", "tel", true, null, null, true)}
-                    {field("Employee ID", "empId", "text", true, null, null, true)}
-                    {field(
-                      "Joining Date",
-                      "joiningDate",
-                      "date",
-                      true,
-                      <Calendar size={16} />,
-                      null,
-                      true,
+                  {/* Right: Import Employee button */}
+                  <div className="shrink-0 flex flex-col items-end gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setImportModalOpen(true)}
+                      className="flex items-center gap-2 px-4 py-2 border border-orange-400 text-orange-500 text-sm font-semibold rounded-lg hover:bg-orange-50 transition"
+                    >
+                      <Download size={15} />
+                      Import Employee
+                    </button>
+                    {importedFrom && (
+                      <div className="flex items-center gap-1.5">
+                        <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+                        <span className="text-[11px] text-green-600 font-medium">
+                          Fields auto-filled &amp; locked
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => setImportedFrom(false)}
+                          className="text-[11px] text-gray-400 underline hover:text-gray-600 ml-1"
+                        >
+                          Unlock
+                        </button>
+                      </div>
                     )}
-                    {field(
-                      "Password",
-                      "password",
-                      showPassword ? "text" : "password",
-                      !editData,
-                      showPassword ? <Eye size={16} /> : <EyeOff size={16} />,
-                      () => setShowPassword(!showPassword),
-                      false, // password is NEVER locked
-                    )}
-                    {field(
-                      "Confirm Password",
-                      "confirmPassword",
-                      showConfirmPassword ? "text" : "password",
-                      !editData,
-                      showConfirmPassword ? <Eye size={16} /> : <EyeOff size={16} />,
-                      () => setShowConfirmPassword(!showConfirmPassword),
-                      false, // confirm password is NEVER locked
-                    )}
-                    {field("Username", "username", "text", true, null, null, true)}
-                    {field("Company", "company", "text", true, null, null, true)}
-                    {selectField("Department", "department", DEPTS, true)}
-                    {selectField("Designation", "designation", DESIGNATIONS_LIST, true)}
                   </div>
+                </div>
 
-                  {/* About text area */}
-                  <div>
-                    <label className="block text-[13px] font-semibold text-[#1f2937] mb-1.5">
-                      About <span className="text-red-500">*</span>
-                    </label>
-                    <textarea
-                      name="about"
-                      disabled={importedFrom}
-                      value={formik.values.about}
-                      onChange={formik.handleChange}
-                      onBlur={formik.handleBlur}
-                      className={`w-full border rounded-lg px-3.5 py-2.5 text-sm outline-none transition min-h-[100px] ${
-                        importedFrom
-                          ? "bg-gray-50 border-gray-200 text-gray-500 cursor-not-allowed"
-                          : formik.touched.about && formik.errors.about
+                {/* Form Grid */}
+                <div className="grid grid-cols-2 gap-x-6 gap-y-5">
+                  {field(
+                    "First Name",
+                    "firstName",
+                    "text",
+                    true,
+                    null,
+                    null,
+                    true,
+                  )}
+                  {field(
+                    "Last Name",
+                    "lastName",
+                    "text",
+                    false,
+                    null,
+                    null,
+                    true,
+                  )}
+                  {field("Email", "email", "email", true, null, null, true)}
+                  {field(
+                    "Phone Number",
+                    "phone",
+                    "tel",
+                    true,
+                    null,
+                    null,
+                    true,
+                  )}
+                  {field(
+                    "Employee ID",
+                    "empId",
+                    "text",
+                    true,
+                    null,
+                    null,
+                    true,
+                  )}
+                  {field(
+                    "Joining Date",
+                    "joiningDate",
+                    "date",
+                    true,
+                    <Calendar size={16} />,
+                    null,
+                    true,
+                  )}
+                  {field(
+                    "Password",
+                    "password",
+                    showPassword ? "text" : "password",
+                    !editData,
+                    showPassword ? <Eye size={16} /> : <EyeOff size={16} />,
+                    () => setShowPassword(!showPassword),
+                    false, // password is NEVER locked
+                  )}
+                  {field(
+                    "Confirm Password",
+                    "confirmPassword",
+                    showConfirmPassword ? "text" : "password",
+                    !editData,
+                    showConfirmPassword ? (
+                      <Eye size={16} />
+                    ) : (
+                      <EyeOff size={16} />
+                    ),
+                    () => setShowConfirmPassword(!showConfirmPassword),
+                    false, // confirm password is NEVER locked
+                  )}
+                  {field(
+                    "Username",
+                    "username",
+                    "text",
+                    true,
+                    null,
+                    null,
+                    true,
+                  )}
+                  {field("Company", "company", "text", true, null, null, true)}
+                  {selectField("Department", "department", DEPTS, true)}
+                  {selectField(
+                    "Designation",
+                    "designation",
+                    DESIGNATIONS_LIST,
+                    true,
+                  )}
+                </div>
+
+                {/* About text area */}
+                <div>
+                  <label className="block text-[13px] font-semibold text-[#1f2937] mb-1.5">
+                    About <span className="text-red-500">*</span>
+                  </label>
+                  <textarea
+                    name="about"
+                    disabled={importedFrom}
+                    value={formik.values.about}
+                    onChange={formik.handleChange}
+                    onBlur={formik.handleBlur}
+                    className={`w-full border rounded-lg px-3.5 py-2.5 text-sm outline-none transition min-h-[100px] ${
+                      importedFrom
+                        ? "bg-gray-50 border-gray-200 text-gray-500 cursor-not-allowed"
+                        : formik.touched.about && formik.errors.about
                           ? "border-red-500 focus:border-red-500 focus:ring-1 focus:ring-red-500"
                           : "border-gray-200 focus:border-orange-400 focus:ring-1 focus:ring-orange-400"
-                      }`}
-                    />
-                    {formik.touched.about && formik.errors.about && !importedFrom && (
+                    }`}
+                  />
+                  {formik.touched.about &&
+                    formik.errors.about &&
+                    !importedFrom && (
                       <p className="text-red-500 text-xs mt-1">
                         {formik.errors.about}
                       </p>
                     )}
-                  </div>
+                </div>
 
-                  {/* ── Static error banner ── */}
-                  <div className="flex items-center gap-2.5 px-4 py-3 bg-red-50 border border-red-100 rounded-xl text-sm text-red-600">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
-                      <circle cx="12" cy="12" r="10"/>
-                      <line x1="12" y1="8" x2="12" y2="12"/>
-                      <line x1="12" y1="16" x2="12.01" y2="16"/>
-                    </svg>
-                    <span>
-                      Employee already exists with this email address. Please choose from{" "}
-                      <button
-                        type="button"
-                        onClick={() => setImportModalOpen(true)}
-                        className="font-semibold underline hover:text-red-800 transition"
-                      >
-                        Import Employee
-                      </button>.
-                    </span>
-                  </div>
-
-                  {/* Action buttons */}
-                  <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
+                {/* ── Static error banner ── */}
+                <div className="flex items-center gap-2.5 px-4 py-3 bg-red-50 border border-red-100 rounded-xl text-sm text-red-600">
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="shrink-0"
+                  >
+                    <circle cx="12" cy="12" r="10" />
+                    <line x1="12" y1="8" x2="12" y2="12" />
+                    <line x1="12" y1="16" x2="12.01" y2="16" />
+                  </svg>
+                  <span>
+                    Employee already exists with this email address. Please
+                    choose from{" "}
                     <button
                       type="button"
-                      onClick={onClose}
-                      className="px-6 py-2.5 border border-gray-300 text-gray-700 rounded-lg text-sm font-semibold hover:bg-gray-50 transition"
+                      onClick={() => setImportModalOpen(true)}
+                      className="font-semibold underline hover:text-red-800 transition"
                     >
-                      Cancel
+                      Import Employee
                     </button>
-                    <button
-                      type="submit"
-                      className="px-6 py-2.5 bg-orange-500 hover:bg-orange-600 text-white rounded-lg text-sm font-semibold transition shadow-sm"
-                    >
-                      {editData ? "Save Changes" : "Save"}
-                    </button>
-                  </div>
+                    .
+                  </span>
                 </div>
+
+                {/* Action buttons */}
+                <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
+                  <button
+                    type="button"
+                    onClick={onClose}
+                    className="px-6 py-2.5 border border-gray-300 text-gray-700 rounded-lg text-sm font-semibold hover:bg-gray-50 transition"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-6 py-2.5 bg-orange-500 hover:bg-orange-600 text-white rounded-lg text-sm font-semibold transition shadow-sm"
+                  >
+                    {editData ? "Save Changes" : "Save"}
+                  </button>
+                </div>
+              </div>
             </form>
           </div>
         </div>

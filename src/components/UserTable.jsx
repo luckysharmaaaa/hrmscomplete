@@ -1,5 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
-import allUsers from "../constants/user";
+import React, { useState, useEffect } from "react";
 import {
   FiSearch,
   FiEdit2,
@@ -7,9 +6,12 @@ import {
   FiChevronUp,
   FiChevronDown,
 } from "react-icons/fi";
+
 import EditUserModal from "./EditUserModal";
 import DeleteUserModal from "./DeleteUserModal";
 import DateRangePickerButton from "./DateRangePickerButton";
+
+import { getAllUsers, getUserById, deleteUser } from "../services/userApi";
 
 const SortIcon = () => (
   <span className="inline-flex flex-col ml-1 opacity-40 leading-none">
@@ -19,19 +21,30 @@ const SortIcon = () => (
 );
 
 const UserTable = () => {
-  const [user, setUser] = useState(allUsers);
+  const [users, setUsers] = useState([]);
+
   const [selected, setSelected] = useState([]);
-  const [deleteTarget, setDeleteTarget] = useState(null); // for delete modal
+
+  const [deleteTarget, setDeleteTarget] = useState(null);
+
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+
   const [rowsPerPage, setRowsPerPage] = useState(10);
+
   const [search, setSearch] = useState("");
+
   const [roleFilter, setRoleFilter] = useState("");
+
   const [statusFilter, setStatusFilter] = useState("");
+
   const [currentPage, setCurrentPage] = useState(1);
+
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+
   const [editUser, setEditUser] = useState(null);
 
   const today = new Date();
+
   const [appliedRange, setAppliedRange] = useState([
     {
       startDate: new Date(today.getFullYear(), 0, 1),
@@ -39,13 +52,97 @@ const UserTable = () => {
       key: "selection",
     },
   ]);
+
   const [sortBy, setSortBy] = useState("This Year");
+
+  // ==========================================
+  // Fetch Users
+  // ==========================================
+
+  const fetchUsers = async () => {
+    try {
+      const response = await getAllUsers();
+
+      console.log("Users API Response", response.data);
+
+      if (response.data.success) {
+        const formattedUsers = response.data.data.map((item) => ({
+          id: item.id,
+
+          firstName: item.firstName,
+          lastName: item.lastName,
+
+          name: `${item.firstName} ${item.lastName}`,
+
+          email: item.email,
+          phone: item.phone,
+
+          status: Number(item.status) === 1 ? "Active" : "Inactive",
+
+          statusValue: Number(item.status),
+
+          // ✅ Complete roles array from backend
+          roles: item.roles || [],
+
+          createdAt: item.createdAt,
+
+          date: new Date(item.createdAt * 1000).toLocaleDateString(),
+
+          avatar: `https://i.pravatar.cc/150?img=${item.id}`,
+        }));
+
+        console.log("Formatted Users:", formattedUsers);
+
+        setUsers(formattedUsers);
+      }
+    } catch (error) {
+      console.error("Failed to fetch users", error);
+    }
+  };
+  useEffect(() => {
+    fetchUsers();
+  }, []);
+
+  // ==========================================
+  // Edit User
+  // ==========================================
+
+  const handleEdit = async (id) => {
+    try {
+      const response = await getUserById(id);
+
+      if (response.data.success) {
+        setEditUser(response.data.data);
+
+        setIsEditModalOpen(true);
+      }
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  // ==========================================
+  // Refresh after Edit
+  // ==========================================
+
+  const handleSaveUser = async () => {
+    await fetchUsers();
+
+    setEditUser(null);
+
+    setIsEditModalOpen(false);
+  };
+  // ==========================================
+  // Sort By
+  // ==========================================
 
   const handleSortByChange = (option) => {
     setSortBy(option);
+
     if (option === "Custom Range") return;
 
-    const baseToday = new Date("2026-06-30"); // reference anchor
+    const baseToday = new Date();
+
     let start = new Date(baseToday);
     let end = new Date(baseToday);
 
@@ -67,77 +164,82 @@ const UserTable = () => {
         key: "selection",
       },
     ]);
+
     setCurrentPage(1);
   };
 
-  const handleDeleteUser = () => {
+  // ==========================================
+  // Delete User
+  // ==========================================
+  const handleDeleteUser = async () => {
     if (!deleteTarget) return;
 
-    setUser((prev) => prev.filter((user) => user.id !== deleteTarget.id));
+    try {
+      const response = await deleteUser(deleteTarget.id, { trashedBy: 1 });
 
-    setSelected((prev) => prev.filter((id) => id !== deleteTarget.id));
+      if (response.data.success) {
+        await fetchUsers();
 
-    setDeleteTarget(null);
-    setIsDeleteModalOpen(false);
+        setDeleteTarget(null);
+        setIsDeleteModalOpen(false);
+      }
+    } catch (error) {
+      console.error(error);
+    }
   };
 
-  const handleSaveUser = (updatedFields) => {
-    setUser((prev) =>
-      prev.map((u) => (u.id === editUser.id ? { ...u, ...updatedFields } : u)),
-    );
-    setIsEditModalOpen(false);
-    setEditUser(null);
-  };
+  // ==========================================
+  // Filter Users
+  // ==========================================
 
-  {
-    /* Toggle Function in the UserList*/
-  }
-  // const toggleAll = () =>
-  //   setSelected(selected.length === user.length ? [] : user.map((u) => u.id));
-
-  // const toggleOne = (id) =>
-  //   setSelected((prev) =>
-  //     prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
-  //   );
-
-  const filtered = user.filter((u) => {
+  const filtered = users.filter((u) => {
     const matchSearch =
       u.name.toLowerCase().includes(search.toLowerCase()) ||
       u.email.toLowerCase().includes(search.toLowerCase());
-    const matchRole = roleFilter ? u.role === roleFilter : true;
+
+    const matchRole = roleFilter
+      ? u.roles.some((role) => role.roleName === roleFilter)
+      : true;
     const matchStatus = statusFilter ? u.status === statusFilter : true;
 
-    // Date filter — parse "DD Mon YYYY" and compare against the applied range
-    const rowDate = new Date(u.date);
+    const rowDate = new Date(u.createdAt * 1000);
+
     const rangeStart = new Date(appliedRange[0].startDate);
     const rangeEnd = new Date(appliedRange[0].endDate);
-    // Normalize to midnight so partial-day boundaries don't exclude valid rows
+
     rangeStart.setHours(0, 0, 0, 0);
     rangeEnd.setHours(23, 59, 59, 999);
+
     const matchDate = rowDate >= rangeStart && rowDate <= rangeEnd;
 
     return matchSearch && matchRole && matchStatus && matchDate;
   });
 
+  // ==========================================
+  // Pagination
+  // ==========================================
+
   const totalEntries = filtered.length;
+
   const totalPages = Math.max(1, Math.ceil(totalEntries / rowsPerPage));
+
   const safePage = Math.min(currentPage, totalPages);
+
   const paginated = filtered.slice(
     (safePage - 1) * rowsPerPage,
     safePage * rowsPerPage,
   );
 
   const startEntry = totalEntries === 0 ? 0 : (safePage - 1) * rowsPerPage + 1;
-  const endEntry = Math.min(safePage * rowsPerPage, totalEntries);
 
+  const endEntry = Math.min(safePage * rowsPerPage, totalEntries);
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-200 font-sans">
-      {/* ── Top Header ──────────────────────────────────────────────── */}
+      {/* Header */}
       <div className="flex items-center justify-between gap-3 px-5 py-3 border-b border-gray-200">
         <h2 className="text-2xl font-bold text-[#0F265C]">Users List</h2>
 
         <div className="flex items-center gap-2">
-          {/* Date Range Picker */}
           <DateRangePickerButton
             value={appliedRange}
             onChange={(newRange) => {
@@ -148,23 +250,31 @@ const UserTable = () => {
             defaultPreset="This Year"
           />
 
-          {/* Role */}
+          {/* Role Filter */}
           <select
-            className="select select-bordered select-sm w-32 text-sm h-10 min-h-0 rounded-lg bg-white text-black"
+            className="select select-bordered select-sm w-40 bg-white text-black"
             value={roleFilter}
             onChange={(e) => {
               setRoleFilter(e.target.value);
               setCurrentPage(1);
             }}
           >
-            <option value="">Role</option>
-            <option value="Employee">Employee</option>
-            <option value="Client">Client</option>
+            <option value="">All Roles</option>
+
+            {[
+              ...new Set(
+                users.flatMap((u) => u.roles.map((role) => role.roleName)),
+              ),
+            ].map((role) => (
+              <option key={role} value={role}>
+                {role}
+              </option>
+            ))}
           </select>
 
-          {/* Status */}
+          {/* Status Filter */}
           <select
-            className="select select-bordered select-sm text-sm h-10 min-h-0 rounded-lg w-32 bg-white text-black"
+            className="select select-bordered select-sm w-36 bg-white text-black"
             value={statusFilter}
             onChange={(e) => {
               setStatusFilter(e.target.value);
@@ -180,28 +290,30 @@ const UserTable = () => {
           <select
             value={sortBy}
             onChange={(e) => handleSortByChange(e.target.value)}
-            className="select select-bordered select-sm text-sm h-10 min-h-0 rounded-lg min-w-40 bg-white text-black"
+            className="select select-bordered select-sm min-w-40 bg-white text-black"
           >
             <option value="" disabled hidden>
               Sort By
             </option>
-            {["Last 7 Days", "Last 30 Days", "Last 90 Days", "This Year"].map((opt) => (
-              <option key={opt} value={opt}>
-                Sort By : {opt}
-              </option>
-            ))}
+
+            {["Last 7 Days", "Last 30 Days", "Last 90 Days", "This Year"].map(
+              (item) => (
+                <option key={item} value={item}>
+                  {item}
+                </option>
+              ),
+            )}
           </select>
         </div>
       </div>
 
-      {/* ── Sub-header (rows per page + search) ────────────────────── */}
-      <div className="flex items-center justify-between gap-2 px-5 py-2.5 border-b border-gray-200 text-sm text-gray-600">
-        {/* Left: rows per page */}
+      {/* Search */}
+      <div className="flex items-center justify-between px-5 py-3 border-b">
         <div className="flex items-center gap-2">
-          <span className="whitespace-nowrap text-[15px]">Row Per Page</span>
+          <span>Rows Per Page</span>
 
           <select
-            className="select select-bordered select-xs h-10 min-h-0 text-xs rounded-md bg-white text-black"
+            className="select select-bordered select-sm bg-white text-black"
             value={rowsPerPage}
             onChange={(e) => {
               setRowsPerPage(Number(e.target.value));
@@ -212,17 +324,15 @@ const UserTable = () => {
             <option value={25}>25</option>
             <option value={50}>50</option>
           </select>
-
-          <span>Entries</span>
         </div>
 
-        {/* Right: search */}
-        <label className="input input-bordered input-xs flex items-center gap-2 h-10 rounded-lg px-3 text-xs bg-white text-black">
-          <FiSearch size={13} className="text-gray-400" />
+        <label className="input input-bordered flex items-center gap-2 bg-white">
+          <FiSearch />
+
           <input
             type="text"
-            placeholder="Search"
-            className="grow bg-transparent outline-none text-[16px] w-32 "
+            className="grow"
+            placeholder="Search..."
             value={search}
             onChange={(e) => {
               setSearch(e.target.value);
@@ -232,143 +342,144 @@ const UserTable = () => {
         </label>
       </div>
 
-      {/* ── Table ───────────────────────────────────────────────────── */}
+      {/* Table */}
+
       <div className="overflow-x-auto">
-        <table className="table table-md w-full">
-          <thead className="bg-gray-100 text-gray-600 text-xs font-semibold">
+        <table className="table w-full">
+          <thead className="bg-gray-100">
             <tr>
-              <th className="w-10 bg-gray-100">
-                {/*toggle all the user*/}
-                {/* <input
-                  type="checkbox"
-                  className="checkbox checkbox-sm border-gray-400 checked:bg-orange-500 checked:border-orange-500"
-                  checked={selected.length === user.length}
-                  onChange={toggleAll}
-                /> */}
-              </th>
-              <th className="bg-gray-100">
-                <span className="inline-flex items-center gap-0.5 font-bold text-lg">
-                  Name <SortIcon />
+              <th></th>
+
+              <th>
+                <span className="inline-flex items-center">
+                  Name
+                  <SortIcon />
                 </span>
               </th>
-              <th className="bg-gray-100">
-                <span className="inline-flex items-center gap-0.5 font-bold text-lg">
-                  Email <SortIcon />
+
+              <th>
+                <span className="inline-flex items-center">
+                  Email
+                  <SortIcon />
                 </span>
               </th>
-              <th className="bg-gray-100">
-                <span className="inline-flex items-center gap-0.5 font-bold text-lg">
-                  Created Date <SortIcon />
+
+              <th>
+                <span className="inline-flex items-center">
+                  Created Date
+                  <SortIcon />
                 </span>
               </th>
-              <th className="bg-gray-100">
-                <span className="inline-flex items-center gap-0.5 font-bold text-lg">
-                  Role <SortIcon />
+
+              <th>
+                <span className="inline-flex items-center">
+                  Role
+                  <SortIcon />
                 </span>
               </th>
-              <th className="bg-gray-100">
-                <span className="inline-flex items-center gap-0.5 font-bold text-lg">
-                  Status <SortIcon />
+
+              <th>
+                <span className="inline-flex items-center">
+                  Status
+                  <SortIcon />
                 </span>
               </th>
-              <th className="bg-gray-100 text-center">
-                <span className="inline-flex items-center gap-0.5 font-bold text-lg">
-                  Actions <SortIcon />
-                </span>
-              </th>
+
+              <th className="text-center">Actions</th>
             </tr>
           </thead>
 
           <tbody>
             {paginated.length === 0 ? (
               <tr>
-                <td colSpan={7} className="text-center text-gray-400 py-10">
+                <td colSpan={7} className="text-center py-10 text-gray-500">
                   No users found.
                 </td>
               </tr>
             ) : (
               paginated.map((user) => (
-                <tr
-                  key={user.id}
-                  className="hover:bg-gray-50 transition-colors"
-                >
+                <tr key={user.id} className="hover:bg-gray-50 transition">
                   {/* Checkbox */}
-                  <td>
-                    {/* Toggle single user*/}
-                    {/* <input
-                      type="checkbox"
-                      className="checkbox checkbox-sm border-gray-400 checked:bg-orange-500 checked:border-orange-500"
-                      checked={selected.includes(user.id)}
-                      onChange={() => toggleOne(user.id)}
-                    /> */}
-                  </td>
+                  <td></td>
 
-                  {/* Name + Avatar */}
+                  {/* Name */}
                   <td>
-                    <div className="flex items-center gap-2.5">
+                    <div className="flex items-center gap-3">
                       <div className="avatar">
-                        <div className="w-10 h-10 rounded-full">
+                        <div className="w-10 rounded-full">
                           <img src={user.avatar} alt={user.name} />
                         </div>
                       </div>
-                      <span className="font-medium text-gray-800 text-[15px]">
-                        {user.name}
-                      </span>
+
+                      <div>
+                        <div className="font-semibold">{user.name}</div>
+
+                        <div className="text-xs text-gray-400">
+                          {user.phone}
+                        </div>
+                      </div>
                     </div>
                   </td>
 
                   {/* Email */}
-                  <td className="text-gray-500 text-[15px]">{user.email}</td>
+                  <td>{user.email}</td>
 
-                  {/* Date */}
-                  <td className="text-gray-500 text-[15px]">{user.date}</td>
+                  {/* Created Date */}
+                  <td>{user.date}</td>
 
-                  {/* Role Badge */}
+                  {/* Role */}
+                  {/* Role */}
                   <td>
-                    <span
-                      className={`badge badge-sm border-0 font-medium text-[15px] px-2.5 py-0.5 ${
-                        user.role === "Employee"
-                          ? "bg-pink-100 text-pink-600"
-                          : "bg-purple-100 text-purple-600"
-                      }`}
-                    >
-                      {user.role}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className="badge badge-info badge-outline">
+                        {user.roles?.[0]?.roleName || "-"}
+                      </span>
+
+                      {user.roles?.length > 1 && (
+                        <span
+                          className="text-xs text-blue-600 font-medium cursor-pointer"
+                          title={user.roles
+                            .slice(1)
+                            .map((r) => r.roleName)
+                            .join(", ")}
+                        >
+                          +{user.roles.length - 1} more
+                        </span>
+                      )}
+                    </div>
                   </td>
 
-                  {/* Status Badge */}
+                  {/* Status */}
                   <td>
                     <span
-                      className={`badge badge-sm border-0 text-white font-semibold text-[12px] gap-1.5 px-2.5 py-0.5 ${
-                        user.status === "Active" ? "bg-green-500" : "bg-red-500"
+                      className={`badge text-white ${
+                        user.status === "Active"
+                          ? "badge-success"
+                          : "badge-error"
                       }`}
                     >
-                      <span className="w-1.5 h-1.5 rounded-full bg-white inline-block" />
                       {user.status}
                     </span>
                   </td>
 
                   {/* Actions */}
-                  <td className="text-center">
-                    <div className="flex justify-center items-center gap-2">
+                  <td>
+                    <div className="flex justify-center gap-2">
                       <button
-                        className="btn btn-ghost btn-xs text-gray-400 hover:text-orange-500"
-                        onClick={() => {
-                          setEditUser(user);
-                          setIsEditModalOpen(true);
-                        }}
+                        className="btn btn-ghost btn-sm text-orange-500"
+                        onClick={() => handleEdit(user.id)}
                       >
-                        <FiEdit2 size={14} />
+                        <FiEdit2 />
                       </button>
+
                       <button
-                        className="btn btn-ghost btn-xs text-gray-400 hover:text-red-500 hover:bg-red-50 p-1 min-h-0 h-auto rounded"
-                        title="Delete"
+                        className="btn btn-ghost btn-sm text-red-500"
                         onClick={() => {
                           setDeleteTarget(user);
                           setIsDeleteModalOpen(true);
                         }}
                       >
-                        <FiTrash2 size={14} />
+                        <FiTrash2 />
                       </button>
                     </div>
                   </td>
@@ -378,8 +489,8 @@ const UserTable = () => {
           </tbody>
         </table>
       </div>
+      {/* ================= Pagination ================= */}
 
-      {/* ── Footer / Pagination ─────────────────────────────────────── */}
       <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-3 border-t border-gray-200">
         <p className="text-sm text-gray-500">
           Showing {startEntry} - {endEntry} of {totalEntries} entries
@@ -387,48 +498,52 @@ const UserTable = () => {
 
         <div className="join">
           <button
-            className="join-item btn btn-sm btn-ghost border border-gray-200"
-            onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+            className="join-item btn btn-sm"
             disabled={safePage === 1}
+            onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
           >
             ❮
           </button>
 
-          {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-            <button
-              key={page}
-              className={`join-item btn btn-sm border-none ${
-                page === safePage
-                  ? "bg-orange-500 text-white hover:bg-orange-600"
-                  : "btn-ghost border border-gray-200"
-              }`}
-              onClick={() => setCurrentPage(page)}
-            >
-              {page}
-            </button>
-          ))}
+          {Array.from({ length: totalPages }, (_, index) => index + 1).map(
+            (page) => (
+              <button
+                key={page}
+                onClick={() => setCurrentPage(page)}
+                className={`join-item btn btn-sm ${
+                  safePage === page ? "btn-warning text-white" : ""
+                }`}
+              >
+                {page}
+              </button>
+            ),
+          )}
 
           <button
-            className="join-item btn btn-sm btn-ghost border border-gray-200"
-            onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+            className="join-item btn btn-sm"
             disabled={safePage === totalPages}
+            onClick={() =>
+              setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+            }
           >
             ❯
           </button>
         </div>
       </div>
 
-      {/* ── Delete Confirmation Modal ────────────────────────────── */}
+      {/* ================= Delete Modal ================= */}
+
       <DeleteUserModal
         isOpen={isDeleteModalOpen}
         deleteTarget={deleteTarget}
         onClose={() => {
-          setIsDeleteModalOpen(false);
           setDeleteTarget(null);
+          setIsDeleteModalOpen(false);
         }}
         onConfirm={handleDeleteUser}
       />
-      {/* ── Edit Modal ────────────────────────────── */}
+
+      {/* ================= Edit Modal ================= */}
 
       <EditUserModal
         isOpen={isEditModalOpen}

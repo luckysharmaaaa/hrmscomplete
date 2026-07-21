@@ -83,7 +83,10 @@ const DateRangePickerButton = ({
         })
       : "";
 
-  const displayLabel = `${formatDate(value[0].startDate)} - ${formatDate(value[0].endDate)}`;
+const displayLabel =
+  value && value.length > 0
+    ? `${formatDate(value[0].startDate)} - ${formatDate(value[0].endDate)}`
+    : "Select Date";
 
   return (
     <div className="relative" ref={datePickerRef}>

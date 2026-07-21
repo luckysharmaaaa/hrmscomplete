@@ -1,16 +1,24 @@
 import React, { useState } from "react";
-import { FiHome, FiChevronRight } from "react-icons/fi";
+import { FiChevronRight } from "react-icons/fi";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import AddIcon from "@mui/icons-material/Add";
 import DescriptionOutlinedIcon from "@mui/icons-material/DescriptionOutlined";
 import PictureAsPdfOutlinedIcon from "@mui/icons-material/PictureAsPdfOutlined";
 import TableChartOutlinedIcon from "@mui/icons-material/TableChartOutlined";
+
 import UserTable from "../components/UserTable";
 import AddUserDrawer from "../components/AddUserDrawer";
 
 const User = () => {
-  // drawer logic
   const [openDrawer, setOpenDrawer] = useState(false);
+
+  // Optional: refresh user table after create
+  const handleUserCreated = () => {
+    setOpenDrawer(false);
+
+    // If UserTable has fetchUsers() later,
+    // call it here or trigger reload.
+  };
 
   return (
     <div className="space-y-6">
@@ -80,7 +88,12 @@ const User = () => {
       {/* Table Section */}
       <div>
         <UserTable />
-        <AddUserDrawer open={openDrawer} onClose={() => setOpenDrawer(false)} />
+
+        <AddUserDrawer
+          open={openDrawer}
+          onClose={() => setOpenDrawer(false)}
+          onSuccess={handleUserCreated}
+        />
       </div>
     </div>
   );
