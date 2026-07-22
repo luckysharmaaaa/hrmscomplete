@@ -23,4 +23,21 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
+// Redirect to Login if Unauthorized (401)
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      // Remove stored data
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+
+      // Redirect to Login page
+      window.location.href = "/";
+    }
+
+    return Promise.reject(error);
+  }
+);
+
 export default api;

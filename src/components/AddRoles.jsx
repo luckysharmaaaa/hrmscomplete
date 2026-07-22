@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import CloseIcon from "@mui/icons-material/Close";
 import { BadgeCheck } from "lucide-react";
-
 import RolePermissionTable from "./RolePermissionTable";
 
 const AddRoles = ({
@@ -11,38 +10,18 @@ const AddRoles = ({
   editRole,
 }) => {
 
-  // ===========================================
-  // Role Form
-  // ===========================================
-
   const [roleData, setRoleData] = useState({
-
     roleName: "",
-
     roleCode: "",
-
     description: "",
-
     status: "Active",
-
   });
 
-  // ===========================================
-  // Permission States
-  // ===========================================
+  const [selectedModules, setSelectedModules] = useState([]);
 
-  const [selectedModules, setSelectedModules] =
-    useState([]);
-
-  const [permissions, setPermissions] =
-    useState([]);
-
-  // ===========================================
-  // Validation
-  // ===========================================
+  const [permissions, setPermissions] = useState([]);
 
   const [errors, setErrors] = useState({});
-
   // ===========================================
   // Edit Mode
   // ===========================================
@@ -210,55 +189,33 @@ const AddRoles = ({
       {/* Overlay */}
 
       {open && (
-        <div
-          className="fixed inset-0 bg-black/40 h-screen z-40"
-          onClick={onClose}
-        />
+        <div onClick={onClose} className="fixed inset-0 bg-black/40 z-999" />
       )}
 
       {/* Drawer */}
 
       <div
-        className={`fixed top-0 right-0 h-screen w-[90vw] max-w-350 bg-white z-90 shadow-2xl flex flex-col overflow-hidden transition-transform duration-300 ${open ? "translate-x-0" : "translate-x-full"
-          }`}
+        className={`fixed top-0 right-0 h-full w-125 bg-white z-1000 transition-transform duration-300 overflow-y-auto shadow-lg ${
+          open ? "translate-x-0" : "translate-x-full"
+        }`}
       >
         {/* ====================================== */}
         {/* Header */}
-        {/* ====================================== */}
-
-        <div className="flex items-center justify-between px-6 py-5 border-b bg-white">
-
-          <div className="flex items-center gap-4">
-
-            <div className="w-12 h-12 rounded-xl bg-orange-100 flex items-center justify-center">
-
-              <BadgeCheck
-                size={24}
-                className="text-orange-500"
-              />
-
+        <div className="flex items-center justify-between p-5 border-b border-gray-100 bg-white">
+          <div className="flex items-center gap-3.5">
+            <div className="p-2.5 bg-orange-50 text-orange-500 rounded-xl shrink-0 shadow-sm border border-orange-100/30">
+              <BadgeCheck size={22} />
             </div>
-
             <div>
-
-              <h2 className="text-2xl font-bold text-[#0F265C]">
-
-                {editRole
-                  ? "Edit Role"
-                  : "Add Role"}
-
+              <h2 className="text-2xl font-bold text-[#0F265C] tracking-tight leading-tight">
+                {editRole ? "Edit Role" : "Add Role"}
               </h2>
-
-              <p className="text-sm text-gray-500">
-
+              <p className="text-xs text-gray-400 font-medium mt-1">
                 {editRole
-                  ? "Update role information & permissions"
-                  : "Create a new role"}
-
+                  ? "Update permission scopes for this role"
+                  : "Create a new role level for user assignments"}
               </p>
-
             </div>
-
           </div>
 
           <button
@@ -533,7 +490,7 @@ const AddRoles = ({
     </>
   );
 
-
 };
+
 
 export default AddRoles;

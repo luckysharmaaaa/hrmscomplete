@@ -91,6 +91,7 @@ function StatCard({ label, value, colorClasses }) {
       <div className={`p-2.5 rounded-lg ${colorClasses}`}>
         <Layers size={18} />
       </div>
+
       <div>
         <p className="text-2xl font-bold text-gray-800">{value}</p>
         <p className="text-xs text-gray-400">{label}</p>
@@ -137,8 +138,8 @@ function ModuleRow({ node, level, allModules, onEdit, onDelete, onToggleStatus }
                 level === 0
                   ? "text-sm font-semibold text-gray-800"
                   : level === 1
-                  ? "text-sm font-medium text-gray-600"
-                  : "text-sm text-gray-500"
+                    ? "text-sm font-medium text-gray-600"
+                    : "text-sm text-gray-500"
               }
             >
               {node.moduleName}
@@ -250,10 +251,12 @@ function ModuleFormModal({ isOpen, onClose, editData, allModules, onSave }) {
             <div className="p-2.5 bg-orange-50 text-orange-500 rounded-xl shrink-0 shadow-sm border border-orange-100/30">
               <Layers size={22} />
             </div>
+
             <div>
               <h2 className="text-2xl font-bold text-[#0F265C] tracking-tight leading-tight">
                 {editData ? "Edit Module" : "Add Module"}
               </h2>
+
               <p className="text-xs text-gray-400 font-medium mt-1">
                 {editData
                   ? "Update configuration parameters for this module"
@@ -261,7 +264,11 @@ function ModuleFormModal({ isOpen, onClose, editData, allModules, onSave }) {
               </p>
             </div>
           </div>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition p-1 rounded-lg hover:bg-gray-100">
+
+          <button
+            onClick={onClose}
+            className="text-gray-400 hover:text-gray-600 transition p-1 rounded-lg hover:bg-gray-100"
+          >
             <X size={18} />
           </button>
         </div>
@@ -342,12 +349,15 @@ function ModuleFormModal({ isOpen, onClose, editData, allModules, onSave }) {
             <button
               type="button"
               onClick={onClose}
+              // className="px-6 py-2.5 border border-gray-300 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-100 bg-white transition"
               className="px-6 py-2.5 border border-gray-300 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-100 bg-white transition"
             >
+
               Cancel
             </button>
             <button
               type="submit"
+              // className="px-6 py-2.5 bg-orange-500 hover:bg-orange-600 text-white rounded-lg text-sm font-semibold transition shadow-sm"
               className="px-6 py-2.5 bg-orange-500 hover:bg-orange-600 text-white rounded-lg text-sm font-semibold transition shadow-sm"
             >
               {editData ? "Update Module" : "Add Module"}
@@ -355,7 +365,7 @@ function ModuleFormModal({ isOpen, onClose, editData, allModules, onSave }) {
           </div>
         </form>
       </div>
-      </div>
+    </div>
   );
 }
 
@@ -372,6 +382,7 @@ function DeleteConfirmModal({ module, onClose, onConfirm }) {
           <div className="p-3 bg-red-50 rounded-full">
             <AlertTriangle size={24} className="text-red-500" />
           </div>
+
           <h3 className="text-base font-semibold text-gray-800">
             Delete Module?
           </h3>
@@ -382,14 +393,15 @@ function DeleteConfirmModal({ module, onClose, onConfirm }) {
         </div>
 
         <div className="flex gap-3 mt-6">
-          <button onClick={onClose} className="flex-1 border border-gray-200 text-gray-600 py-2.5 rounded-lg text-sm font-medium hover:bg-gray-50 transition">
+
+          <button
+            onClick={onClose}
+            className="flex-1 border border-gray-200 text-gray-600 py-2.5 rounded-lg text-sm font-medium hover:bg-gray-50 transition"
+          >
             Cancel
           </button>
           <button
-            onClick={() => {
-              onConfirm(module.id);
-              onClose();
-            }}
+
             onClick={() => {
               onConfirm(module.id);
               onClose();
@@ -523,6 +535,7 @@ export default function Modules() {
           <h2 className="text-sm font-semibold text-gray-700 shrink-0">
             Module Tree
           </h2>
+
           <div className="flex items-center gap-2 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-500 w-64">
             <Search size={14} className="shrink-0 text-gray-400" />
             <input
@@ -559,6 +572,7 @@ export default function Modules() {
                     colSpan={6}
                     className="text-center py-12 text-gray-400 text-sm"
                   >
+
                     No modules found.
                   </td>
                 </tr>

@@ -6,23 +6,12 @@ import { useNavigate } from "react-router-dom";
 
 import { FaFacebookF, FaApple } from "react-icons/fa";
 import { Mail, EyeOff, Eye } from "lucide-react";
-import { login } from "../services/authServices";
+import { login } from "../services/loginAPI";
+import { toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+
 function Login() {
   const navigate = useNavigate();
-
-  //login with google pop-up
-  const handleGoogleLogin = async () => {
-    try {
-      const response = await googleLogin();
-
-      console.log(response);
-
-      // navigate dashboard
-      navigate("/dashboard");
-    } catch (error) {
-      console.log(error);
-    }
-  };
 
   const [formData, setFormData] = useState({
     email: "",
@@ -31,7 +20,21 @@ function Login() {
   });
 
   const [errors, setErrors] = useState({});
+  const [apiError, setApiError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+
+  // Google Login
+  const handleGoogleLogin = async () => {
+    try {
+      // const response = await googleLogin();
+      // console.log(response);
+
+      navigate("/users");
+    } catch (error) {
+      console.log(error);
+      toast.error("Google login failed");
+    }
+  };
 
   // Handle Input Change
   const handleChange = (e) => {
@@ -41,13 +44,19 @@ function Login() {
       ...prev,
       [name]: type === "checkbox" ? checked : value,
     }));
+
+    setErrors((prev) => ({
+      ...prev,
+      [name]: "",
+    }));
+
+    setApiError("");
   };
 
   // Validation
   const validateForm = () => {
     const newErrors = {};
 
-    // Email Validation
     if (!formData.email.trim()) {
       newErrors.email = "Email is required";
     } else if (
@@ -56,7 +65,6 @@ function Login() {
       newErrors.email = "Invalid email address";
     }
 
-    // Password Validation
     if (!formData.password) {
       newErrors.password = "Password is required";
     } else if (formData.password.length < 6) {
@@ -65,32 +73,49 @@ function Login() {
 
     setErrors(newErrors);
 
-    return Object.keys(newErrors).length === 0;
+    if (Object.keys(newErrors).length > 0) {
+      toast.error(Object.values(newErrors)[0]);
+      return false;
+    }
+
+    return true;
   };
 
   // Submit Form
   const handleSubmit = async (e) => {
-  e.preventDefault();
+    e.preventDefault();
 
-  if (!validateForm()) return;
+    setApiError("");
 
-  try {
-    const response = await login({
-      email: formData.email,
-      password: formData.password,
-    });
+    if (!validateForm()) return;
 
-    console.log(response);
+    try {
+      const response = await login({
+        email: formData.email,
+        password: formData.password,
+      });
 
-    navigate("/dashboard");
-  } catch (error) {
-    console.log(error);
-    alert(error.message || "Login Failed");
-  }
-};
+      console.log(response);
+
+      toast.success("Login Successful!");
+
+      navigate("/profile");
+    } catch (error) {
+      console.error(error);
+
+      const message =
+        error.response?.data?.message ||
+        error.response?.data?.error ||
+        "Invalid email or password";
+
+      setApiError(message);
+      toast.error(message);
+    }
+  };
+
   return (
     <div className="flex h-screen overflow-hidden bg-white">
-      {/* LEFT SIDE IMAGE */}
+      {/* LEFT IMAGE */}
       <div className="w-[43%] hidden lg:block">
         <img
           src={login_bg}
@@ -112,7 +137,9 @@ function Login() {
 
           {/* Heading */}
           <div className="text-center mb-3">
-            <h1 className="text-[22px] font-bold text-[#1b2559]">Sign In</h1>
+            <h1 className="text-[22px] font-bold text-[#1b2559]">
+              Sign In
+            </h1>
 
             <p className="text-gray-500 mt-1 text-xs">
               Please enter your details to sign in
@@ -129,9 +156,9 @@ function Login() {
               <input
                 type="email"
                 name="email"
+                placeholder="Enter email"
                 value={formData.email}
                 onChange={handleChange}
-                placeholder="Enter email"
                 className="w-full px-3 py-2 outline-none text-sm rounded-lg"
               />
 
@@ -141,7 +168,9 @@ function Login() {
             </div>
 
             {errors.email && (
-              <p className="text-red-500 text-xs mt-1">{errors.email}</p>
+              <p className="text-red-500 text-xs mt-1">
+                {errors.email}
+              </p>
             )}
           </div>
 
@@ -155,9 +184,9 @@ function Login() {
               <input
                 type={showPassword ? "text" : "password"}
                 name="password"
+                placeholder="Enter password"
                 value={formData.password}
                 onChange={handleChange}
-                placeholder="Enter password"
                 className="w-full px-3 py-2 outline-none text-sm rounded-lg"
               />
 
@@ -166,16 +195,28 @@ function Login() {
                 onClick={() => setShowPassword(!showPassword)}
                 className="px-3 text-gray-400"
               >
-                {showPassword ? <Eye size={16} /> : <EyeOff size={16} />}
+                {showPassword ? (
+                  <Eye size={16} />
+                ) : (
+                  <EyeOff size={16} />
+                )}
               </button>
             </div>
 
             {errors.password && (
-              <p className="text-red-500 text-xs mt-1">{errors.password}</p>
+              <p className="text-red-500 text-xs mt-1">
+                {errors.password}
+              </p>
+            )}
+
+            {apiError && (
+              <p className="text-red-500 text-xs mt-1">
+                {apiError}
+              </p>
             )}
           </div>
 
-          {/* Remember + Forgot */}
+          {/* Remember Me */}
           <div className="flex justify-between items-center mb-3 text-xs">
             <label className="flex items-center gap-2 text-gray-600">
               <input
@@ -187,44 +228,51 @@ function Login() {
               Remember Me
             </label>
 
-            <button type="button" className="text-red-500 hover:underline">
+            <button
+              type="button"
+              className="text-red-500 hover:underline"
+            >
               Forgot Password?
             </button>
           </div>
 
-          {/* Sign In Button */}
+          {/* Login Button */}
           <button
-            className="w-full h-9 bg-orange-500 hover:bg-orange-600 text-white rounded-lg font-medium text-sm transition flex items-center justify-center"
-            // onClick={() => navigate("profile")}
+            type="submit"
+            className="w-full h-9 bg-orange-500 hover:bg-orange-600 text-white rounded-lg font-medium text-sm"
           >
             Sign In
           </button>
 
           {/* Divider */}
-          <div className="flex items-center my-3">
+          <div className="flex items-center my-2">
             <div className="flex-1 border-t border-gray-300"></div>
-
-            <span className="mx-3 text-gray-400 text-xs">Or</span>
-
+            <span className="mx-2 text-gray-400 text-xs">Or</span>
             <div className="flex-1 border-t border-gray-300"></div>
           </div>
 
-          {/* Social Login */}
-          <p className="flex justify-center items-center mb-4  text-gray-500 font-semi-bold">
+          <p className="text-center text-gray-500 text-sm mb-3">
             Continue with Google
           </p>
-          <div className="flex justify-center gap-2">
+
+          <div className="flex justify-center">
             <button
+              type="button"
               onClick={handleGoogleLogin}
-              className="w-100 h-10 border border-gray-300 rounded-lg flex items-center justify-center hover:bg-gray-50 transition"
+              className="w-full h-10 border border-gray-300 rounded-lg flex items-center justify-center hover:bg-gray-50"
             >
-              <img src={google_icon} alt="Google" className="w-6 h-6" />
+              <img
+                src={google_icon}
+                alt="Google"
+                className="w-6 h-6"
+              />
             </button>
           </div>
 
-          {/* COPYRIGHT */}
-          <div className="text-center pt-3">
-            <p className="text-xs text-gray-500">Copyright © 2026 - SmartHR</p>
+          <div className="text-center pt-4">
+            <p className="text-xs text-gray-500">
+              Copyright © 2026 - SmartHR
+            </p>
           </div>
         </form>
       </div>

@@ -1,11 +1,16 @@
 import React, { useEffect, useState } from "react";
-import axios from "axios";
+import api from "../services/api"; // adjust the path
 import {
   FiChevronDown,
   FiChevronRight,
 } from "react-icons/fi";
 
 const BASE_URL = "http://localhost:5000/api/v1";
+const token = localStorage.getItem("token");
+
+const headers = {
+  Authorization: `Bearer ${token}`,
+};
 
 const permissionColumns = [
   "view",
@@ -56,9 +61,9 @@ const RolePermissionTable = ({
 
       setLoading(true);
 
-      const res = await axios.get(
-        `${BASE_URL}/modules`
-      );
+     const res = await api.get("/modules" ,{
+    headers,
+  });
 
       const list = res.data.data || [];
 
@@ -108,13 +113,9 @@ const RolePermissionTable = ({
       const [moduleRes, permissionRes] =
         await Promise.all([
 
-          axios.get(
-            `${BASE_URL}/role-module-mapping/${roleId}`
-          ),
+         api.get(`/role-module-mapping/${roleId}` ,   { headers }),
 
-          axios.get(
-            `${BASE_URL}/role-permissions/${roleId}`
-          ),
+          api.get(`/role-permissions/${roleId}` ,   { headers } ),
 
         ]);
 

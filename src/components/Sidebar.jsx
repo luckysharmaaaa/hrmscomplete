@@ -1,5 +1,6 @@
 import React from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
+import { logout } from "../services/loginAPI";
 import {
   LayoutDashboard,
   FileText,
@@ -7,7 +8,7 @@ import {
   CalendarCheck,
   ClipboardList,
   ClipboardCheck,
-  History,
+  CalendarClock,
   Settings2,
   Users,
   ShieldCheck,
@@ -16,6 +17,8 @@ import {
   LogOut,
   Home,
   Layers,
+  Building2,
+  Briefcase,
 } from "lucide-react";
 
 function Sidebar() {
@@ -41,10 +44,23 @@ function Sidebar() {
         : "text-gray-600 hover:bg-orange-50 hover:text-orange-500"
     }`;
 
+  const subLink = (path) =>
+    `flex items-center gap-3 pl-8 pr-4 py-[7px] rounded-lg text-[13px] transition-all duration-150 ${
+      isActive(path)
+        ? activeClass
+        : "text-gray-500 hover:bg-orange-50 hover:text-orange-500"
+    }`;
+
+    const handleLogout = () => {
+  logout(); // remove token and user
+
+  navigate("/");
+};
+
   return (
     <div className="w-64 h-screen bg-white border-r border-gray-100 fixed left-0 top-0 overflow-y-auto flex flex-col  shadow-sm">
       {/* ── Logo ── */}
-      <div className="px-6 py-2.5 border-b border-gray-100 shrink-0 flex justify-center items-center">
+      <div className="px-6 py-[10px] border-b border-gray-100 shrink-0 flex justify-center items-center">
         <Link to="/dashboard">
           <img
             src={
@@ -58,7 +74,6 @@ function Sidebar() {
 
       {/* ── Navigation ── */}
       <nav className="flex-1 px-3 py-5 overflow-y-auto">
-        {/* Section label */}
         <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3 px-2">
           Main Menu
         </p>
@@ -98,8 +113,7 @@ function Sidebar() {
                       </div>
 
                       <div className="collapse-content p-0">
-                        <ul className="ml-8 border-l-2 border-gray-100 pl-3 space-y-0.5 pb-1">
-                          {/* leave-admin*/}
+                        <ul className="ml-8 border-l-2 border-gray-100 pl-3 space-y-[2px] pb-1">
                           <li>
                             <Link
                               to="/leave-admin"
@@ -110,19 +124,17 @@ function Sidebar() {
                                   size={13}
                                   className="shrink-0 opacity-60"
                                 />
-                                {"Leave(Admin)"}
+                                Leave(Admin)
                               </span>
                             </Link>
                           </li>
-
-                          {/* Leave Employee */}
                           <li>
                             <Link
                               to="/leave-employee"
                               className={subNavItem("/leave-employee")}
                             >
                               <span className="flex items-center gap-2">
-                                <History
+                                <CalendarClock
                                   size={13}
                                   className="shrink-0 opacity-60"
                                 />
@@ -130,8 +142,6 @@ function Sidebar() {
                               </span>
                             </Link>
                           </li>
-
-                          {/* Leave Settings */}
                           <li>
                             <Link
                               to="/leave-setting"
@@ -155,11 +165,7 @@ function Sidebar() {
                   <li>
                     <Link
                       to="/attendance-admin"
-                      className={`flex items-center gap-3 pl-8 pr-4 py-1.75 rounded-lg text-[13px] transition-all duration-150 ${
-                        isActive("/attendance-admin")
-                          ? activeClass
-                          : "text-gray-500 hover:bg-orange-50 hover:text-orange-500"
-                      }`}
+                      className={subLink("/attendance-admin")}
                     >
                       <CalendarCheck size={15} className="shrink-0" />
                       Attendance (Admin)
@@ -170,11 +176,7 @@ function Sidebar() {
                   <li>
                     <Link
                       to="/attendance-employee"
-                      className={`flex items-center gap-3 pl-8 pr-4 py-1.75 rounded-lg text-[13px] transition-all duration-150 ${
-                        isActive("/attendance-employee")
-                          ? activeClass
-                          : "text-gray-500 hover:bg-orange-50 hover:text-orange-500"
-                      }`}
+                      className={subLink("/attendance-employee")}
                     >
                       <CalendarDays size={15} className="shrink-0" />
                       Attendance (Employee)
@@ -185,11 +187,7 @@ function Sidebar() {
                   <li>
                     <Link
                       to="/holiday-calender"
-                      className={`flex items-center gap-3 pl-8 pr-4 py-1.75 rounded-lg text-[13px] transition-all duration-150 ${
-                        isActive("/holiday-calender")
-                          ? activeClass
-                          : "text-gray-500 hover:bg-orange-50 hover:text-orange-500"
-                      }`}
+                      className={subLink("/holiday-calender")}
                     >
                       <CalendarDays size={15} className="shrink-0" />
                       Holiday Calendar
@@ -200,14 +198,50 @@ function Sidebar() {
                   <li>
                     <Link
                       to="/wfh-management"
-                      className={`flex items-center gap-3 pl-8 pr-4 py-1.75 rounded-lg text-[13px] transition-all duration-150 ${
-                        isActive("/wfh-management")
-                          ? activeClass
-                          : "text-gray-500 hover:bg-orange-50 hover:text-orange-500"
-                      }`}
+                      className={subLink("/wfh-management")}
                     >
                       <Home size={15} className="shrink-0" />
                       WFH Management
+                    </Link>
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </li>
+
+          {/* ── Employees (Parent Collapse) ── */}
+          <li>
+            <div className="collapse collapse-arrow bg-white rounded-lg">
+              <input type="checkbox" defaultChecked />
+
+              <div className="collapse-title flex items-center gap-3 px-4 py-[9px] text-[13.5px] font-medium text-gray-800 min-h-0">
+                <Users size={17} className="shrink-0 text-gray-500" />
+                Employees
+              </div>
+
+              <div className="collapse-content p-0">
+                <ul className="space-y-[2px] pb-1">
+                  {/* Employee List */}
+                  <li>
+                    <Link
+                      to="/employee-list"
+                      className={subLink("/employee-list")}
+                    >
+                      <ClipboardList size={15} className="shrink-0" />
+                      Employee List
+                    </Link>
+                  </li>
+
+                  <li>
+                    <Link to="/department" className={subLink("/department")}>
+                      <Building2 size={15} className="shrink-0" />
+                      Department
+                    </Link>
+                  </li>
+                  <li>
+                    <Link to="/designations" className={subLink("/designations")}>
+                      <Briefcase size={15} className="shrink-0" />
+                      Designations
                     </Link>
                   </li>
                 </ul>
@@ -276,7 +310,7 @@ function Sidebar() {
       {/* ── Logout (pinned to bottom) ── */}
       <div className="shrink-0 px-3 py-4 border-t border-gray-100">
         <button
-          onClick={() => navigate("/")}
+  onClick={handleLogout}
           className="w-full flex items-center gap-3 px-4 py-2.25 rounded-lg text-[13.5px] text-red-400 hover:bg-red-50 hover:text-red-500 transition-all duration-150 font-medium"
         >
           <LogOut size={17} className="shrink-0" />

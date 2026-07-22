@@ -25,37 +25,34 @@ const SortIcon = () => (
 );
 
 const UserTable = () => {
-  const [users, setUsers] = useState([]);
+const [users, setUsers] = useState([]);
 
-  const [selected, setSelected] = useState([]);
+const [selected, setSelected] = useState([]);
 
-  const [deleteTarget, setDeleteTarget] = useState(null);
+const [deleteTarget, setDeleteTarget] = useState(null);
 
-  const [isDeleteModalOpen, setIsDeleteModalOpen] =
-    useState(false);
+const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
-  const [rowsPerPage, setRowsPerPage] =
-    useState(10);
+const [rowsPerPage, setRowsPerPage] = useState(10);
 
-  const [search, setSearch] = useState("");
+const [search, setSearch] = useState("");
 
-  const [roleFilter, setRoleFilter] =
-    useState("");
+const today = new Date();
 
-  const [statusFilter, setStatusFilter] =
-    useState("");
+// Edit Modal
+const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+const [editUser, setEditUser] = useState(null);
 
-  const [currentPage, setCurrentPage] =
-    useState(1);
+// Pagination
+const [currentPage, setCurrentPage] = useState(1);
 
-  const [isEditModalOpen, setIsEditModalOpen] =
-    useState(false);
+// Filters
+const [roleFilter, setRoleFilter] = useState("");
+const [statusFilter, setStatusFilter] = useState("");
 
-  const [editUser, setEditUser] =
-    useState(null);
 
-  const today = new Date();
 
+const [sortBy, setSortBy] = useState("This Year");
   const [appliedRange, setAppliedRange] =
     useState([
       {
@@ -73,8 +70,6 @@ const UserTable = () => {
       },
     ]);
 
-  const [sortBy, setSortBy] =
-    useState("This Year");
 
   // ==========================================
   // Fetch Users
@@ -356,26 +351,15 @@ const UserTable = () => {
           {/* Sort */}
           <select
             value={sortBy}
-            onChange={(e) =>
-              handleSortByChange(e.target.value)
-            }
-            className="select select-bordered select-sm min-w-40 bg-white text-black"
+            onChange={(e) => handleSortByChange(e.target.value)}
+            className="select select-bordered select-sm text-sm h-10 min-h-0 rounded-lg min-w-40 bg-white text-black"
           >
             <option value="" disabled hidden>
               Sort By
             </option>
-
-            {[
-              "Last 7 Days",
-              "Last 30 Days",
-              "Last 90 Days",
-              "This Year",
-            ].map((item) => (
-              <option
-                key={item}
-                value={item}
-              >
-                {item}
+            {["Last 7 Days", "Last 30 Days", "Last 90 Days", "This Year"].map((opt) => (
+              <option key={opt} value={opt}>
+                Sort By : {opt}
               </option>
             ))}
           </select>

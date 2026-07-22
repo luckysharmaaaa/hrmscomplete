@@ -290,7 +290,7 @@ const Roles = () => {
 
             <label
               tabIndex={0}
-              className="btn bg-orange-500 hover:bg-orange-600 border-none text-white"
+              className="btn bg-orange-500 hover:bg-orange-600 border-none text-white animate-fade-in"
             >
 
               <DescriptionOutlinedIcon fontSize="small" />
@@ -303,7 +303,7 @@ const Roles = () => {
 
             <ul
               tabIndex={0}
-              className="dropdown-content z-10 menu p-2 shadow bg-white rounded-box w-56"
+              className="dropdown-content z-10 menu p-2 shadow bg-white rounded-box w-56 animate-fade-in"
             >
 
               <li>
