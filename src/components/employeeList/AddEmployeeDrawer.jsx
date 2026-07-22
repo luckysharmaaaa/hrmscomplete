@@ -11,7 +11,8 @@ import {
 } from "lucide-react";
 import { useFormik } from "formik";
 import * as Yup from "yup";
-import { EMPLOYEE_DATA } from "./employeeData";
+import { toast } from "react-toastify";
+import { createEmployee, getImportableUsers } from "../../services/employee.service";
 
 const EMPTY_FORM = {
   firstName: "",
@@ -27,6 +28,7 @@ const EMPTY_FORM = {
   department: "",
   designation: "",
   about: "",
+  _importedUserId: null, // set when user is selected from the Import modal
 };
 
 const DEPTS = [
@@ -43,20 +45,30 @@ const DESIGNATIONS_LIST = ["Finance", "Developer", "Executive", "Manager"];
 // ── Import Employee Modal ─────────────────────────────────────────────────────
 function ImportEmployeeModal({ open, onClose, onSelect }) {
   const [search, setSearch] = useState("");
-
-  const filtered = EMPLOYEE_DATA.filter((e) => {
-    const q = search.toLowerCase();
-    return (
-      e.name.toLowerCase().includes(q) ||
-      e.empId.toLowerCase().includes(q) ||
-      e.email.toLowerCase().includes(q) ||
-      e.department.toLowerCase().includes(q)
-    );
-  });
+  const [employees, setEmployees] = useState([]);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (!open) setSearch("");
+    if (!open) {
+      setSearch("");
+      return;
+    }
+    setLoading(true);
+    getImportableUsers()
+      .then((res) => setEmployees(res.data?.data ?? []))
+      .catch(() => toast.error("Failed to load users."))
+      .finally(() => setLoading(false));
   }, [open]);
+
+  const filtered = employees.filter((e) => {
+    const q = search.toLowerCase();
+    const name = `${e.firstName ?? ""} ${e.lastName ?? ""}`.toLowerCase();
+    return (
+      name.includes(q) ||
+      (e.email ?? "").toLowerCase().includes(q) ||
+      (e.phone ?? "").toLowerCase().includes(q)
+    );
+  });
 
   if (!open) return null;
 
@@ -115,51 +127,89 @@ function ImportEmployeeModal({ open, onClose, onSelect }) {
           </div>
         </div>
 
-        {/* Employee List */}
+        {/* User List */}
         <div className="flex-1 overflow-y-auto divide-y divide-gray-50">
-          {filtered.length === 0 ? (
+          {loading ? (
             <div className="py-12 text-center text-gray-400 text-sm">
-              No employees found.
+              Loading users…
+            </div>
+          ) : filtered.length === 0 ? (
+            <div className="py-12 text-center text-gray-400 text-sm">
+              No users found.
             </div>
           ) : (
-            filtered.map((emp) => (
-              <button
-                key={emp.id}
-                onClick={() => {
-                  onSelect(emp);
-                  onClose();
-                }}
-                className="w-full flex items-center gap-4 px-5 py-3.5 hover:bg-orange-50/60 transition text-left group"
-              >
-                {/* Avatar */}
-                <div
-                  className={`w-10 h-10 rounded-full ${emp.color || "bg-gray-400"} flex items-center justify-center text-white text-xs font-bold shrink-0`}
+            filtered.map((user) => {
+              const fullName = `${user.firstName ?? ""} ${user.lastName ?? ""}`.trim();
+              const initials = fullName
+                .split(" ")
+                .map((w) => w[0])
+                .join("")
+                .slice(0, 2)
+                .toUpperCase();
+              const alreadyEmployee = !!user.isEmployee;
+
+              return (
+                <button
+                  key={user.id}
+                  disabled={alreadyEmployee}
+                  onClick={() => {
+                    if (!alreadyEmployee) {
+                      onSelect(user);
+                      onClose();
+                    }
+                  }}
+                  className={`w-full flex items-center gap-4 px-5 py-3.5 transition text-left group ${
+                    alreadyEmployee
+                      ? "opacity-50 cursor-not-allowed bg-gray-50"
+                      : "hover:bg-orange-50/60 cursor-pointer"
+                  }`}
                 >
-                  {emp.avatar}
-                </div>
+                  {/* Avatar */}
+                  <div
+                    className={`w-10 h-10 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0 ${
+                      alreadyEmployee ? "bg-gray-400" : "bg-orange-400"
+                    }`}
+                  >
+                    {initials || "?"}
+                  </div>
 
-                {/* Info */}
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-gray-800 group-hover:text-orange-600 transition truncate">
-                    {emp.name}
-                  </p>
-                  <p className="text-xs text-gray-400 truncate">
-                    {emp.empId} &bull; {emp.email}
-                  </p>
-                </div>
+                  {/* Info */}
+                  <div className="flex-1 min-w-0">
+                    <p
+                      className={`text-sm font-semibold truncate transition ${
+                        alreadyEmployee
+                          ? "text-gray-400"
+                          : "text-gray-800 group-hover:text-orange-600"
+                      }`}
+                    >
+                      {fullName || "—"}
+                    </p>
+                    <p className="text-xs text-gray-400 truncate">
+                      {user.email ?? "—"}
+                    </p>
+                  </div>
 
-                {/* Dept badge */}
-                <span className="shrink-0 text-[11px] font-medium px-2.5 py-1 rounded-full bg-orange-50 text-orange-500 border border-orange-100">
-                  {emp.department}
-                </span>
-              </button>
-            ))
+                  {/* Badge */}
+                  {alreadyEmployee ? (
+                    <span className="shrink-0 text-[11px] font-semibold px-2.5 py-1 rounded-full bg-green-50 text-green-600 border border-green-200">
+                      ✓ Employee
+                    </span>
+                  ) : (
+                    <span className="shrink-0 text-[11px] font-medium px-2.5 py-1 rounded-full bg-orange-50 text-orange-500 border border-orange-100">
+                      Import
+                    </span>
+                  )}
+                </button>
+              );
+            })
           )}
         </div>
 
         {/* Footer count */}
         <div className="px-5 py-3 border-t border-gray-50 text-xs text-gray-400">
-          {filtered.length} employee{filtered.length !== 1 ? "s" : ""} found
+          {loading
+            ? "Loading…"
+            : `${filtered.filter((u) => !u.isEmployee).length} of ${filtered.length} user${filtered.length !== 1 ? "s" : ""} available to import`}
         </div>
       </div>
     </div>
@@ -178,6 +228,8 @@ export default function AddEmployeeDrawer({
   const [profileImage, setProfileImage] = useState(null);
   const [importModalOpen, setImportModalOpen] = useState(false);
   const [importedFrom, setImportedFrom] = useState(false); // true = fields are locked
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [apiError, setApiError] = useState(null); // inline error from API (e.g. duplicate email)
   const fileInputRef = useRef(null);
 
   const validationSchema = Yup.object().shape({
@@ -189,19 +241,21 @@ export default function AddEmployeeDrawer({
     email: Yup.string()
       .email("Invalid email format")
       .required("Email is required"),
-    password: Yup.string().when("$isEditing", (isEditing, schema) => {
-      return isEditing[0]
-        ? schema
-        : schema
-            .required("Password is required")
-            .min(6, "Password must be at least 6 characters");
+    password: Yup.string().when(["$isEditing", "_importedUserId"], {
+      is: (isEditing, importedUserId) => !isEditing && !importedUserId,
+      then: (schema) =>
+        schema
+          .required("Password is required")
+          .min(6, "Password must be at least 6 characters"),
+      otherwise: (schema) => schema,
     }),
-    confirmPassword: Yup.string().when("$isEditing", (isEditing, schema) => {
-      return isEditing[0]
-        ? schema
-        : schema
-            .required("Confirm Password is required")
-            .oneOf([Yup.ref("password")], "Passwords do not match");
+    confirmPassword: Yup.string().when(["$isEditing", "_importedUserId"], {
+      is: (isEditing, importedUserId) => !isEditing && !importedUserId,
+      then: (schema) =>
+        schema
+          .required("Confirm Password is required")
+          .oneOf([Yup.ref("password")], "Passwords do not match"),
+      otherwise: (schema) => schema,
     }),
     phone: Yup.string().required("Phone Number is required"),
     company: Yup.string().required("Company is required"),
@@ -214,20 +268,60 @@ export default function AddEmployeeDrawer({
     initialValues: EMPTY_FORM,
     validationSchema,
     context: { isEditing: !!editData },
-    onSubmit: (values) => {
-      const submittedForm = {
-        ...values,
-        name: `${values.firstName} ${values.lastName}`.trim(),
-        status: "Active",
-      };
-      onSubmit(submittedForm);
-      onClose();
+    onSubmit: async (values) => {
+      setIsSubmitting(true);
+      try {
+        const isImporting = !!values._importedUserId;
+
+        const payload = {
+          // If importing an existing user, pass their userId so the backend
+          // links the employee record instead of creating a duplicate user.
+          ...(isImporting ? { userId: values._importedUserId } : {
+            firstName: values.firstName,
+            lastName: values.lastName,
+            email: values.email,
+            phone: values.phone || null,
+            password: values.password,
+          }),
+          employeeCode: values.empId || null,
+          joiningDate: values.joiningDate || null,
+          about: values.about || null,
+          departmentId: null,   // TODO: replace with real ID when dept API is ready
+          designationId: null,  // TODO: replace with real ID when designation API is ready
+          status: true,
+        };
+
+        await createEmployee(payload);
+        toast.success("Employee created successfully!");
+        onSubmit({
+          ...values,
+          name: `${values.firstName} ${values.lastName}`.trim(),
+          status: "Active",
+        });
+        onClose();
+      } catch (error) {
+        const status = error?.response?.status;
+        const msg =
+          error?.response?.data?.message ||
+          "Failed to create employee. Please try again.";
+        const code = error?.response?.data?.errors?.code ?? null;
+
+        // 409 Conflict → show inline banner (not a toast)
+        if (status === 409) {
+          setApiError({ message: msg, code });
+        } else {
+          toast.error(msg);
+        }
+      } finally {
+        setIsSubmitting(false);
+      }
     },
   });
 
   // Reset form on open/editData change
   useEffect(() => {
     if (open) {
+      setApiError(null);
       if (editData) {
         formik.setValues({
           ...EMPTY_FORM,
@@ -260,36 +354,31 @@ export default function AddEmployeeDrawer({
   }, [open]);
 
   // ── Import handler ───────────────────────────────────────────
-  const handleImportSelect = (emp) => {
-    // Parse joiningDate to yyyy-mm-dd for the date input
-    let parsedDate = "";
-    if (emp.joiningDate) {
-      const d = new Date(emp.joiningDate);
-      if (!isNaN(d)) {
-        parsedDate = d.toISOString().split("T")[0];
-      }
-    }
-
+  // user is a row from GET /employees/users (users table, no employee record yet)
+  const handleImportSelect = (user) => {
     formik.setValues({
       ...EMPTY_FORM,
-      firstName: emp.name?.split(" ")[0] || "",
-      lastName: emp.name?.split(" ").slice(1).join(" ") || "",
-      empId: emp.empId || "",
-      email: emp.email || "",
-      phone: emp.phone || "",
-      department: emp.department || "",
-      designation: emp.designation || "",
-      joiningDate: parsedDate,
-      username: emp.email?.split("@")[0] || "",
-      company: emp.company || "",
-      about: emp.about || "",
-      // passwords stay blank — user must fill them
+      firstName: user.firstName ?? "",
+      lastName: user.lastName ?? "",
+      empId: "",           // no employee code yet — user fills this in
+      email: user.email ?? "",
+      phone: user.phone ?? "",
+      department: "",      // no dept yet — user fills this in
+      designation: "",     // no designation yet — user fills this in
+      joiningDate: "",     // no joining date yet — user fills this in
+      username: (user.email ?? "").split("@")[0],
+      company: "",
+      about: "",
+      // passwords stay blank — existing user keeps their password
       password: "",
       confirmPassword: "",
+      // Store the userId so createEmployee links to this account
+      _importedUserId: user.id,
     });
     formik.setTouched({});
     setImportedFrom(true);
   };
+
 
   // ── Image handlers ───────────────────────────────────────────
   const handleImageUpload = (e) => {
@@ -336,7 +425,11 @@ export default function AddEmployeeDrawer({
             type={type}
             disabled={isDisabled}
             value={formik.values[key]}
-            onChange={formik.handleChange}
+            onChange={(e) => {
+              formik.handleChange(e);
+              // Clear the API error banner when the user edits the email
+              if (key === "email" && apiError) setApiError(null);
+            }}
             onBlur={formik.handleBlur}
             onClick={(e) =>
               type === "date" && e.target.showPicker && e.target.showPicker()
@@ -693,36 +786,50 @@ export default function AddEmployeeDrawer({
                     )}
                 </div>
 
-                {/* ── Static error banner ── */}
-                <div className="flex items-center gap-2.5 px-4 py-3 bg-red-50 border border-red-100 rounded-xl text-sm text-red-600">
-                  <svg
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className="shrink-0"
-                  >
-                    <circle cx="12" cy="12" r="10" />
-                    <line x1="12" y1="8" x2="12" y2="12" />
-                    <line x1="12" y1="16" x2="12.01" y2="16" />
-                  </svg>
-                  <span>
-                    Employee already exists with this email address. Please
-                    choose from{" "}
-                    <button
-                      type="button"
-                      onClick={() => setImportModalOpen(true)}
-                      className="font-semibold underline hover:text-red-800 transition"
+                {/* ── Dynamic API error banner ── */}
+                {apiError && (
+                  <div className="flex items-start gap-2.5 px-4 py-3 bg-red-50 border border-red-100 rounded-xl text-sm text-red-600">
+                    <svg
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className="shrink-0 mt-0.5"
                     >
-                      Import Employee
-                    </button>
-                    .
-                  </span>
-                </div>
+                      <circle cx="12" cy="12" r="10" />
+                      <line x1="12" y1="8" x2="12" y2="12" />
+                      <line x1="12" y1="16" x2="12.01" y2="16" />
+                    </svg>
+
+                    {apiError.code === "ALREADY_EMPLOYEE" ? (
+                      // Person is already a fully set-up employee — cannot import
+                      <span>
+                        {apiError.message} This person already has an employee
+                        profile and cannot be added again.
+                      </span>
+                    ) : (
+                      // Person exists in users table but not yet an employee — can import
+                      <span>
+                        {apiError.message} Please{" "}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setApiError(null);
+                            setImportModalOpen(true);
+                          }}
+                          className="font-semibold underline hover:text-red-800 transition"
+                        >
+                          Import this user
+                        </button>{" "}
+                        instead of creating a new account.
+                      </span>
+                    )}
+                  </div>
+                )}
 
                 {/* Action buttons */}
                 <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
@@ -735,9 +842,35 @@ export default function AddEmployeeDrawer({
                   </button>
                   <button
                     type="submit"
-                    className="px-6 py-2.5 bg-orange-500 hover:bg-orange-600 text-white rounded-lg text-sm font-semibold transition shadow-sm"
+                    disabled={isSubmitting}
+                    className="px-6 py-2.5 bg-orange-500 hover:bg-orange-600 disabled:opacity-60 disabled:cursor-not-allowed text-white rounded-lg text-sm font-semibold transition shadow-sm flex items-center gap-2"
                   >
-                    {editData ? "Save Changes" : "Save"}
+                    {isSubmitting && (
+                      <svg
+                        className="animate-spin h-4 w-4 text-white"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                      >
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                        />
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8v8H4z"
+                        />
+                      </svg>
+                    )}
+                    {isSubmitting
+                      ? "Saving…"
+                      : editData
+                        ? "Save Changes"
+                        : "Save"}
                   </button>
                 </div>
               </div>
