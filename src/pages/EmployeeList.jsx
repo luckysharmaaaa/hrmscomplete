@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
+
 import {
   ChevronRight,
   FileText,
@@ -8,13 +9,15 @@ import {
   LayoutList,
   LayoutGrid,
 } from "lucide-react";
-
-import { EMPLOYEE_DATA } from "../components/employeeList/employeeData";
+// Mock Employee_Data
+// import { EMPLOYEE_DATA } from "../components/employeeList/employeeData";
 import EmployeeStatCards from "../components/employeeList/EmployeeStatCards";
 import EmployeeTable from "../components/employeeList/EmployeeTable";
 import EmployeeGrid from "../components/employeeList/EmployeeGrid";
 import AddEmployeeDrawer from "../components/employeeList/AddEmployeeDrawer";
 import DeleteModal from "../components/leaveAdmin/DeleteModal";
+
+import { getEmployees } from "../services/employee.service";
 
 const AVATAR_COLORS = [
   "bg-blue-500",
@@ -30,7 +33,46 @@ const AVATAR_COLORS = [
 ];
 
 export default function EmployeeList() {
-  const [data, setData] = useState(EMPLOYEE_DATA);
+  //Employee Data.....
+  const [data, setData] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  const fetchEmployees = async () => {
+    try {
+      setLoading(true);
+
+      const res = await getEmployees();
+
+      const employees = res.data.data.map((emp, index) => ({
+        id: emp.id,
+        empId: emp.employeeCode,
+        name: `${emp.firstName} ${emp.lastName}`.trim(),
+        avatar: `${emp.firstName?.[0] ?? ""}${emp.lastName?.[0] ?? ""}`,
+        color: AVATAR_COLORS[index % AVATAR_COLORS.length],
+        department: emp.departmentName,
+        designation: emp.designationName,
+        email: emp.email,
+        phone: emp.phone,
+        joiningDate: emp.joiningDate,
+        status: emp.status ? "Active" : "Inactive",
+        projects: 0,
+        done: 0,
+        progress: 0,
+        productivity: 0,
+      }));
+
+      setData(employees);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchEmployees();
+  }, []);
+
   const [viewMode, setViewMode] = useState("list"); // "list" | "grid"
 
   // Filters
@@ -82,66 +124,10 @@ export default function EmployeeList() {
   );
 
   // ── Handlers ─────────────────────────────────────────────────
-  const handleSubmit = (form) => {
-    if (editItem) {
-      setData((prev) =>
-        prev.map((e) =>
-          e.id === editItem.id
-            ? {
-                ...e,
-                name: form.name,
-                empId: form.empId,
-                email: form.email,
-                phone: form.phone,
-                department: form.department,
-                designation: form.designation,
-                joiningDate: form.joiningDate
-                  ? new Date(form.joiningDate).toLocaleDateString("en-GB", {
-                      day: "2-digit",
-                      month: "short",
-                      year: "numeric",
-                    })
-                  : e.joiningDate,
-                status: form.status,
-              }
-            : e,
-        ),
-      );
-    } else {
-      const newId = Math.max(...data.map((e) => e.id)) + 1;
-      const avatarLetters = form.name
-        .split(" ")
-        .map((w) => w[0])
-        .join("")
-        .slice(0, 2)
-        .toUpperCase();
-      setData((prev) => [
-        {
-          id: newId,
-          empId: form.empId || `Emp-${String(newId).padStart(3, "0")}`,
-          name: form.name,
-          avatar: avatarLetters,
-          color: AVATAR_COLORS[newId % AVATAR_COLORS.length],
-          department: form.department,
-          designation: form.designation,
-          email: form.email,
-          phone: form.phone,
-          joiningDate: form.joiningDate
-            ? new Date(form.joiningDate).toLocaleDateString("en-GB", {
-                day: "2-digit",
-                month: "short",
-                year: "numeric",
-              })
-            : "—",
-          status: form.status || "Active",
-          projects: 0,
-          done: 0,
-          progress: 0,
-          productivity: 0,
-        },
-        ...prev,
-      ]);
-    }
+  const handleSubmit = async () => {
+    await fetchEmployees();
+
+    setDrawerOpen(false);
     setEditItem(null);
   };
 

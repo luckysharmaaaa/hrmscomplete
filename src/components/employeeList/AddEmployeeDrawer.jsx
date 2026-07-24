@@ -9,10 +9,18 @@ import {
   Search,
   Download,
 } from "lucide-react";
+
 import { useFormik } from "formik";
 import * as Yup from "yup";
 import { toast } from "react-toastify";
-import { createEmployee, getImportableUsers } from "../../services/employee.service";
+import {
+  createEmployee,
+  getImportableUsers,
+  updateEmployee,
+} from "../../services/employee.service";
+
+import { getDepartments } from "../../services/department.service";
+import { getDesignations } from "../../services/designation.service";
 
 const EMPTY_FORM = {
   firstName: "",
@@ -25,22 +33,11 @@ const EMPTY_FORM = {
   confirmPassword: "",
   phone: "",
   company: "",
-  department: "",
-  designation: "",
+  departmentId: "",
+  designationId: "",
   about: "",
   _importedUserId: null, // set when user is selected from the Import modal
 };
-
-const DEPTS = [
-  "Finance",
-  "Engineering",
-  "Management",
-  "Development",
-  "Admin",
-  "Analytics",
-  "QA",
-];
-const DESIGNATIONS_LIST = ["Finance", "Developer", "Executive", "Manager"];
 
 // ── Import Employee Modal ─────────────────────────────────────────────────────
 function ImportEmployeeModal({ open, onClose, onSelect }) {
@@ -139,7 +136,8 @@ function ImportEmployeeModal({ open, onClose, onSelect }) {
             </div>
           ) : (
             filtered.map((user) => {
-              const fullName = `${user.firstName ?? ""} ${user.lastName ?? ""}`.trim();
+              const fullName =
+                `${user.firstName ?? ""} ${user.lastName ?? ""}`.trim();
               const initials = fullName
                 .split(" ")
                 .map((w) => w[0])
@@ -223,6 +221,9 @@ export default function AddEmployeeDrawer({
   editData,
   onSubmit,
 }) {
+  // ── State ────────────────────────────────────────────────────
+  const [departments, setDepartments] = useState([]);
+  const [designations, setDesignations] = useState([]);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [profileImage, setProfileImage] = useState(null);
@@ -232,83 +233,173 @@ export default function AddEmployeeDrawer({
   const [apiError, setApiError] = useState(null); // inline error from API (e.g. duplicate email)
   const fileInputRef = useRef(null);
 
+  // ── Departments ─────────────────────────────────────────────
+  const fetchDepartments = async () => {
+    try {
+      const response = await getDepartments();
+      setDepartments(response.data?.data || []);
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to load departments");
+    }
+  };
+
+  // ── Designations ───────────────────────────────────────────
+  const fetchDesignations = async () => {
+    try {
+      const response = await getDesignations();
+      setDesignations(response.data?.data || []);
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to load designations");
+    }
+  };
+
+  useEffect(() => {
+    fetchDepartments();
+    fetchDesignations();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const DEPTS = departments.map((d) => ({
+    value: d.id,
+    label: d.departmentName || d.name || String(d),
+  }));
+
+  const DESIGNATIONS = designations.map((d) => ({
+    value: d.id,
+    label: d.designationName || d.name || String(d),
+  }));
+
   const validationSchema = Yup.object().shape({
-    firstName: Yup.string().required("First Name is required"),
+    firstName: editData
+      ? Yup.string()
+      : Yup.string().required("First Name is required"),
     lastName: Yup.string(),
-    empId: Yup.string().required("Employee ID is required"),
-    joiningDate: Yup.string().required("Joining Date is required"),
-    username: Yup.string().required("Username is required"),
-    email: Yup.string()
-      .email("Invalid email format")
-      .required("Email is required"),
-    password: Yup.string().when(["$isEditing", "_importedUserId"], {
-      is: (isEditing, importedUserId) => !isEditing && !importedUserId,
+    empId: editData
+      ? Yup.string()
+      : Yup.string().required("Employee ID is required"),
+    joiningDate: editData
+      ? Yup.string()
+      : Yup.string().required("Joining Date is required"),
+    username: editData
+      ? Yup.string()
+      : Yup.string().required("Username is required"),
+    email: editData
+      ? Yup.string().email("Invalid email format")
+      : Yup.string()
+          .email("Invalid email format")
+          .required("Email is required"),
+    password: Yup.string().when("_importedUserId", {
+      is: (importedUserId) => !editData && !importedUserId,
       then: (schema) =>
         schema
           .required("Password is required")
           .min(6, "Password must be at least 6 characters"),
       otherwise: (schema) => schema,
     }),
-    confirmPassword: Yup.string().when(["$isEditing", "_importedUserId"], {
-      is: (isEditing, importedUserId) => !isEditing && !importedUserId,
+    confirmPassword: Yup.string().when("_importedUserId", {
+      is: (importedUserId) => !editData && !importedUserId,
       then: (schema) =>
         schema
           .required("Confirm Password is required")
           .oneOf([Yup.ref("password")], "Passwords do not match"),
       otherwise: (schema) => schema,
     }),
-    phone: Yup.string().required("Phone Number is required"),
-    company: Yup.string().required("Company is required"),
-    department: Yup.string().required("Department is required"),
-    designation: Yup.string().required("Designation is required"),
-    about: Yup.string().required("About is required"),
+    phone: editData
+      ? Yup.string()
+      : Yup.string().required("Phone Number is required"),
+    company: editData
+      ? Yup.string()
+      : Yup.string().required("Company is required"),
+    departmentId: Yup.string().required("Department is required"),
+    designationId: Yup.string().required("Designation is required"),
+    about: editData ? Yup.string() : Yup.string().required("About is required"),
   });
 
   const formik = useFormik({
     initialValues: EMPTY_FORM,
     validationSchema,
-    context: { isEditing: !!editData },
     onSubmit: async (values) => {
       setIsSubmitting(true);
+
       try {
         const isImporting = !!values._importedUserId;
 
-        const payload = {
-          // If importing an existing user, pass their userId so the backend
-          // links the employee record instead of creating a duplicate user.
-          ...(isImporting ? { userId: values._importedUserId } : {
-            firstName: values.firstName,
-            lastName: values.lastName,
-            email: values.email,
-            phone: values.phone || null,
-            password: values.password,
-          }),
-          employeeCode: values.empId || null,
-          joiningDate: values.joiningDate || null,
-          about: values.about || null,
-          departmentId: null,   // TODO: replace with real ID when dept API is ready
-          designationId: null,  // TODO: replace with real ID when designation API is ready
-          status: true,
-        };
+        let payload;
 
-        await createEmployee(payload);
-        toast.success("Employee created successfully!");
-        onSubmit({
-          ...values,
-          name: `${values.firstName} ${values.lastName}`.trim(),
-          status: "Active",
-        });
+        if (editData) {
+          // ── Edit mode: always send the current (or original) value so the
+          //    backend never receives null/undefined for required DB columns.
+          const originalFirstName = editData.name?.split(" ")[0] || "";
+          const originalLastName =
+            editData.name?.split(" ").slice(1).join(" ") || "";
+
+          payload = {
+            firstName: values.firstName || originalFirstName,
+            lastName: values.lastName ?? originalLastName,
+            email: values.email || editData.email,
+            phone: values.phone || editData.phone || null,
+            employeeCode: values.empId || editData.empId || null,
+            departmentId: values.departmentId || null,
+            designationId: values.designationId || null,
+            joiningDate: values.joiningDate || editData.joiningDate || null,
+            managerId: values.managerId || null,
+            about: values.about || null,
+            profileImage: profileImage || null,
+            status: true,
+          };
+        } else {
+          // ── Create mode
+          payload = {
+            ...(isImporting
+              ? { userId: values._importedUserId }
+              : {
+                  firstName: values.firstName,
+                  lastName: values.lastName,
+                  email: values.email,
+                  phone: values.phone || null,
+                  password: values.password,
+                }),
+            employeeCode: values.empId || null,
+            departmentId: values.departmentId || null,
+            designationId: values.designationId || null,
+            joiningDate: values.joiningDate || null,
+            managerId: values.managerId || null,
+            about: values.about || null,
+            profileImage: profileImage || null,
+            status: true,
+          };
+        }
+
+        if (editData) {
+          await updateEmployee(editData.id, payload);
+
+          toast.success("Employee updated successfully");
+        } else {
+          await createEmployee(payload);
+
+          toast.success("Employee created successfully");
+        }
+
+        // Refresh employee list
+        await onSubmit?.();
+
+        // Close drawer
         onClose();
       } catch (error) {
         const status = error?.response?.status;
         const msg =
           error?.response?.data?.message ||
-          "Failed to create employee. Please try again.";
+          "Something went wrong. Please try again.";
+
         const code = error?.response?.data?.errors?.code ?? null;
 
-        // 409 Conflict → show inline banner (not a toast)
         if (status === 409) {
-          setApiError({ message: msg, code });
+          setApiError({
+            message: msg,
+            code,
+          });
         } else {
           toast.error(msg);
         }
@@ -330,8 +421,8 @@ export default function AddEmployeeDrawer({
           empId: editData.empId || "",
           email: editData.email || "",
           phone: editData.phone || "",
-          department: editData.department || "",
-          designation: editData.designation || "",
+          departmentId: editData.departmentId || "",
+          designationId: editData.designationId || "",
           joiningDate: editData.joiningDate || "",
         });
       } else {
@@ -360,12 +451,12 @@ export default function AddEmployeeDrawer({
       ...EMPTY_FORM,
       firstName: user.firstName ?? "",
       lastName: user.lastName ?? "",
-      empId: "",           // no employee code yet — user fills this in
+      empId: "", // no employee code yet — user fills this in
       email: user.email ?? "",
       phone: user.phone ?? "",
-      department: "",      // no dept yet — user fills this in
-      designation: "",     // no designation yet — user fills this in
-      joiningDate: "",     // no joining date yet — user fills this in
+      departmentId: "", // no dept yet — user fills this in
+      designationId: "", // no designation yet — user fills this in
+      joiningDate: "", // no joining date yet — user fills this in
       username: (user.email ?? "").split("@")[0],
       company: "",
       about: "",
@@ -378,7 +469,6 @@ export default function AddEmployeeDrawer({
     formik.setTouched({});
     setImportedFrom(true);
   };
-
 
   // ── Image handlers ───────────────────────────────────────────
   const handleImageUpload = (e) => {
@@ -412,11 +502,12 @@ export default function AddEmployeeDrawer({
   ) => {
     const hasError = formik.touched[key] && formik.errors[key];
     const isDisabled = locked && importedFrom;
+    const isRequired = editData ? false : required;
 
     return (
       <div>
         <label className="block text-[13px] font-semibold text-[#1f2937] mb-1.5">
-          {label} {required && <span className="text-red-500">*</span>}
+          {label} {isRequired && <span className="text-red-500">*</span>}
         </label>
         <div className="relative">
           <input
@@ -486,11 +577,12 @@ export default function AddEmployeeDrawer({
   const selectField = (label, key, options, locked = false) => {
     const hasError = formik.touched[key] && formik.errors[key];
     const isDisabled = locked && importedFrom;
+    const isRequired = editData ? false : true;
 
     return (
       <div>
         <label className="block text-[13px] font-semibold text-[#1f2937] mb-1.5">
-          {label} <span className="text-red-500">*</span>
+          {label} {isRequired && <span className="text-red-500">*</span>}
         </label>
         <div className="relative">
           <select
@@ -508,9 +600,15 @@ export default function AddEmployeeDrawer({
             }`}
           >
             <option value="">Select</option>
-            {options.map((d) => (
-              <option key={d}>{d}</option>
-            ))}
+            {options.map((d) => {
+              const val = d?.value ?? d;
+              const label = d?.label ?? d;
+              return (
+                <option key={val} value={val}>
+                  {label}
+                </option>
+              );
+            })}
           </select>
           <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
             <svg
@@ -749,11 +847,11 @@ export default function AddEmployeeDrawer({
                     true,
                   )}
                   {field("Company", "company", "text", true, null, null, true)}
-                  {selectField("Department", "department", DEPTS, true)}
+                  {selectField("Department", "departmentId", DEPTS, true)}
                   {selectField(
                     "Designation",
-                    "designation",
-                    DESIGNATIONS_LIST,
+                    "designationId",
+                    DESIGNATIONS,
                     true,
                   )}
                 </div>
@@ -761,7 +859,7 @@ export default function AddEmployeeDrawer({
                 {/* About text area */}
                 <div>
                   <label className="block text-[13px] font-semibold text-[#1f2937] mb-1.5">
-                    About <span className="text-red-500">*</span>
+                    About {!editData && <span className="text-red-500">*</span>}
                   </label>
                   <textarea
                     name="about"
