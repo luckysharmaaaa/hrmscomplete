@@ -6,7 +6,7 @@ import {
   FiChevronUp,
   FiChevronDown,
 } from "react-icons/fi";
-import DateRangePickerButton from "../DateRangePickerButton";
+import DateRangePickerButton from "../user/DateRangePickerButton";
 import { DESIGNATION_DEPARTMENTS } from "./designationData";
 
 const DesignationTable = ({ designations, onEdit, onDelete }) => {

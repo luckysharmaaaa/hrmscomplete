@@ -7,7 +7,7 @@ import {
   Pencil,
   Trash2,
 } from "lucide-react";
-import DateRangePickerButton from "../DateRangePickerButton";
+import DateRangePickerButton from "../user/DateRangePickerButton";
 import ReasonTooltip from "../leaveAdmin/ReasonTooltip";
 import { LEAVE_TYPES, SORT_OPTIONS, ROWS_OPTIONS } from "./leaveEmployeeData";
 

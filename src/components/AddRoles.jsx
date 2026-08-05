@@ -27,31 +27,18 @@ const AddRoles = ({
   // ===========================================
 
   useEffect(() => {
-
     if (editRole) {
-
       setRoleData({
+        roleName: editRole.roleName || "",
 
-        roleName:
-          editRole.roleName || "",
+        roleCode: editRole.roleCode || "",
 
-        roleCode:
-          editRole.roleCode || "",
+        description: editRole.description || "",
 
-        description:
-          editRole.description || "",
-
-        status:
-          editRole.status || "Active",
-
+        status: editRole.status || "Active",
       });
-
-    }
-
-    else {
-
+    } else {
       setRoleData({
-
         roleName: "",
 
         roleCode: "",
@@ -59,40 +46,31 @@ const AddRoles = ({
         description: "",
 
         status: "Active",
-
       });
 
       setSelectedModules([]);
 
       setPermissions([]);
-
     }
-
   }, [editRole, open]);
   // ===========================================
   // Input Change
   // ===========================================
 
   const handleChange = (e) => {
-
     const { name, value } = e.target;
 
     setRoleData((prev) => ({
-
       ...prev,
 
       [name]: value,
-
     }));
 
     setErrors((prev) => ({
-
       ...prev,
 
       [name]: "",
-
     }));
-
   };
 
   // ===========================================
@@ -100,27 +78,19 @@ const AddRoles = ({
   // ===========================================
 
   const validate = () => {
-
     const newErrors = {};
 
     if (!roleData.roleName.trim()) {
-
-      newErrors.roleName =
-        "Role Name is required";
-
+      newErrors.roleName = "Role Name is required";
     }
 
     if (!roleData.roleCode.trim()) {
-
-      newErrors.roleCode =
-        "Role Code is required";
-
+      newErrors.roleCode = "Role Code is required";
     }
 
     setErrors(newErrors);
 
     return Object.keys(newErrors).length === 0;
-
   };
 
   // ===========================================
@@ -128,15 +98,11 @@ const AddRoles = ({
   // ===========================================
 
   const handleSubmit = () => {
-
     if (!validate()) {
-
       return;
-
     }
 
     onAddRole({
-
       roleName: roleData.roleName,
 
       roleCode: roleData.roleCode,
@@ -156,11 +122,9 @@ const AddRoles = ({
       // -----------------------------
 
       permissions,
-
     });
 
     setRoleData({
-
       roleName: "",
 
       roleCode: "",
@@ -168,7 +132,6 @@ const AddRoles = ({
       description: "",
 
       status: "Active",
-
     });
 
     setSelectedModules([]);
@@ -178,7 +141,6 @@ const AddRoles = ({
     setErrors({});
 
     onClose();
-
   };
   // ===========================================
   // JSX
@@ -224,7 +186,6 @@ const AddRoles = ({
           >
             <CloseIcon />
           </button>
-
         </div>
 
         {/* ====================================== */}
@@ -232,11 +193,9 @@ const AddRoles = ({
         {/* ====================================== */}
 
         <div className="flex-1 overflow-auto">
-
           {/* Role Information */}
 
           <div className="p-6">
-
             {/* <h3 className="text-lg font-semibold text-[#0F265C] mb-6">
 
               Role 
@@ -244,17 +203,12 @@ const AddRoles = ({
             </h3> */}
 
             <div className="grid grid-cols-2 gap-6">
-
               {/* Role Name */}
 
               <div>
-
                 <label className="block text-sm font-semibold mb-2">
-
                   Role Name
-
                   <span className="text-red-500 ml-1">*</span>
-
                 </label>
 
                 <input
@@ -263,34 +217,22 @@ const AddRoles = ({
                   value={roleData.roleName}
                   onChange={handleChange}
                   placeholder="Enter Role Name"
-                  className={`input input-bordered w-full ${errors.roleName
-                    ? "border-red-500"
-                    : ""
-                    }`}
+                  className={`input input-bordered w-full ${
+                    errors.roleName ? "border-red-500" : ""
+                  }`}
                 />
 
                 {errors.roleName && (
-
-                  <p className="text-red-500 text-sm mt-1">
-
-                    {errors.roleName}
-
-                  </p>
-
+                  <p className="text-red-500 text-sm mt-1">{errors.roleName}</p>
                 )}
-
               </div>
 
               {/* Role Code */}
 
               <div>
-
                 <label className="block text-sm font-semibold mb-2">
-
                   Role Code
-
                   <span className="text-red-500 ml-1">*</span>
-
                 </label>
 
                 <input
@@ -299,32 +241,21 @@ const AddRoles = ({
                   value={roleData.roleCode}
                   onChange={handleChange}
                   placeholder="Enter Role Code"
-                  className={`input input-bordered w-full ${errors.roleCode
-                    ? "border-red-500"
-                    : ""
-                    }`}
+                  className={`input input-bordered w-full ${
+                    errors.roleCode ? "border-red-500" : ""
+                  }`}
                 />
 
                 {errors.roleCode && (
-
-                  <p className="text-red-500 text-sm mt-1">
-
-                    {errors.roleCode}
-
-                  </p>
-
+                  <p className="text-red-500 text-sm mt-1">{errors.roleCode}</p>
                 )}
-
               </div>
 
               {/* Description */}
 
               <div className="col-span-2">
-
                 <label className="block text-sm font-semibold mb-2">
-
                   Description
-
                 </label>
 
                 <input
@@ -335,7 +266,6 @@ const AddRoles = ({
                   placeholder="Enter Description"
                   className="input input-bordered w-full"
                 />
-
               </div>
 
               {/* Status */}
@@ -369,9 +299,7 @@ const AddRoles = ({
                 </select>
 
               </div> */}
-
             </div>
-
           </div>
 
           <hr />
@@ -380,45 +308,28 @@ const AddRoles = ({
           {/* ====================================== */}
 
           <div className="p-6">
-
             <div className="flex items-center justify-between mb-5">
-
               <h3 className="text-lg font-semibold text-[#0F265C]">
-
                 Role Permissions
-
               </h3>
 
               <span className="text-sm text-gray-500">
-
                 Select Modules & Permissions
-
               </span>
-
             </div>
 
             <div className="rounded-xl border border-gray-200 overflow-hidden bg-white">
-
               <RolePermissionTable
-
                 role={editRole}
-
                 // Selected Modules
                 selectedModules={selectedModules}
-
                 setSelectedModules={setSelectedModules}
-
                 // Permissions
                 permissions={permissions}
-
                 setPermissions={setPermissions}
-
               />
-
             </div>
-
           </div>
-
         </div>
 
         {/* ====================================== */}
@@ -428,7 +339,6 @@ const AddRoles = ({
         {/* Footer */}
 
         <div className="border-t border-gray-200 bg-white px-6   py-4 flex items-center justify-between">
-
           <div className="flex items-center gap-3 z-80">
             <label className="text-sm font-semibold">Status</label>
 
@@ -440,33 +350,31 @@ const AddRoles = ({
                   status: prev.status === "Active" ? "Inactive" : "Active",
                 }))
               }
-              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-300 ${roleData.status === "Active"
-                  ? "bg-orange-500"
-                  : "bg-gray-300"
-                }`}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-300 ${
+                roleData.status === "Active" ? "bg-orange-500" : "bg-gray-300"
+              }`}
             >
               <span
-                className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform duration-300 ${roleData.status === "Active"
+                className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform duration-300 ${
+                  roleData.status === "Active"
                     ? "translate-x-5"
                     : "translate-x-1"
-                  }`}
+                }`}
               />
             </button>
 
             <span
-              className={`text-sm font-medium ${roleData.status === "Active"
+              className={`text-sm font-medium ${
+                roleData.status === "Active"
                   ? "text-orange-600"
                   : "text-gray-500"
-                }`}
+              }`}
             >
               {roleData.status}
             </span>
           </div>
 
-
-
           <div className="flex gap-3">
-
             <button
               onClick={onClose}
               className="px-5 py-2.5 rounded-lg border border-gray-300 hover:bg-gray-100"
@@ -480,13 +388,9 @@ const AddRoles = ({
             >
               {editRole ? "Update Role" : "Save Role"}
             </button>
-
           </div>
-
         </div>
-
       </div>
-
     </>
   );
 

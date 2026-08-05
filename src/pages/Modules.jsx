@@ -68,7 +68,11 @@ function findModuleName(modules, id) {
 
 function StatusToggle({ isActive, onClick }) {
   return (
-    <button onClick={onClick} title="Toggle status" className="flex items-center gap-1.5 transition">
+    <button
+      onClick={onClick}
+      title="Toggle status"
+      className="flex items-center gap-1.5 transition"
+    >
       {isActive ? (
         <>
           <ToggleRight size={22} className="text-green-500" />
@@ -104,7 +108,14 @@ function StatCard({ label, value, colorClasses }) {
 // 4. TABLE ROW (renders itself, then renders its children below it)
 // ------------------------------------------------------------
 
-function ModuleRow({ node, level, allModules, onEdit, onDelete, onToggleStatus }) {
+function ModuleRow({
+  node,
+  level,
+  allModules,
+  onEdit,
+  onDelete,
+  onToggleStatus,
+}) {
   const [isExpanded, setIsExpanded] = useState(true);
   const hasChildren = node.children.length > 0;
   const isActive = node.status === "1";
@@ -115,13 +126,19 @@ function ModuleRow({ node, level, allModules, onEdit, onDelete, onToggleStatus }
       <tr className="hover:bg-gray-50 transition group">
         {/* Module name + expand arrow + indentation */}
         <td className="px-5 py-3">
-          <div className="flex items-center gap-2" style={{ paddingLeft: `${indentPx}px` }}>
+          <div
+            className="flex items-center gap-2"
+            style={{ paddingLeft: `${indentPx}px` }}
+          >
             {hasChildren ? (
               <button
                 onClick={() => setIsExpanded((prev) => !prev)}
                 className="text-gray-400 hover:text-orange-500 transition shrink-0"
               >
-                <ChevronRight size={14} className={`transition-transform ${isExpanded ? "rotate-90" : ""}`} />
+                <ChevronRight
+                  size={14}
+                  className={`transition-transform ${isExpanded ? "rotate-90" : ""}`}
+                />
               </button>
             ) : (
               <span className="w-3.5 shrink-0" /> // keeps alignment even with no arrow
@@ -155,7 +172,9 @@ function ModuleRow({ node, level, allModules, onEdit, onDelete, onToggleStatus }
         {/* Route path */}
         <td className="px-5 py-3">
           {node.path ? (
-            <code className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded font-mono">{node.path}</code>
+            <code className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded font-mono">
+              {node.path}
+            </code>
           ) : (
             <span className="text-gray-300 text-xs">—</span>
           )}
@@ -228,7 +247,9 @@ function ModuleFormModal({ isOpen, onClose, editData, allModules, onSave }) {
   // Can't set a module as its own parent, and can't set it as a child of one of
   // its own descendants either — that would create a cycle in the tree and blow
   // the stack in ModuleRow's recursive rendering.
-  const blockedIds = editData ? new Set([editData.id, ...getDescendantIds(allModules, editData.id)]) : new Set();
+  const blockedIds = editData
+    ? new Set([editData.id, ...getDescendantIds(allModules, editData.id)])
+    : new Set();
   const parentOptions = allModules.filter((m) => !blockedIds.has(m.id));
 
   function handleSubmit(e) {
@@ -264,7 +285,6 @@ function ModuleFormModal({ isOpen, onClose, editData, allModules, onSave }) {
               </p>
             </div>
           </div>
-
           <button
             onClick={onClose}
             className="text-gray-400 hover:text-gray-600 transition p-1 rounded-lg hover:bg-gray-100"
@@ -294,7 +314,9 @@ function ModuleFormModal({ isOpen, onClose, editData, allModules, onSave }) {
             </label>
             <select
               value={form.parentId ?? ""}
-              onChange={(e) => setForm({ ...form, parentId: e.target.value || null })}
+              onChange={(e) =>
+                setForm({ ...form, parentId: e.target.value || null })
+              }
               className="w-full border border-gray-200 rounded-lg px-3.5 py-2.5 text-sm text-gray-700 outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100 transition bg-white"
             >
               <option value="">— None (Top Level) —</option>
@@ -328,7 +350,9 @@ function ModuleFormModal({ isOpen, onClose, editData, allModules, onSave }) {
               placeholder="e.g. LayoutDashboard"
               className="w-full border border-gray-200 rounded-lg px-3.5 py-2.5 text-sm text-gray-700 font-mono outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100 transition"
             />
-            <p className="text-[11px] text-gray-400 mt-1">Use Lucide icon component names (e.g. FileText, Users)</p>
+            <p className="text-[11px] text-gray-400 mt-1">
+              Use Lucide icon component names (e.g. FileText, Users)
+            </p>
           </div>
 
           <div className="flex items-center justify-between bg-gray-50 rounded-xl px-4 py-3">
@@ -393,7 +417,6 @@ function DeleteConfirmModal({ module, onClose, onConfirm }) {
         </div>
 
         <div className="flex gap-3 mt-6">
-
           <button
             onClick={onClose}
             className="flex-1 border border-gray-200 text-gray-600 py-2.5 rounded-lg text-sm font-medium hover:bg-gray-50 transition"
@@ -430,7 +453,8 @@ export default function Modules() {
   const [moduleToDelete, setModuleToDelete] = useState(null);
 
   // --- derived data ---
-  const matchesSearch = (m) => m.moduleName.toLowerCase().includes(searchText.toLowerCase());
+  const matchesSearch = (m) =>
+    m.moduleName.toLowerCase().includes(searchText.toLowerCase());
   const visibleModules = searchText ? modules.filter(matchesSearch) : modules;
   const tree = buildTree(visibleModules);
 
@@ -510,7 +534,9 @@ export default function Modules() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-800">Modules</h1>
-          <p className="text-sm text-gray-400 mt-0.5">Manage navigation modules and their hierarchy</p>
+          <p className="text-sm text-gray-400 mt-0.5">
+            Manage navigation modules and their hierarchy
+          </p>
         </div>
         <button
           onClick={openAddForm}

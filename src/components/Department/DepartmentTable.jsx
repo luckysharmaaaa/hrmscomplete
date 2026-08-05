@@ -6,7 +6,7 @@ import {
   FiChevronUp,
   FiChevronDown,
 } from "react-icons/fi";
-import DateRangePickerButton from "../DateRangePickerButton";
+import DateRangePickerButton from "../user/DateRangePickerButton";
 
 const SortIcon = () => (
   <span className="inline-flex flex-col ml-1 opacity-40 leading-none">

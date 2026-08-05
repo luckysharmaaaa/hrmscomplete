@@ -60,7 +60,7 @@ function Sidebar() {
   return (
     <div className="w-64 h-screen bg-white border-r border-gray-100 fixed left-0 top-0 overflow-y-auto flex flex-col  shadow-sm">
       {/* ── Logo ── */}
-      <div className="px-6 py-[10px] border-b border-gray-100 shrink-0 flex justify-center items-center">
+      <div className="px-6 py-2.5 border-b border-gray-100 shrink-0 flex justify-center items-center">
         <Link to="/dashboard">
           <img
             src={
@@ -113,7 +113,7 @@ function Sidebar() {
                       </div>
 
                       <div className="collapse-content p-0">
-                        <ul className="ml-8 border-l-2 border-gray-100 pl-3 space-y-[2px] pb-1">
+                        <ul className="ml-8 border-l-2 border-gray-100 pl-3 space-y-0.5 pb-1">
                           <li>
                             <Link
                               to="/leave-admin"
@@ -214,13 +214,13 @@ function Sidebar() {
             <div className="collapse collapse-arrow bg-white rounded-lg">
               <input type="checkbox" defaultChecked />
 
-              <div className="collapse-title flex items-center gap-3 px-4 py-[9px] text-[13.5px] font-medium text-gray-800 min-h-0">
+              <div className="collapse-title flex items-center gap-3 px-4 py-2.25 text-[13.5px] font-medium text-gray-800 min-h-0">
                 <Users size={17} className="shrink-0 text-gray-500" />
                 Employees
               </div>
 
               <div className="collapse-content p-0">
-                <ul className="space-y-[2px] pb-1">
+                <ul className="space-y-0.5 pb-1">
                   {/* Employee List */}
                   <li>
                     <Link
@@ -239,7 +239,10 @@ function Sidebar() {
                     </Link>
                   </li>
                   <li>
-                    <Link to="/designations" className={subLink("/designations")}>
+                    <Link
+                      to="/designations"
+                      className={subLink("/designations")}
+                    >
                       <Briefcase size={15} className="shrink-0" />
                       Designations
                     </Link>

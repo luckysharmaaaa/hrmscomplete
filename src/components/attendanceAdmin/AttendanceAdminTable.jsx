@@ -7,7 +7,7 @@ import {
   ChevronRight,
   Clock,
 } from "lucide-react";
-import DateRangePickerButton from "../DateRangePickerButton";
+import DateRangePickerButton from "../user/DateRangePickerButton";
 import EditAttendanceModal from "./EditAttendanceModal";
 
 const employees = [

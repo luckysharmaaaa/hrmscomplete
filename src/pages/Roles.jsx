@@ -20,7 +20,6 @@ import {
 const BASE_URL = "http://localhost:5000/api/v1";
 
 const Roles = () => {
-
   // ======================================
   // States
   // ======================================
@@ -53,13 +52,14 @@ const Roles = () => {
           roleName: item.roleName,
           roleCode: item.roleCode,
           description: item.description,
-          status: item.status === "1" || item.status === 1 ? "Active" : "Inactive",
+          status:
+            item.status === "1" || item.status === 1 ? "Active" : "Inactive",
           createdAt: item.createdAt
             ? new Date(item.createdAt * 1000).toLocaleDateString("en-GB", {
-              day: "2-digit",
-              month: "short",
-              year: "numeric",
-            })
+                day: "2-digit",
+                month: "short",
+                year: "numeric",
+              })
             : "-",
         }));
 
@@ -70,29 +70,23 @@ const Roles = () => {
     } catch (error) {
       console.error("Fetch Roles Error:", error);
 
-      toast.error(
-        error.response?.data?.message || "Failed to fetch roles."
-      );
+      toast.error(error.response?.data?.message || "Failed to fetch roles.");
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-
     fetchRoles();
-
   }, []);
   // ======================================
   // Open Drawer
   // ======================================
 
   const handleOpenDrawer = () => {
-
     setEditRole(null);
 
     setOpenDrawer(true);
-
   };
 
   // ======================================
@@ -112,9 +106,7 @@ const Roles = () => {
   // ======================================
 
   const handleAddRole = async (roleData) => {
-
     try {
-
       let roleId = null;
 
       // ==================================
@@ -135,7 +127,6 @@ const Roles = () => {
       // ==================================
       // CREATE ROLE
       // ==================================
-
       else {
         const response = await api.post("/roles/add", {
           roleName: roleData.roleName,
@@ -150,19 +141,16 @@ const Roles = () => {
         console.log("Role ID:", roleId);
       }
 
-      console.log(roleId)
+      console.log(roleId);
 
       // ==================================
       // Save Module Mapping
       // ==================================
 
       await saveRoleModules({
-
         roleId,
 
-        moduleIds:
-          roleData.selectedModules,
-
+        moduleIds: roleData.selectedModules,
       });
 
       // ==================================
@@ -171,12 +159,9 @@ const Roles = () => {
       const permissionArray = Object.entries(roleData.permissions).map(
         ([moduleId, actions]) => ({
           moduleId: Number(moduleId),
-          actions: Object.keys(actions).filter(
-            (action) => actions[action]
-          ),
-        })
+          actions: Object.keys(actions).filter((action) => actions[action]),
+        }),
       );
-
 
       await saveRolePermissions({
         roleId,
@@ -195,53 +180,41 @@ const Roles = () => {
       toast.success(
         editRole
           ? "Role updated successfully!"
-          : "Role and permissions added successfully!"
+          : "Role and permissions added successfully!",
       );
-
     } catch (error) {
-
       console.error(error);
 
-      toast.error(
-        error.response?.data?.message ||
-        "Something went wrong."
-      );
-
+      toast.error(error.response?.data?.message || "Something went wrong.");
     }
-
-  }
-
+  };
 
   // ======================================
   // Delete Role
   // ======================================
 
   const handleDeleteRole = async (id) => {
-  try {
-    await api.delete(`/roles/delete/${id}`);
+    try {
+      await api.delete(`/roles/delete/${id}`);
 
-    await fetchRoles();
+      await fetchRoles();
 
-    toast.success("Role deleted successfully!");
-  } catch (error) {
-    console.error("Delete Role Error:", error);
+      toast.success("Role deleted successfully!");
+    } catch (error) {
+      console.error("Delete Role Error:", error);
 
-    toast.error(
-      error.response?.data?.message || "Unable to delete role."
-    );
-  }
-};
+      toast.error(error.response?.data?.message || "Unable to delete role.");
+    }
+  };
 
   // ======================================
   // Close Drawer
   // ======================================
 
   const handleCloseDrawer = () => {
-
     setOpenDrawer(false);
 
     setEditRole(null);
-
   };
 
   // ======================================
@@ -249,23 +222,14 @@ const Roles = () => {
   // ======================================
 
   return (
-
     <div className="space-y-6 overflow-hidden ">
-
       {/* Header */}
 
       <div className="flex items-start justify-between">
-
         <div>
-
-          <h1 className="text-3xl font-bold text-[#0F265C]">
-
-            Roles
-
-          </h1>
+          <h1 className="text-3xl font-bold text-[#0F265C]">Roles</h1>
 
           <div className="flex items-center gap-1.5 mt-1 text-xs text-gray-400">
-
             <span>User Management</span>
 
             <FiChevronRight size={12} />
@@ -277,35 +241,27 @@ const Roles = () => {
             </span>
 
           </div>
-
         </div>
 
         {/* Right Buttons */}
 
         <div className="flex items-center gap-3">
-
           {/* Export */}
 
           <div className="dropdown dropdown-end">
-
             <label
               tabIndex={0}
               className="btn bg-orange-500 hover:bg-orange-600 border-none text-white animate-fade-in"
             >
-
               <DescriptionOutlinedIcon fontSize="small" />
-
               Export
-
               <KeyboardArrowDownIcon fontSize="small" />
-
             </label>
 
             <ul
               tabIndex={0}
               className="dropdown-content z-10 menu p-2 shadow bg-white rounded-box w-56 animate-fade-in"
             >
-
               <li>
 
                 <button>
@@ -314,11 +270,8 @@ const Roles = () => {
                     fontSize="small"
                     sx={{ color: "#ef4444" }}
                   />
-
                   Export as PDF
-
                 </button>
-
               </li>
 
               <li>
@@ -329,15 +282,10 @@ const Roles = () => {
                     fontSize="small"
                     sx={{ color: "#16a34a" }}
                   />
-
                   Export as Excel
-
                 </button>
-
               </li>
-
             </ul>
-
           </div>
 
           {/* Add Role */}
@@ -346,39 +294,26 @@ const Roles = () => {
             onClick={handleOpenDrawer}
             className="flex items-center gap-2 px-4 py-2.5 bg-orange-500 hover:bg-orange-600 text-white rounded-lg"
           >
-
             <AddIcon fontSize="small" />
-
             Add Role
-
           </button>
-
         </div>
-
       </div>
 
       {/* Loading */}
 
-      {
-
-        loading ? (
-
-          <div className="flex justify-center py-20">
-
-            <span className="loading loading-spinner loading-lg text-orange-500"></span>
-
-          </div>
-
-        ) : (<RolesTable
+      {loading ? (
+        <div className="flex justify-center py-20">
+          <span className="loading loading-spinner loading-lg text-orange-500"></span>
+        </div>
+      ) : (
+        <RolesTable
           roles={roles}
           setRoles={setRoles}
           onEditRole={handleEditRole}
           onDeleteRole={handleDeleteRole}
         />
-
-        )
-
-      }
+      )}
 
       {/* ====================================== */}
       {/* Add / Edit Drawer */}
@@ -390,9 +325,7 @@ const Roles = () => {
         onAddRole={handleAddRole}
         editRole={editRole}
       />
-
     </div>
-
   );
 };
 

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { FiChevronRight } from "react-icons/fi";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import AddIcon from "@mui/icons-material/Add";
@@ -6,18 +6,36 @@ import DescriptionOutlinedIcon from "@mui/icons-material/DescriptionOutlined";
 import PictureAsPdfOutlinedIcon from "@mui/icons-material/PictureAsPdfOutlined";
 import TableChartOutlinedIcon from "@mui/icons-material/TableChartOutlined";
 
-import UserTable from "../components/UserTable";
-import AddUserDrawer from "../components/AddUserDrawer";
+import UserTable from "../components/user/UserTable";
+import AddUserDrawer from "../components/user/AddUserDrawer";
+import { getRoles } from "../services/userApi";
 
-const User = () => {
+const User = ({ refresh }) => {
   const [openDrawer, setOpenDrawer] = useState(false);
+  const [refreshTable, setRefreshTable] = useState(false);
+
+  // Roles are fetched once here (instead of separately inside
+  // AddUserDrawer and EditUserModal) and passed down to both, so the
+  // /roles endpoint is only called a single time per page load.
+  const [roles, setRoles] = useState([]);
+
+  useEffect(() => {
+    fetchRoles();
+  }, []);
+
+  const fetchRoles = async () => {
+    try {
+      const response = await getRoles();
+      setRoles(response.data.data || []);
+    } catch (error) {
+      console.error("Failed to fetch roles", error);
+    }
+  };
 
   // Optional: refresh user table after create
   const handleUserCreated = () => {
     setOpenDrawer(false);
-
-    // If UserTable has fetchUsers() later,
-    // call it here or trigger reload.
+    setRefreshTable((prev) => !prev);
   };
 
   return (
@@ -26,16 +44,12 @@ const User = () => {
       <div className="flex items-start justify-between">
         {/* Left */}
         <div>
-          <h1 className="text-3xl font-bold text-[#0F265C]">
-            Users
-          </h1>
+          <h1 className="text-3xl font-bold text-[#0F265C]">Users</h1>
 
           <div className="flex items-center gap-1.5 mt-1 text-xs text-gray-400">
             <span>User Management</span>
             <FiChevronRight size={12} className="shrink-0" />
-            <span className="text-orange-500 font-medium">
-              Users
-            </span>
+            <span className="text-orange-500 font-medium">Users</span>
           </div>
         </div>
 
@@ -91,12 +105,13 @@ const User = () => {
 
       {/* Table Section */}
       <div>
-        <UserTable />
+        <UserTable refresh={refreshTable} roles={roles} />
 
         <AddUserDrawer
           open={openDrawer}
           onClose={() => setOpenDrawer(false)}
           onSuccess={handleUserCreated}
+          roles={roles}
         />
       </div>
     </div>
