@@ -36,15 +36,23 @@ const cards = [
   },
 ];
 
+function getJoiningYear(joiningDate) {
+  if (!joiningDate) return null;
+  const parsed = new Date(joiningDate);
+  return isNaN(parsed.getTime()) ? null : parsed.getFullYear();
+}
+
 export default function EmployeeStatCards({ data }) {
   const currentYear = new Date().getFullYear();
+
+  // Derive all four card counts from the employee list in one pass
   const counts = {
     total: data.length,
     active: data.filter((e) => e.status === "Active").length,
     inactive: data.filter((e) => e.status === "Inactive").length,
     new: data.filter((e) => {
-      const y = parseInt(e.joiningDate?.split(" ")[2] || 0);
-      return y >= currentYear - 1;
+      const year = getJoiningYear(e.joiningDate);
+      return year !== null && year >= currentYear - 1;
     }).length,
   };
 

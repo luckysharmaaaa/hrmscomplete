@@ -1,243 +1,394 @@
-import React, { useState } from "react";
+import React, { useMemo } from "react";
+import { useFormik } from "formik";
+import { toast } from "react-toastify";
 
-const ProfileForm = () => {
-  const [profileImage, setProfileImage] = useState(null);
+import ProfileImage from "./ProfileImage";
+import { profileSchema } from "./profileValidation";
+import { updateMyProfile } from "../../services/profileApi";
 
-  const [formData, setFormData] = useState({
-    firstName: "",
-    lastName: "",
-    email: "",
-    phone: "",
-    address: "",
-    country: "",
-    state: "",
-    city: "",
-    postalCode: "",
+const ADDRESS_TYPES = ["home", "work", "other"];
+
+const ProfileForm = ({ profileData, onSaved, onImageChanged }) => {
+  const user = profileData?.user;
+  const address = profileData?.address;
+  const roles = profileData?.roles || [];
+  const profileImage = profileData?.profileImage;
+
+  const initialValues = useMemo(
+    () => ({
+      firstName: user?.firstName || "",
+      lastName: user?.lastName || "",
+      email: user?.email || "",
+      phone: user?.phone || "",
+
+      addressType: address?.addressType || "home",
+      houseNumber: address?.houseNumber || "",
+      addressLine1: address?.addressLine1 || "",
+      addressLine2: address?.addressLine2 || "",
+      landmark: address?.landmark || "",
+      locality: address?.locality || "",
+      city: address?.city || "",
+      state: address?.state || "",
+      zipCode: address?.zipCode || "",
+      countryID: address?.countryID ?? "",
+      countryCode: address?.countryCode || "",
+      phoneCode: address?.phoneCode || "",
+      latitude: address?.latitude ?? "",
+      longitude: address?.longitude ?? "",
+      isDefault: Boolean(address?.isDefault),
+    }),
+    [user, address],
+  );
+
+  const formik = useFormik({
+    initialValues,
+    validationSchema: profileSchema,
+    enableReinitialize: true,
+    onSubmit: async (values, { setSubmitting }) => {
+      try {
+        const hasAddressInput = Boolean(
+          values.addressLine1 || values.city || values.state || values.zipCode,
+        );
+
+        const payload = {
+          firstName: values.firstName,
+          lastName: values.lastName,
+          email: values.email,
+          phone: values.phone || null,
+        };
+
+        if (hasAddressInput) {
+          payload.address = {
+            addressType: values.addressType || "home",
+            houseNumber: values.houseNumber || null,
+            addressLine1: values.addressLine1,
+            addressLine2: values.addressLine2 || null,
+            landmark: values.landmark || null,
+            locality: values.locality || null,
+            city: values.city,
+            state: values.state,
+            zipCode: values.zipCode,
+            countryID: values.countryID ? Number(values.countryID) : null,
+            countryCode: values.countryCode,
+            phoneCode: values.phoneCode,
+            latitude: values.latitude === "" ? null : Number(values.latitude),
+            longitude: values.longitude === "" ? null : Number(values.longitude),
+            isDefault: values.isDefault,
+          };
+        }
+
+        const response = await updateMyProfile(payload);
+
+        toast.success(response?.message || "Profile updated successfully");
+        onSaved?.(response?.data);
+      } catch (error) {
+        toast.error(
+          error?.response?.data?.message || "Failed to update profile",
+        );
+      } finally {
+        setSubmitting(false);
+      }
+    },
   });
 
-  const handleChange = (e) => {
-    setFormData((prev) => ({
-      ...prev,
-      [e.target.name]: e.target.value,
-    }));
-  };
+  const {
+    values,
+    errors,
+    touched,
+    handleChange,
+    handleBlur,
+    handleSubmit,
+    resetForm,
+    isSubmitting,
+  } = formik;
 
-  const handleImageUpload = (e) => {
-    const file = e.target.files[0];
+  const fieldClass = (name) =>
+    `w-full border rounded-lg px-4 py-3 outline-none focus:border-[#FF7A21] ${
+      touched[name] && errors[name] ? "border-red-400" : "border-gray-300"
+    }`;
 
-    if (file) {
-      setProfileImage(URL.createObjectURL(file));
-    }
-  };
-
-  const handleCancelImage = () => {
-    setProfileImage(null);
-  };
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-
-    console.log(formData);
-
-    alert("Profile Updated Successfully");
-  };
+  const FieldError = ({ name }) =>
+    touched[name] && errors[name] ? (
+      <p className="text-xs text-red-500 mt-1">{errors[name]}</p>
+    ) : null;
 
   return (
-    <form onSubmit={handleSubmit}>
+    <form onSubmit={handleSubmit} noValidate>
       {/* Heading */}
       <div className="border-b border-gray-200 pb-5 mb-8">
-        <h2 className="text-2xl font-semibold text-[#0F265C]">
-          My Profile
-        </h2>
-
+        <h2 className="text-2xl font-semibold text-[#0F265C]">My Profile</h2>
         <p className="text-gray-500 text-sm mt-1">
           Update your personal information.
         </p>
       </div>
 
-      {/* Profile Image */}
-      <div className="bg-slate-50 rounded-xl p-6 flex items-center gap-6 mb-8">
-        <div className="w-24 h-24 rounded-full border-2 border-dashed border-gray-300 overflow-hidden flex items-center justify-center">
-          {profileImage ? (
-            <img
-              src={profileImage}
-              alt="Profile"
-              className="w-full h-full object-cover"
-            />
-          ) : (
-            <span className="text-gray-400 text-sm">IMG</span>
-          )}
-        </div>
-
-        <div>
-          <h3 className="text-lg font-semibold text-[#0F265C]">
-            Profile Photo
-          </h3>
-
-          <p className="text-gray-500 text-sm mt-1">
-            JPG, PNG (Max 2MB)
-          </p>
-
-          <div className="flex gap-3 mt-4">
-            <label className="bg-[#FF7A21] text-white px-4 py-2 rounded-md cursor-pointer hover:opacity-90">
-              Upload
-              <input
-                type="file"
-                className="hidden"
-                accept="image/*"
-                onChange={handleImageUpload}
-              />
-            </label>
-
-            <button
-              type="button"
-              onClick={handleCancelImage}
-              className="border border-gray-300 px-4 py-2 rounded-md hover:bg-gray-100"
-            >
-              Remove
-            </button>
-          </div>
-        </div>
+      {/* Profile Photo */}
+      <div className="mb-8">
+        <ProfileImage user={user} profileImage={profileImage} onChange={onImageChanged} />
       </div>
 
       {/* Personal Information */}
+      <h3 className="text-lg font-semibold text-[#0F265C] mb-5">
+        Personal Information
+      </h3>
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-
         <div>
-          <label className="block mb-2 text-sm font-medium">
-            First Name
-          </label>
-
+          <label className="block mb-2 text-sm font-medium text-gray-700">First Name</label>
           <input
             type="text"
             name="firstName"
-            value={formData.firstName}
+            value={values.firstName}
             onChange={handleChange}
-            className="w-full border rounded-lg px-4 py-3 focus:border-[#FF7A21] outline-none"
+            onBlur={handleBlur}
+            className={fieldClass("firstName")}
           />
+          <FieldError name="firstName" />
         </div>
 
         <div>
-          <label className="block mb-2 text-sm font-medium">
-            Last Name
-          </label>
-
+          <label className="block mb-2 text-sm font-medium text-gray-700">Last Name</label>
           <input
             type="text"
             name="lastName"
-            value={formData.lastName}
+            value={values.lastName}
             onChange={handleChange}
-            className="w-full border rounded-lg px-4 py-3 focus:border-[#FF7A21] outline-none"
+            onBlur={handleBlur}
+            className={fieldClass("lastName")}
           />
+          <FieldError name="lastName" />
         </div>
 
         <div>
-          <label className="block mb-2 text-sm font-medium">
-            Email
-          </label>
-
+          <label className="block mb-2 text-sm font-medium text-gray-700">Email</label>
           <input
             type="email"
             name="email"
-            value={formData.email}
+            value={values.email}
             onChange={handleChange}
-            className="w-full border rounded-lg px-4 py-3 focus:border-[#FF7A21] outline-none"
+            onBlur={handleBlur}
+            className={fieldClass("email")}
           />
+          <FieldError name="email" />
         </div>
 
         <div>
-          <label className="block mb-2 text-sm font-medium">
-            Phone
-          </label>
-
+          <label className="block mb-2 text-sm font-medium text-gray-700">Phone</label>
           <input
             type="text"
             name="phone"
-            value={formData.phone}
+            value={values.phone}
             onChange={handleChange}
-            className="w-full border rounded-lg px-4 py-3 focus:border-[#FF7A21] outline-none"
+            onBlur={handleBlur}
+            className={fieldClass("phone")}
           />
+          <FieldError name="phone" />
         </div>
-
       </div>
 
       {/* Address */}
       <div className="mt-10">
-
         <h3 className="text-lg font-semibold text-[#0F265C] mb-5">
           Address Information
         </h3>
 
-        <input
-          type="text"
-          name="address"
-          placeholder="Address"
-          value={formData.address}
-          onChange={handleChange}
-          className="w-full border rounded-lg px-4 py-3 mb-6 focus:border-[#FF7A21] outline-none"
-        />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <label className="block mb-2 text-sm font-medium text-gray-700">Address Type</label>
+            <select
+              name="addressType"
+              value={values.addressType}
+              onChange={handleChange}
+              className="w-full border border-gray-300 rounded-lg px-4 py-3"
+            >
+              {ADDRESS_TYPES.map((type) => (
+                <option key={type} value={type}>
+                  {type.charAt(0).toUpperCase() + type.slice(1)}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block mb-2 text-sm font-medium text-gray-700">House No.</label>
+            <input
+              type="text"
+              name="houseNumber"
+              value={values.houseNumber}
+              onChange={handleChange}
+              className="w-full border border-gray-300 rounded-lg px-4 py-3 outline-none focus:border-[#FF7A21]"
+            />
+          </div>
+
+          <div className="md:col-span-2">
+            <label className="block mb-2 text-sm font-medium text-gray-700">Address Line 1</label>
+            <input
+              type="text"
+              name="addressLine1"
+              value={values.addressLine1}
+              onChange={handleChange}
+              className="w-full border border-gray-300 rounded-lg px-4 py-3 outline-none focus:border-[#FF7A21]"
+            />
+          </div>
+
+          <div className="md:col-span-2">
+            <label className="block mb-2 text-sm font-medium text-gray-700">Address Line 2</label>
+            <input
+              type="text"
+              name="addressLine2"
+              value={values.addressLine2}
+              onChange={handleChange}
+              className="w-full border border-gray-300 rounded-lg px-4 py-3 outline-none focus:border-[#FF7A21]"
+            />
+          </div>
+
+          <div>
+            <label className="block mb-2 text-sm font-medium text-gray-700">Landmark</label>
+            <input
+              type="text"
+              name="landmark"
+              value={values.landmark}
+              onChange={handleChange}
+              className="w-full border border-gray-300 rounded-lg px-4 py-3 outline-none focus:border-[#FF7A21]"
+            />
+          </div>
+
+          <div>
+            <label className="block mb-2 text-sm font-medium text-gray-700">Locality</label>
+            <input
+              type="text"
+              name="locality"
+              value={values.locality}
+              onChange={handleChange}
+              className="w-full border border-gray-300 rounded-lg px-4 py-3 outline-none focus:border-[#FF7A21]"
+            />
+          </div>
+
+          <div>
+            <label className="block mb-2 text-sm font-medium text-gray-700">City</label>
+            <input
+              type="text"
+              name="city"
+              value={values.city}
+              onChange={handleChange}
+              className="w-full border border-gray-300 rounded-lg px-4 py-3 outline-none focus:border-[#FF7A21]"
+            />
+          </div>
+
+          <div>
+            <label className="block mb-2 text-sm font-medium text-gray-700">State</label>
+            <input
+              type="text"
+              name="state"
+              value={values.state}
+              onChange={handleChange}
+              className="w-full border border-gray-300 rounded-lg px-4 py-3 outline-none focus:border-[#FF7A21]"
+            />
+          </div>
+
+          <div>
+            <label className="block mb-2 text-sm font-medium text-gray-700">Postal Code</label>
+            <input
+              type="text"
+              name="zipCode"
+              value={values.zipCode}
+              onChange={handleChange}
+              className="w-full border border-gray-300 rounded-lg px-4 py-3 outline-none focus:border-[#FF7A21]"
+            />
+          </div>
+
+          <div>
+            <label className="block mb-2 text-sm font-medium text-gray-700">Country ID</label>
+            <input
+              type="number"
+              name="countryID"
+              value={values.countryID}
+              onChange={handleChange}
+              className="w-full border border-gray-300 rounded-lg px-4 py-3 outline-none focus:border-[#FF7A21]"
+            />
+          </div>
+
+          <div>
+            <label className="block mb-2 text-sm font-medium text-gray-700">Country Code</label>
+            <input
+              type="text"
+              name="countryCode"
+              placeholder="e.g. IN"
+              value={values.countryCode}
+              onChange={handleChange}
+              className="w-full border border-gray-300 rounded-lg px-4 py-3 outline-none focus:border-[#FF7A21]"
+            />
+          </div>
+
+          <div>
+            <label className="block mb-2 text-sm font-medium text-gray-700">Phone Code</label>
+            <input
+              type="text"
+              name="phoneCode"
+              placeholder="e.g. +91"
+              value={values.phoneCode}
+              onChange={handleChange}
+              className="w-full border border-gray-300 rounded-lg px-4 py-3 outline-none focus:border-[#FF7A21]"
+            />
+          </div>
+
+          <div className="flex items-center gap-2 md:col-span-2">
+            <input
+              type="checkbox"
+              id="isDefault"
+              name="isDefault"
+              checked={values.isDefault}
+              onChange={handleChange}
+              className="h-4 w-4"
+            />
+            <label htmlFor="isDefault" className="text-sm text-gray-700">
+              Set as default address
+            </label>
+          </div>
+        </div>
+      </div>
+
+      {/* Account Information (read-only) */}
+      <div className="mt-10">
+        <h3 className="text-lg font-semibold text-[#0F265C] mb-5">
+          Account Information
+        </h3>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <label className="block mb-2 text-sm font-medium text-gray-700">Role</label>
+            <div className="w-full border border-gray-200 bg-gray-50 rounded-lg px-4 py-3 text-gray-600">
+              {roles.length > 0 ? roles.map((r) => r.roleName).join(", ") : "Not assigned"}
+            </div>
+          </div>
 
-          <select
-            name="country"
-            value={formData.country}
-            onChange={handleChange}
-            className="border rounded-lg px-4 py-3"
-          >
-            <option value="">Select Country</option>
-            <option>India</option>
-          </select>
-
-          <select
-            name="state"
-            value={formData.state}
-            onChange={handleChange}
-            className="border rounded-lg px-4 py-3"
-          >
-            <option value="">Select State</option>
-            <option>Delhi</option>
-          </select>
-
-          <select
-            name="city"
-            value={formData.city}
-            onChange={handleChange}
-            className="border rounded-lg px-4 py-3"
-          >
-            <option value="">Select City</option>
-            <option>Delhi</option>
-          </select>
-
-          <input
-            type="text"
-            name="postalCode"
-            placeholder="Postal Code"
-            value={formData.postalCode}
-            onChange={handleChange}
-            className="border rounded-lg px-4 py-3 focus:border-[#FF7A21] outline-none"
-          />
-
+          <div>
+            <label className="block mb-2 text-sm font-medium text-gray-700">Status</label>
+            <div className="w-full border border-gray-200 bg-gray-50 rounded-lg px-4 py-3 text-gray-600">
+              {user?.status === "1" ? "Active" : "Inactive"}
+            </div>
+          </div>
         </div>
       </div>
 
       {/* Buttons */}
       <div className="flex justify-end gap-3 mt-10">
-
         <button
           type="button"
-          className="border border-gray-300 px-6 py-2.5 rounded-lg hover:bg-gray-100"
+          onClick={() => resetForm()}
+          disabled={isSubmitting}
+          className="border border-gray-300 px-6 py-2.5 rounded-lg hover:bg-gray-100 disabled:opacity-60"
         >
           Cancel
         </button>
 
         <button
           type="submit"
-          className="bg-[#FF7A21] text-white px-6 py-2.5 rounded-lg hover:opacity-90"
+          disabled={isSubmitting}
+          className="bg-[#FF7A21] text-white px-6 py-2.5 rounded-lg hover:opacity-90 disabled:opacity-60"
         >
-          Save Changes
+          {isSubmitting ? "Saving..." : "Save Changes"}
         </button>
-
       </div>
     </form>
   );

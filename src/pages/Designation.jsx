@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   ChevronRight,
   FileText,
@@ -6,125 +6,332 @@ import {
   ChevronDown,
   Plus,
 } from "lucide-react";
-import { DESIGNATION_DATA } from "../components/Designation/designationData";
+
 import DesignationTable from "../components/Designation/DesignationTable";
 import AddDesignationDrawer from "../components/Designation/AddDesignationDrawer";
 import DeleteDesignationModal from "../components/Designation/DeleteDesignationModal";
 
+import {
+  getDesignations,
+  createDesignation,
+  updateDesignation,
+  deleteDesignation,
+} from "../services/designation.service";
+
+import { getDepartments } from "../services/department.service";
+
 const Designation = () => {
-  const [designations, setDesignations] = useState(DESIGNATION_DATA);
+  const [designations, setDesignations] = useState([]);
+  const [departments, setDepartments] = useState([]);
+
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [editData, setEditData] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
+  const [loading, setLoading] = useState(false);
 
-  // Open drawer for add
+  // ==========================================================
+  // GET DESIGNATIONS
+  // ==========================================================
+
+  const fetchDesignations = async () => {
+    try {
+      const response = await getDesignations();
+
+      console.log("Designation API Response:", response);
+
+      const data =
+        response?.data?.data ||
+        response?.data ||
+        [];
+
+      setDesignations(
+        Array.isArray(data) ? data : []
+      );
+    } catch (error) {
+      console.error(
+        "Failed to fetch designations:",
+        error
+      );
+
+      setDesignations([]);
+    }
+  };
+
+  // ==========================================================
+  // GET DEPARTMENTS
+  // ==========================================================
+
+  const fetchDepartments = async () => {
+    try {
+      const response = await getDepartments();
+
+      console.log("Department API Response:", response);
+
+      const data =
+        response?.data?.data ||
+        response?.data ||
+        [];
+
+      console.log(
+        "Raw Departments for dropdown:",
+        data
+      );
+
+      /*
+       * Normalize department data.
+       *
+       * Different APIs can return:
+       * departmentName
+       * name
+       * department_name
+       *
+       * The drawer expects:
+       * department.id
+       * department.departmentName
+       */
+
+      const normalizedDepartments = Array.isArray(data)
+        ? data.map((department) => ({
+            ...department,
+
+            id:
+              department.id ??
+              department.departmentId ??
+              department.department_id,
+
+            departmentName:
+              department.departmentName ??
+              department.name ??
+              department.department_name ??
+              "",
+          }))
+        : [];
+
+      console.log(
+        "Normalized Departments for dropdown:",
+        normalizedDepartments
+      );
+
+      setDepartments(normalizedDepartments);
+    } catch (error) {
+      console.error(
+        "Failed to fetch departments:",
+        error
+      );
+
+      setDepartments([]);
+    }
+  };
+
+  // ==========================================================
+  // FETCH DATA ON PAGE LOAD
+  // ==========================================================
+
+  useEffect(() => {
+    fetchDesignations();
+    fetchDepartments();
+  }, []);
+
+  // ==========================================================
+  // OPEN ADD DRAWER
+  // ==========================================================
+
   const handleAdd = () => {
     setEditData(null);
     setIsDrawerOpen(true);
   };
 
-  // Open drawer for edit
-  const handleEdit = (des) => {
-    setEditData(des);
+  // ==========================================================
+  // OPEN EDIT DRAWER
+  // ==========================================================
+
+  const handleEdit = (designation) => {
+    console.log(
+      "Edit Designation:",
+      designation
+    );
+
+    setEditData(designation);
     setIsDrawerOpen(true);
   };
 
-  // Submit add/edit
-  const handleSubmit = ({ title, department, status }) => {
-    if (editData) {
-      setDesignations((prev) =>
-        prev.map((d) =>
-          d.id === editData.id ? { ...d, title, department, status } : d
-        )
+  // ==========================================================
+  // ADD / UPDATE DESIGNATION
+  // ==========================================================
+
+  const handleSubmit = async (formData) => {
+    try {
+      setLoading(true);
+
+      console.log(
+        "Designation Form Data:",
+        formData
       );
-    } else {
-      const newId = Math.max(...designations.map((d) => d.id), 0) + 1;
-      setDesignations((prev) => [
-        {
-          id: newId,
-          title,
-          department,
-          employees: 0,
-          status,
-          createdDate: new Date().toLocaleDateString("en-US", {
-            month: "short",
-            day: "numeric",
-            year: "numeric",
-          }),
-        },
-        ...prev,
-      ]);
+
+      if (editData) {
+        await updateDesignation(
+          editData.id,
+          formData
+        );
+      } else {
+        await createDesignation(formData);
+      }
+
+      await fetchDesignations();
+
+      setIsDrawerOpen(false);
+      setEditData(null);
+    } catch (error) {
+      console.error(
+        "Failed to save designation:",
+        error
+      );
+    } finally {
+      setLoading(false);
     }
-    setEditData(null);
   };
 
-  // Confirm delete
-  const handleDelete = (id) => {
-    setDesignations((prev) => prev.filter((d) => d.id !== id));
+  // ==========================================================
+  // DELETE DESIGNATION
+  // ==========================================================
+
+  const handleDelete = async (id) => {
+    try {
+      setLoading(true);
+
+      await deleteDesignation(id);
+
+      await fetchDesignations();
+
+      setDeleteTarget(null);
+    } catch (error) {
+      console.error(
+        "Failed to delete designation:",
+        error
+      );
+    } finally {
+      setLoading(false);
+    }
   };
+
+  // ==========================================================
+  // RENDER
+  // ==========================================================
 
   return (
-    <div className="space-y-6">
-      {/* ── Header ── */}
-      <div className="flex items-start justify-between">
+    <div>
+      {/* =====================================================
+          HEADER
+      ===================================================== */}
+
+      <div className="flex items-center justify-between mb-5">
         <div>
-          <h1 className="text-3xl font-bold text-[#0F265C]">Designations</h1>
-          <nav className="flex items-center gap-1.5 mt-1 text-xs text-gray-400">
+          {/* Breadcrumb */}
+
+          <div className="flex items-center gap-1 text-sm text-gray-500 mb-1">
             <span>Employees</span>
-            <ChevronRight size={12} />
-            <span className="text-orange-500 font-medium">Designations</span>
-          </nav>
+
+            <ChevronRight
+              size={15}
+              className="text-gray-400"
+            />
+
+            <span className="text-gray-800 font-medium">
+              Designations
+            </span>
+          </div>
+
+          <h1 className="text-2xl font-bold text-[#0F265C]">
+            Designations
+          </h1>
         </div>
 
         <div className="flex items-center gap-2">
-          {/* Export Dropdown */}
+          {/* =================================================
+              EXPORT DROPDOWN
+          ================================================= */}
+
           <div className="dropdown dropdown-end">
             <label
               tabIndex={0}
               className="flex items-center gap-2 px-4 py-2.5 bg-white hover:bg-gray-50 text-gray-700 border border-gray-200 text-sm font-semibold rounded-lg transition shadow-sm cursor-pointer"
             >
-              <FileText size={16} className="text-gray-500" />
+              <FileText
+                size={16}
+                className="text-gray-500"
+              />
+
               <span>Export</span>
+
               <ChevronDown size={14} />
             </label>
+
             <ul
               tabIndex={0}
               className="dropdown-content menu bg-white border border-gray-100 rounded-xl shadow-xl z-50 w-48 p-1.5 mt-2"
             >
               <li>
                 <a className="flex items-center gap-3 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-lg">
-                  <FileText size={16} className="text-red-500 shrink-0" />
-                  <span className="font-medium">Export as PDF</span>
+                  <FileText
+                    size={16}
+                    className="text-red-500 shrink-0"
+                  />
+
+                  <span className="font-medium">
+                    Export as PDF
+                  </span>
                 </a>
               </li>
+
               <li>
                 <a className="flex items-center gap-3 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-lg">
-                  <FileSpreadsheet size={16} className="text-green-600 shrink-0" />
-                  <span className="font-medium">Export as Excel</span>
+                  <FileSpreadsheet
+                    size={16}
+                    className="text-green-600 shrink-0"
+                  />
+
+                  <span className="font-medium">
+                    Export as Excel
+                  </span>
                 </a>
               </li>
             </ul>
           </div>
 
-          {/* Add Designation */}
+          {/* =================================================
+              ADD DESIGNATION
+          ================================================= */}
+
           <button
+            type="button"
             onClick={handleAdd}
-            className="flex items-center gap-2 px-4 py-2.5 bg-orange-500 text-white text-sm font-semibold rounded-lg hover:bg-orange-600 transition shadow-sm"
+            disabled={loading}
+            className="flex items-center gap-2 px-4 py-2.5 bg-orange-500 text-white text-sm font-semibold rounded-lg hover:bg-orange-600 transition shadow-sm disabled:opacity-60"
           >
             <Plus size={15} />
+
             Add Designation
           </button>
         </div>
       </div>
 
-      {/* ── Designation Table ── */}
+      {/* =====================================================
+          DESIGNATION TABLE
+      ===================================================== */}
+
       <DesignationTable
         designations={designations}
+        departments={departments}
         onEdit={handleEdit}
-        onDelete={(des) => setDeleteTarget(des)}
+        onDelete={(designation) =>
+          setDeleteTarget(designation)
+        }
       />
 
-      {/* ── Add/Edit Drawer ── */}
+      {/* =====================================================
+          ADD / EDIT DRAWER
+      ===================================================== */}
+
       <AddDesignationDrawer
         open={isDrawerOpen}
         onClose={() => {
@@ -132,14 +339,20 @@ const Designation = () => {
           setEditData(null);
         }}
         editData={editData}
+        departments={departments}
         onSubmit={handleSubmit}
       />
 
-      {/* ── Delete Modal ── */}
+      {/* =====================================================
+          DELETE MODAL
+      ===================================================== */}
+
       <DeleteDesignationModal
         open={!!deleteTarget}
         item={deleteTarget}
-        onClose={() => setDeleteTarget(null)}
+        onClose={() =>
+          setDeleteTarget(null)
+        }
         onConfirm={handleDelete}
       />
     </div>

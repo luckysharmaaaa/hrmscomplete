@@ -77,10 +77,25 @@ export default function EmployeeGrid({
                   </div>
 
                   {/* Avatar */}
+                  {/* Avatar */}
                   <div className="relative mt-2">
-                    <div className={`w-16 h-16 rounded-full ${emp.color} flex items-center justify-center text-white text-xl font-bold shadow-md ring-4 ring-white`}>
-                      {emp.avatar}
+                    <div
+                      className={`w-16 h-16 rounded-full ${emp.color} flex items-center justify-center text-white text-xl font-bold shadow-md ring-4 ring-white overflow-hidden`}
+                    >
+                      {emp.avatarUrl ? (
+                        <img
+                          src={emp.avatarUrl}
+                          alt={emp.name}
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            e.currentTarget.style.display = "none";
+                          }}
+                        />
+                      ) : (
+                        emp.avatar
+                      )}
                     </div>
+
                     <span className="absolute bottom-0.5 right-0.5 w-3.5 h-3.5 rounded-full border-2 border-white bg-green-500" />
                   </div>
 

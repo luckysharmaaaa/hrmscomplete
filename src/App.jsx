@@ -2,6 +2,8 @@ import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
+import { AuthProvider } from "./context/AuthContext";
+
 import Sidebar from "./components/Sidebar";
 import Navbar from "./components/Navbar";
 
@@ -101,26 +103,28 @@ function Layout() {
 
 function App() {
   return (
-    <BrowserRouter>
-      <Routes>
-        {/* Login */}
-        <Route path="/" element={<Login />} />
+    <AuthProvider>
+      <BrowserRouter>
+        <Routes>
+          {/* Login */}
+          <Route path="/" element={<Login />} />
 
-        {/* Dashboard Layout */}
-        <Route path="/*" element={<Layout />} />
-      </Routes>
+          {/* Dashboard Layout */}
+          <Route path="/*" element={<Layout />} />
+        </Routes>
 
-      <ToastContainer
-        position="top-right"
-        autoClose={3000}
-        hideProgressBar={false}
-        newestOnTop
-        closeOnClick
-        pauseOnHover
-        draggable
-        theme="light"
-      />
-    </BrowserRouter>
+        <ToastContainer
+          position="top-right"
+          autoClose={3000}
+          hideProgressBar={false}
+          newestOnTop
+          closeOnClick
+          pauseOnHover
+          draggable
+          theme="light"
+        />
+      </BrowserRouter>
+    </AuthProvider>
   );
 }
 
