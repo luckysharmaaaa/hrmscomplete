@@ -29,6 +29,9 @@ import EmployeeDetail from "./pages/EmployeeDetail";
 import Designation from "./pages/Designation";
 import Department from "./pages/Department";
 
+import AttendanceRegularizationAdmin from "./pages/AttendanceRegularizationAdmin";
+
+
 function Layout() {
   const location = useLocation();
   const hideLayout = location.pathname === "/";
@@ -94,6 +97,10 @@ function Layout() {
               path="/department"
               element={<Department />}
             />
+            <Route path="/attendance-regularization"
+             element={<AttendanceRegularizationAdmin />} 
+             
+             />
           </Routes>
         </main>
       </div>

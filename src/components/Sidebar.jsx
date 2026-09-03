@@ -19,6 +19,7 @@ import {
   Layers,
   Building2,
   Briefcase,
+  ClipboardEdit,
 } from "lucide-react";
 
 function Sidebar() {
@@ -202,6 +203,17 @@ function Sidebar() {
                     >
                       <Home size={15} className="shrink-0" />
                       WFH Management
+                    </Link>
+                  </li>
+
+                  {/* Regularization (Admin) */}
+                  <li>
+                    <Link
+                      to="/attendance-regularization"
+                      className={subLink("/attendance-regularization")}
+                    >
+                      <ClipboardEdit size={15} className="shrink-0" />
+                      Regularization Requests
                     </Link>
                   </li>
                 </ul>

@@ -11,7 +11,7 @@ import { getMyProfile } from "../../services/profileApi";
 import { useAuth } from "../../context/AuthContext";
 
 const Profile = () => {
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchParams] = useSearchParams();
 
   const initialTab =
     searchParams.get("tab") === "password" ? "password" : "profile";
@@ -22,27 +22,46 @@ const Profile = () => {
 
   const { setProfile: setAuthProfile } = useAuth();
 
-  const loadProfile = useCallback(async () => {
-    setLoading(true);
+  // showSpinner = false lets us silently refresh in the background
+  // (e.g. on tab focus) without flashing the skeleton loader again.
+  const loadProfile = useCallback(
+    async (showSpinner = true) => {
+      if (showSpinner) setLoading(true);
 
-    try {
-      const response = await getMyProfile();
+      try {
+        const response = await getMyProfile();
+        const data = response?.data || null;
 
-      setProfileData(response?.data || null);
-    } catch (error) {
-      toast.error(
-        error?.response?.data?.message || "Failed to load your profile",
-      );
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+        setProfileData(data);
+        setAuthProfile(data); // keep Navbar in sync from every fetch, not just saves
+      } catch (error) {
+        toast.error(
+          error?.response?.data?.message || "Failed to load your profile",
+        );
+      } finally {
+        if (showSpinner) setLoading(false);
+      }
+    },
+    [setAuthProfile],
+  );
 
+  // Initial load on mount — this was missing before, which left the
+  // page stuck on the skeleton forever since `focus` never fires on
+  // first render (the window already has focus when we mount).
   useEffect(() => {
     loadProfile();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Silent re-fetch when this tab regains focus (e.g. you uploaded a
+  // photo in User Management, then switched back here).
+  useEffect(() => {
+    const handleFocus = () => loadProfile(false);
+    window.addEventListener("focus", handleFocus);
+    return () => window.removeEventListener("focus", handleFocus);
   }, [loadProfile]);
 
-  // Keep tab in sync with Navbar URL
+  // Keep tab in sync with Navbar URL (?tab=password / ?tab=profile)
   useEffect(() => {
     const tab =
       searchParams.get("tab") === "password" ? "password" : "profile";
@@ -74,7 +93,7 @@ const Profile = () => {
 
       {/* Main Content */}
       <div className="w-full">
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 min-h-[650px]">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 min-h-162.5">
           {loading ? (
             <ProfileSkeleton />
           ) : (

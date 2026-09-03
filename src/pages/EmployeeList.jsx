@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 
 import {
   ChevronRight,
@@ -14,13 +14,13 @@ import EmployeeStatCards from "../components/employeeList/EmployeeStatCards";
 import EmployeeTable from "../components/employeeList/EmployeeTable";
 import EmployeeGrid from "../components/employeeList/EmployeeGrid";
 import AddEmployeeDrawer from "../components/employeeList/AddEmployeeDrawer";
-// FIX: was importing the leaveAdmin DeleteModal (no await, no
-// loading/error state). Use the employee-specific one instead.
+import EmployeeShiftDrawer from "../components/employeeList/EmployeeShiftDrawer";
 import DeleteModal from "../components/employeeList/DeleteModal";
 
-// FIX: deleteEmployee was never imported, so there was nothing to
-// actually call the DELETE API with.
-import { getEmployees, deleteEmployee } from "../services/employee.service";
+import {
+  getEmployees,
+  deleteEmployee,
+} from "../services/employee.service";
 
 const AVATAR_COLORS = [
   "bg-blue-500",
@@ -36,47 +36,64 @@ const AVATAR_COLORS = [
 ];
 
 export default function EmployeeList() {
+  // =========================================================
   // Employee Data
+  // =========================================================
+
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  const fetchEmployees = async () => {
+  // =========================================================
+  // Fetch Employees
+  // =========================================================
+
+  const fetchEmployees = useCallback(async () => {
     try {
       setLoading(true);
 
       const res = await getEmployees();
 
-      const employees = res.data.data.map((emp, index) => ({
-        id: emp.id,
+      const employeeData = res?.data?.data;
 
-        empId: emp.employeeCode,
+      if (!Array.isArray(employeeData)) {
+        console.warn(
+          "Employee API returned unexpected data:",
+          res?.data
+        );
 
-        name: `${emp.firstName} ${emp.lastName}`.trim(),
+        setData([]);
+        return;
+      }
+
+      const employees = employeeData.map((emp, index) => ({
+        id: emp?.id,
+
+        empId: String(emp?.employeeCode ?? ""),
+
+        name: `${emp?.firstName ?? ""} ${emp?.lastName ?? ""}`.trim(),
 
         // Default avatar initials
-        avatar: `${emp.firstName?.[0] ?? ""}${emp.lastName?.[0] ?? ""}`,
+        avatar: `${emp?.firstName?.[0] ?? ""}${emp?.lastName?.[0] ?? ""}`,
 
         // Default avatar color
-        // Used when employee does not have a profile image
         color: AVATAR_COLORS[index % AVATAR_COLORS.length],
 
         // Profile image
-        // We will use the actual backend field once confirmed
-        // Profile image
-        avatarUrl: emp.profileImage
+        avatarUrl: emp?.profileImage
           ? `http://localhost:5000/${emp.profileImage}`
           : null,
-        department: emp.departmentName,
 
-        designation: emp.designationName,
+        department: String(emp?.departmentName ?? ""),
 
-        email: emp.email,
+        designation: String(emp?.designationName ?? ""),
 
-        phone: emp.phone,
+        email: String(emp?.email ?? ""),
 
-        joiningDate: emp.joiningDate,
+        phone: String(emp?.phone ?? ""),
 
-        status: emp.status ? "Active" : "Inactive",
+        joiningDate: emp?.joiningDate ?? null,
+
+        status: emp?.status ? "Active" : "Inactive",
 
         projects: 0,
 
@@ -90,22 +107,37 @@ export default function EmployeeList() {
       setData(employees);
     } catch (error) {
       console.error("Failed to fetch employees:", error);
+
+      // Keep existing data instead of unnecessarily clearing
+      // the table when a refresh request fails.
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  // =========================================================
+  // Initial API Call
+  // =========================================================
 
   useEffect(() => {
     fetchEmployees();
-  }, []);
+  }, [fetchEmployees]);
+
+  // =========================================================
+  // View
+  // =========================================================
 
   const [viewMode, setViewMode] = useState("list");
 
+  // =========================================================
   // Filters
+  // =========================================================
+
   const [search, setSearch] = useState("");
   const [designation, setDesignation] = useState("All Designations");
   const [status, setStatus] = useState("All Status");
   const [sortBy, setSortBy] = useState("Recently Added");
+
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [currentPage, setCurrentPage] = useState(1);
 
@@ -117,46 +149,70 @@ export default function EmployeeList() {
     },
   ]);
 
-  // Modals
+  // =========================================================
+  // Modals / Drawers
+  // =========================================================
+
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [editItem, setEditItem] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
+  const [shiftTarget, setShiftTarget] = useState(null);
 
-  // Filter
+  // =========================================================
+  // Filter Employees
+  // =========================================================
+
   const filtered = data
-    .filter((e) => {
-      const q = search.toLowerCase();
+    .filter((employee) => {
+      const q = String(search ?? "").toLowerCase();
 
       const matchSearch =
-        e.name.toLowerCase().includes(q) ||
-        e.empId.toLowerCase().includes(q) ||
-        e.email.toLowerCase().includes(q) ||
-        e.designation.toLowerCase().includes(q) ||
-        e.department.toLowerCase().includes(q);
+        String(employee?.name ?? "")
+          .toLowerCase()
+          .includes(q) ||
+        String(employee?.empId ?? "")
+          .toLowerCase()
+          .includes(q) ||
+        String(employee?.email ?? "")
+          .toLowerCase()
+          .includes(q) ||
+        String(employee?.designation ?? "")
+          .toLowerCase()
+          .includes(q) ||
+        String(employee?.department ?? "")
+          .toLowerCase()
+          .includes(q);
 
       const matchDesignation =
         designation === "All Designations" ||
-        e.designation === designation;
+        employee?.designation === designation;
 
       const matchStatus =
         status === "All Status" ||
-        e.status === status;
+        employee?.status === status;
 
       return matchSearch && matchDesignation && matchStatus;
     })
     .sort((a, b) => {
       if (sortBy === "Ascending") {
-        return a.name.localeCompare(b.name);
+        return String(a?.name ?? "").localeCompare(
+          String(b?.name ?? "")
+        );
       }
 
       if (sortBy === "Descending") {
-        return b.name.localeCompare(a.name);
+        return String(b?.name ?? "").localeCompare(
+          String(a?.name ?? "")
+        );
       }
 
       return 0;
     });
 
+  // =========================================================
   // Pagination
+  // =========================================================
+
   const totalPages = Math.max(
     1,
     Math.ceil(filtered.length / rowsPerPage)
@@ -167,7 +223,10 @@ export default function EmployeeList() {
     currentPage * rowsPerPage
   );
 
-  // Handlers
+  // =========================================================
+  // Submit Handler
+  // =========================================================
+
   const handleSubmit = async () => {
     await fetchEmployees();
 
@@ -175,15 +234,37 @@ export default function EmployeeList() {
     setEditItem(null);
   };
 
-  // FIX: this used to only filter local state (setData), with no API
-  // call at all — that's why nothing ever showed up in the Network
-  // tab, and why the employee reappeared on the next fetch. Now it
-  // actually calls the DELETE endpoint, and only updates local state
-  // once the server confirms the delete succeeded.
+  // =========================================================
+  // Delete Handler
+  // =========================================================
+
   const handleDelete = async (id) => {
-    await deleteEmployee(id);
-    setData((prev) => prev.filter((e) => e.id !== id));
+    try {
+      await deleteEmployee(id);
+
+      // Remove deleted employee from local state
+      setData((prev) =>
+        prev.filter((employee) => employee.id !== id)
+      );
+
+      // Close delete modal after successful deletion
+      setDeleteTarget(null);
+    } catch (error) {
+      console.error("Failed to delete employee:", error);
+    }
   };
+
+  // =========================================================
+  // Reset Page When Filters Change
+  // =========================================================
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, designation, status, rowsPerPage]);
+
+  // =========================================================
+  // Render
+  // =========================================================
 
   return (
     <div className="space-y-6">
@@ -206,25 +287,29 @@ export default function EmployeeList() {
         </div>
 
         <div className="flex items-center gap-2">
-          {/* List / Grid toggle */}
+          {/* List / Grid Toggle */}
           <div className="flex items-center border border-gray-200 rounded-lg overflow-hidden">
             <button
+              type="button"
               onClick={() => setViewMode("list")}
-              className={`p-2.5 transition ${viewMode === "list"
+              className={`p-2.5 transition ${
+                viewMode === "list"
                   ? "bg-orange-500 text-white"
                   : "bg-white text-gray-500 hover:bg-gray-50"
-                }`}
+              }`}
               title="List View"
             >
               <LayoutList size={16} />
             </button>
 
             <button
+              type="button"
               onClick={() => setViewMode("grid")}
-              className={`p-2.5 transition ${viewMode === "grid"
+              className={`p-2.5 transition ${
+                viewMode === "grid"
                   ? "bg-orange-500 text-white"
                   : "bg-white text-gray-500 hover:bg-gray-50"
-                }`}
+              }`}
               title="Grid View"
             >
               <LayoutGrid size={16} />
@@ -237,7 +322,10 @@ export default function EmployeeList() {
               tabIndex={0}
               className="flex items-center gap-2 px-4 py-2.5 bg-white hover:bg-gray-50 text-gray-700 border border-gray-200 text-sm font-semibold rounded-lg transition shadow-sm cursor-pointer"
             >
-              <FileText size={16} className="text-gray-500" />
+              <FileText
+                size={16}
+                className="text-gray-500"
+              />
 
               <span>Export</span>
 
@@ -278,6 +366,7 @@ export default function EmployeeList() {
 
           {/* Add Employee */}
           <button
+            type="button"
             onClick={() => {
               setEditItem(null);
               setDrawerOpen(true);
@@ -294,7 +383,7 @@ export default function EmployeeList() {
       {/* Stat Cards */}
       <EmployeeStatCards data={data} />
 
-      {/* Table or Grid */}
+      {/* Table / Grid */}
       {viewMode === "list" ? (
         <EmployeeTable
           paginated={paginated}
@@ -318,7 +407,12 @@ export default function EmployeeList() {
             setEditItem(row);
             setDrawerOpen(true);
           }}
-          onDelete={(row) => setDeleteTarget(row)}
+          onDelete={(row) => {
+            setDeleteTarget(row);
+          }}
+          onViewShift={(row) => {
+            setShiftTarget(row);
+          }}
         />
       ) : (
         <EmployeeGrid
@@ -331,11 +425,13 @@ export default function EmployeeList() {
             setEditItem(row);
             setDrawerOpen(true);
           }}
-          onDelete={(row) => setDeleteTarget(row)}
+          onDelete={(row) => {
+            setDeleteTarget(row);
+          }}
         />
       )}
 
-      {/* Modals */}
+      {/* Add / Edit Employee Drawer */}
       <AddEmployeeDrawer
         open={drawerOpen}
         onClose={() => {
@@ -346,11 +442,19 @@ export default function EmployeeList() {
         onSubmit={handleSubmit}
       />
 
+      {/* Delete Modal */}
       <DeleteModal
         open={!!deleteTarget}
         item={deleteTarget}
         onClose={() => setDeleteTarget(null)}
         onConfirm={handleDelete}
+      />
+
+      {/* Employee Shift Drawer */}
+      <EmployeeShiftDrawer
+        open={!!shiftTarget}
+        employee={shiftTarget}
+        onClose={() => setShiftTarget(null)}
       />
     </div>
   );

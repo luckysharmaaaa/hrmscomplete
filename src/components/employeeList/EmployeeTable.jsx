@@ -7,6 +7,7 @@ import {
   Trash2,
   ChevronLeft,
   ChevronRight,
+  Clock,
   Eye,
 } from "lucide-react";
 import DateRangePickerButton from "../user/DateRangePickerButton";
@@ -53,6 +54,7 @@ export default function EmployeeTable({
   setCurrentPage,
   totalPages,
   onEdit,
+  onViewShift,
   onDelete,
 }) {
   const navigate = useNavigate();
@@ -268,68 +270,75 @@ export default function EmployeeTable({
                     <td className="px-4 py-3 text-right">
                       <div className="flex items-center justify-end gap-1">
                         <button
-                          onClick={() => onEdit(row)}
-                          className="p-1.5 rounded-lg hover:bg-orange-50 text-gray-500 hover:text-orange-500 transition"
-                          title="Edit"
+                         onClick={() => onViewShift(row)}
+                           className="p-1.5 rounded-lg hover:bg-blue-50 text-gray-500 hover:text-blue-500 transition"
+                                                  title="Shift"
                         >
-                          <Pencil size={15} />
-                        </button>
-                        <button
-                          onClick={() => onDelete(row)}
-                          className="p-1.5 rounded-lg hover:bg-red-50 text-gray-500 hover:text-red-500 transition"
-                          title="Delete"
-                        >
-                          <Trash2 size={15} />
-                        </button>
-                      </div>
-                    </td>
+                                                  <Clock size={15} />
+                                                </button>
+                      <button
+                        onClick={() => onEdit(row)}
+                        className="p-1.5 rounded-lg hover:bg-orange-50 text-gray-500 hover:text-orange-500 transition"
+                        title="Edit"
+                      >
+                        <Pencil size={15} />
+                      </button>
+                      <button
+                        onClick={() => onDelete(row)}
+                        className="p-1.5 rounded-lg hover:bg-red-50 text-gray-500 hover:text-red-500 transition"
+                        title="Delete"
+                      >
+                        <Trash2 size={15} />
+                      </button>
+                    </div>
+                  </td>
                   </tr>
-                );
+          );
               })
             )}
-          </tbody>
-        </table>
-      </div>
-
-      {/* Pagination */}
-      <div className="px-5 py-3 border-t border-gray-50 flex items-center justify-between text-sm text-gray-500">
-        <span>
-          Showing{" "}
-          {filtered.length === 0
-            ? 0
-            : Math.min((currentPage - 1) * rowsPerPage + 1, filtered.length)}
-          –{Math.min(currentPage * rowsPerPage, filtered.length)} of{" "}
-          {filtered.length} entries
-        </span>
-        <div className="flex items-center gap-1">
-          <button
-            onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
-            disabled={currentPage === 1}
-            className="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition"
-          >
-            <ChevronLeft size={14} />
-          </button>
-          {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-            <button
-              key={page}
-              onClick={() => setCurrentPage(page)}
-              className={`w-8 h-8 flex items-center justify-center rounded-lg text-xs font-semibold transition ${page === currentPage
-                ? "bg-orange-500 text-white shadow-sm"
-                : "border border-gray-200 hover:bg-gray-50 text-gray-600"
-                }`}
-            >
-              {page}
-            </button>
-          ))}
-          <button
-            onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
-            disabled={currentPage === totalPages || totalPages === 0}
-            className="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition"
-          >
-            <ChevronRight size={14} />
-          </button>
-        </div>
-      </div>
+        </tbody>
+      </table>
     </div>
+
+      {/* Pagination */ }
+  <div className="px-5 py-3 border-t border-gray-50 flex items-center justify-between text-sm text-gray-500">
+    <span>
+      Showing{" "}
+      {filtered.length === 0
+        ? 0
+        : Math.min((currentPage - 1) * rowsPerPage + 1, filtered.length)}
+      –{Math.min(currentPage * rowsPerPage, filtered.length)} of{" "}
+      {filtered.length} entries
+    </span>
+    <div className="flex items-center gap-1">
+      <button
+        onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
+        disabled={currentPage === 1}
+        className="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition"
+      >
+        <ChevronLeft size={14} />
+      </button>
+      {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+        <button
+          key={page}
+          onClick={() => setCurrentPage(page)}
+          className={`w-8 h-8 flex items-center justify-center rounded-lg text-xs font-semibold transition ${page === currentPage
+            ? "bg-orange-500 text-white shadow-sm"
+            : "border border-gray-200 hover:bg-gray-50 text-gray-600"
+            }`}
+        >
+          {page}
+        </button>
+      ))}
+      <button
+        onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
+        disabled={currentPage === totalPages || totalPages === 0}
+        className="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition"
+      >
+        <ChevronRight size={14} />
+      </button>
+    </div>
+  </div>
+    </div >
   );
 }
