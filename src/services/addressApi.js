@@ -55,3 +55,10 @@ export const deleteAddress = (id, data = {}) => {
     data,
   });
 };
+
+export const getAttendanceHistory = async (page = 1, limit = 31, { startDate, endDate } = {}) => {
+  const res = await api.get("/attendance/history", {
+    params: { page, limit, startDate, endDate },
+  });
+  return res.data;
+};

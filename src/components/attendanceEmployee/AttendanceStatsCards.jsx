@@ -417,7 +417,7 @@ const StatCard = ({
   );
 
   return (
-    <div className="group relative bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden p-5 flex flex-col gap-3">
+    <div className="group relative bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden p-4 flex flex-col gap-3">
 
       {/* Top accent */}
       <div
@@ -453,23 +453,23 @@ const StatCard = ({
 
       {/* Value */}
       <div>
-        <div className="flex items-baseline gap-1">
-          <span className="text-2xl font-black text-[#0F265C]">
+        <div className="flex items-baseline gap-1.5">
+          <span className="text-2xl font-black text-[#0F265C] leading-none tabular-nums">
             {value}
           </span>
 
-          <span className="text-sm font-medium text-gray-300">
+          <span className="text-xs font-semibold text-gray-400 leading-none">
             / {total} {unit}
           </span>
         </div>
 
-        <p className="text-xs text-gray-400 font-medium mt-0.5">
+        <p className="text-xs text-gray-400 font-medium mt-1.5">
           {label}
         </p>
       </div>
 
       {/* Progress */}
-      <div className="space-y-1">
+      <div className="space-y-1.5">
         <div className="h-1.5 w-full bg-gray-100 rounded-full overflow-hidden">
           <div
             className={`h-full rounded-full bg-gradient-to-r ${gradient} transition-all duration-700`}
@@ -480,11 +480,11 @@ const StatCard = ({
         </div>
 
         <div className="flex items-center justify-between">
-          <span className="text-[10px] text-gray-400">
+          <span className="text-[10px] text-gray-400 font-medium">
             {trendLabel}
           </span>
 
-          <span className="text-[10px] font-bold text-gray-400">
+          <span className="text-[10px] font-bold text-gray-500">
             {Math.round(safeBar)}%
           </span>
         </div>

@@ -1,30 +1,62 @@
 import api from "./api";
 
-export const submitRegularization = async (payload) => {
-  const res = await api.post("/attendance/regularization", payload);
-  return res.data;
+/**
+ * ===========================================
+ * Submit a new regularization request
+ * ===========================================
+ */
+export const submitRegularization = (payload) => {
+  return api.post("/regularization", payload);
 };
 
-export const getMyRegularizations = async (page = 1, limit = 100, status) => {
-  const res = await api.get("/attendance/regularization/my", {
-    params: { page, limit, ...(status ? { status } : {}) },
+/**
+ * ===========================================
+ * Update an existing PENDING regularization request
+ * (Part 14/15 — edits the same request, never creates a new one)
+ * ===========================================
+ */
+export const updateRegularization = (id, payload) => {
+  return api.patch(`/regularization/${id}`, payload);
+};
+
+/**
+ * ===========================================
+ * Get the logged-in employee's own requests
+ * ===========================================
+ */
+export const getMyRegularizations = async (page = 1, limit = 10, status) => {
+  const res = await api.get("/regularization/my", {
+    params: { page, limit, status },
   });
   return res.data;
 };
 
-export const getRegularizationsForReview = async (page = 1, limit = 20, status) => {
-  const res = await api.get("/attendance/regularization", {
-    params: { page, limit, ...(status ? { status } : {}) },
+/**
+ * ===========================================
+ * HR/Admin — list requests for review
+ * ===========================================
+ */
+export const getRegularizationsForReview = async (page = 1, limit = 10, status) => {
+  const res = await api.get("/regularization", {
+    params: { page, limit, status },
   });
   return res.data;
 };
 
-export const approveRegularization = async (id, reviewRemarks = null) => {
-  const res = await api.patch(`/attendance/regularization/${id}/approve`, { reviewRemarks });
-  return res.data;
+/**
+ * ===========================================
+ * HR/Admin — approve a request
+ * ===========================================
+ */
+export const approveRegularization = (id, reviewRemarks) => {
+  return api.patch(`/regularization/${id}/approve`, { reviewRemarks });
 };
 
-export const rejectRegularization = async (id, reviewRemarks) => {
-  const res = await api.patch(`/attendance/regularization/${id}/reject`, { reviewRemarks });
-  return res.data;
+/**
+ * ===========================================
+ * HR/Admin — reject a request
+ * ===========================================
+ */
+export const rejectRegularization = (id, reviewRemarks) => {
+  return api.patch(`/regularization/${id}/reject`, { reviewRemarks });
 };

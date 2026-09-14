@@ -16,9 +16,14 @@ import {
   Pencil,
 } from "lucide-react";
 
-import DateRangePickerButton from "../user/DateRangePickerButton";
+import MonthYearPicker from "../user/MonthYearPicker";
 
-const STATUS_OPTIONS = ["Present", "Absent", "Late", "Half Day"];
+const STATUS_OPTIONS = ["Present", "Absent", "Late", "Half Day", "Regularized"];
+
+const MONTH_NAMES = [
+  "January", "February", "March", "April", "May", "June",
+  "July", "August", "September", "October", "November", "December",
+];
 
 const STATUS_CONFIG = {
   Present: {
@@ -78,7 +83,7 @@ const REG_STATUS_CONFIG = {
     bg: "bg-emerald-50",
     text: "text-emerald-700",
     border: "border-emerald-100",
-    label: "Approved",
+    label: "Regularized",
   },
   REJECTED: {
     bg: "bg-red-50",
@@ -863,6 +868,9 @@ const RegularizationModal = ({
 
 const EmployeeAttendanceTable = ({
   records = [],
+  year,
+  month,
+  onMonthChange,
   onSubmitRegularization,
 }) => {
   const [search, setSearch] = useState("");
@@ -870,26 +878,14 @@ const EmployeeAttendanceTable = ({
   const [activeRecord, setActiveRecord] =
     useState(null);
 
-  const [dateRange, setDateRange] = useState([
-    {
-      startDate: new Date(
-        new Date().getFullYear(),
-        new Date().getMonth(),
-        1
-      ),
-
-      endDate: new Date(
-        new Date().getFullYear(),
-        new Date().getMonth() + 1,
-        0
-      ),
-
-      key: "selection",
-    },
-  ]);
-
   /* ==========================================================
      FILTER
+     NOTE: date-range filtering was removed here on purpose.
+     `records` now already reflects exactly the selected month
+     (the parent fetches from the backend scoped to that month),
+     so there is nothing left to filter by date on the client —
+     that's what caused the earlier "This Year"/"Last 30 Days"
+     bug where rows silently disappeared.
   ========================================================== */
 
   const filtered = records.filter((r) => {
@@ -900,53 +896,12 @@ const EmployeeAttendanceTable = ({
       r.status?.toLowerCase().includes(q);
 
     const matchStatus = status
-      ? r.status === status
+      ? status === "Regularized"
+        ? r.regularization?.status === "APPROVED"
+        : r.status === status
       : true;
 
-    let matchDate = true;
-
-    if (dateRange?.[0] && r.raw) {
-      const {
-        startDate,
-        endDate,
-      } = dateRange[0];
-
-      if (startDate && endDate) {
-        const rowDate = new Date(r.raw);
-
-        const filterStart = new Date(
-          startDate
-        );
-
-        filterStart.setHours(
-          0,
-          0,
-          0,
-          0
-        );
-
-        const filterEnd = new Date(
-          endDate
-        );
-
-        filterEnd.setHours(
-          23,
-          59,
-          59,
-          999
-        );
-
-        matchDate =
-          rowDate >= filterStart &&
-          rowDate <= filterEnd;
-      }
-    }
-
-    return (
-      matchSearch &&
-      matchStatus &&
-      matchDate
-    );
+    return matchSearch && matchStatus;
   });
 
   /* ==========================================================
@@ -967,6 +922,16 @@ const EmployeeAttendanceTable = ({
 
   /* ==========================================================
      CAN REGULARIZE
+
+     FIXED: this previously only allowed opening the modal when a
+     punch was fully missing. That made INCORRECT_CHECK_IN /
+     INCORRECT_CHECK_OUT / WRONG_STATUS — all of which are options in
+     the modal's own REQUEST_TYPES list — impossible to reach for a
+     day that has both punches but a wrong value (e.g. disputing a
+     Late flag). Now any past/today record without an active
+     PENDING/APPROVED request can be regularized; the request-type
+     dropdown inside the modal is what actually narrows down what's
+     being corrected.
   ========================================================== */
 
   const canRegularize = (r) => {
@@ -1000,22 +965,12 @@ const EmployeeAttendanceTable = ({
     }
 
     /*
-     * If rejected or no request:
-     * allow regularization only when
-     * check-in or check-out is missing.
+     * Rejected or no request yet: the employee may still raise a
+     * new request — for a missing punch, a wrong punch, or a wrong
+     * status. The modal's request-type selector is what determines
+     * which fields are actually required.
      */
-    const missingCheckIn =
-      !r.checkIn ||
-      r.checkIn === "-";
-
-    const missingCheckOut =
-      !r.checkOut ||
-      r.checkOut === "-";
-
-    return (
-      missingCheckIn ||
-      missingCheckOut
-    );
+    return true;
   };
 
   /* ==========================================================
@@ -1050,7 +1005,7 @@ const EmployeeAttendanceTable = ({
     /*
      * APPROVED
      *
-     * No edit.
+     * No edit — this is the "Regularized" state.
      */
     if (regStatus === "APPROVED") {
       return (
@@ -1097,6 +1052,7 @@ const EmployeeAttendanceTable = ({
       return (
         <button
           type="button"
+          title="Regularize Attendance"
           onClick={() =>
             setActiveRecord(record)
           }
@@ -1115,6 +1071,7 @@ const EmployeeAttendanceTable = ({
       return (
         <button
           type="button"
+          title="Regularize Attendance"
           onClick={() =>
             setActiveRecord(record)
           }
@@ -1137,6 +1094,9 @@ const EmployeeAttendanceTable = ({
      UI
   ========================================================== */
 
+  const monthLabel =
+    year && month ? `${MONTH_NAMES[month - 1]} ${year}` : "this month";
+
   return (
     <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
 
@@ -1158,8 +1118,7 @@ const EmployeeAttendanceTable = ({
             </h2>
 
             <p className="text-[11px] text-gray-400">
-              Personal attendance history —
-              full month
+              Personal attendance history — {monthLabel}
             </p>
           </div>
 
@@ -1182,17 +1141,22 @@ const EmployeeAttendanceTable = ({
             {absentCount} Absent
           </span>
 
+          <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-red-50 border border-red-100 text-red-600 text-xs font-semibold rounded-full">
+            {/* <XCircle size={10} /> */}
+             Regularization
+          </span>
+
+
         </div>
       </div>
 
       {/* FILTERS */}
       <div className="px-6 py-3 bg-gray-50/50 border-b border-gray-100 flex flex-wrap items-center gap-2">
 
-        <DateRangePickerButton
-          value={dateRange}
-          onChange={(r) =>
-            setDateRange(r)
-          }
+        <MonthYearPicker
+          year={year}
+          month={month}
+          onChange={onMonthChange}
         />
 
         <select
@@ -1296,7 +1260,7 @@ const EmployeeAttendanceTable = ({
               </th>
 
               <th className="px-6 py-3.5 text-xs font-bold text-gray-500 uppercase tracking-wider">
-                Action
+                Regularization
               </th>
 
             </tr>
@@ -1460,7 +1424,7 @@ const EmployeeAttendanceTable = ({
                       />
                     </td>
 
-                    {/* ACTION */}
+                    {/* REGULARIZATION ACTION */}
                     <td className="px-6 py-4">
                       {renderAction(r)}
                     </td>
@@ -1485,7 +1449,7 @@ const EmployeeAttendanceTable = ({
             {filtered.length}
           </span>{" "}
 
-          days this month
+          days in {monthLabel}
 
         </span>
       </div>
@@ -1508,4 +1472,3 @@ const EmployeeAttendanceTable = ({
 };
 
 export default EmployeeAttendanceTable;
-// ```

@@ -252,8 +252,7 @@ export const buildMonthAttendance = (
       // ── Regularization status for this attendance row ──────────────────────
       //
       // Looked up by attendanceId (realRow.id), not by date, since that's
-      // the actual foreign key the backend uses. Only status + reviewer
-      // remarks are surfaced here — the table doesn't need the full row.
+      // the actual foreign key the backend uses.
 
       const regRow = regularizationMap.get(realRow.id);
 
@@ -329,12 +328,28 @@ export const buildMonthAttendance = (
           realRow.isCheckOutIpAllowed ?? null,
 
         // ── Regularization ──────────────────────────────────────────────────
-        // Consumed by EmployeeAttendanceTable's canRegularize() / status pill.
+        // Consumed by EmployeeAttendanceTable's canRegularize() / status pill
+        // AND by RegularizationModal's pre-fill logic when editing a PENDING
+        // request (Part 13/14).
+        //
+        // FIXED: previously only { id, status, reviewRemarks } were included.
+        // The modal's edit pre-fill reads existingRequest.requestType,
+        // .requestedCheckIn, .requestedCheckOut, .requestedStatus and
+        // .reason — all of which were silently undefined before, so
+        // re-opening a pending request for editing showed the *original*
+        // attendance times and the auto-detected type instead of what the
+        // employee had actually requested. Now the full set the modal
+        // needs is passed through.
 
         regularization: regRow
           ? {
               id: regRow.id,
               status: regRow.status,
+              requestType: regRow.requestType || null,
+              requestedCheckIn: regRow.requestedCheckIn || null,
+              requestedCheckOut: regRow.requestedCheckOut || null,
+              requestedStatus: regRow.requestedStatus || null,
+              reason: regRow.reason || null,
               reviewRemarks: regRow.reviewRemarks || null,
             }
           : null,
