@@ -1,86 +1,106 @@
 import React from "react";
-import {
-  Search,
-  X,
-  Pencil,
-  Trash2,
-  ChevronLeft,
-  ChevronRight,
-} from "lucide-react";
-import DateRangePickerButton from "../user/DateRangePickerButton";
+import { Search, X, Check, ChevronLeft, ChevronRight } from "lucide-react";
 import ReasonTooltip from "./ReasonTooltip";
-import { LEAVE_TYPES, SORT_OPTIONS, ROWS_OPTIONS } from "./leaveAdminData";
 
-// ── Leave Table (toolbar + table + pagination) ────────────────
+const STATUS_TABS = ["PENDING", "APPROVED", "REJECTED", "All"];
+const ROWS_OPTIONS = [5, 10, 25, 50];
+
+const STATUS_LABEL = {
+  PENDING: "Pending",
+  APPROVED: "Approved",
+  REJECTED: "Rejected",
+  CANCELLED: "Cancelled",
+};
+
+const STATUS_BADGE = {
+  APPROVED: "bg-green-100 text-green-700",
+  PENDING: "bg-yellow-100 text-yellow-700",
+  REJECTED: "bg-red-100 text-red-700",
+  CANCELLED: "bg-gray-200 text-gray-600",
+};
+
+// Deterministic dot color per leave type so it stays consistent across renders
+const DOT_COLORS = ["bg-orange-400", "bg-sky-500", "bg-violet-500", "bg-rose-500", "bg-lime-500", "bg-amber-500"];
+const dotColorFor = (leaveCode = "") => {
+  const hash = leaveCode.split("").reduce((a, c) => a + c.charCodeAt(0), 0);
+  return DOT_COLORS[hash % DOT_COLORS.length];
+};
+
+const formatDate = (iso) => {
+  if (!iso) return "-";
+  return new Date(iso).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
+};
+
+const initials = (first, last) => `${(first || "?")[0]}${(last || "")[0] || ""}`.toUpperCase();
+
+// ── Leave Table (Admin/HR review) ──────────────────────────────
 export default function LeaveTable({
-  paginated,
-  filtered,
+  rows,
+  loading,
+  total,
+  totalPages,
+  leaveTypes,
   search,
   setSearch,
-  leaveType,
-  setLeaveType,
-  sortBy,
-  handleSortByChange,
-  dateRange,
-  setDateRange,
+  leaveTypeId,
+  setLeaveTypeId,
+  status,
+  setStatus,
   rowsPerPage,
   setRowsPerPage,
   currentPage,
   setCurrentPage,
-  totalPages,
-  onEdit,
-  onDelete,
+  onApprove,
+  onReject,
 }) {
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-100">
-      {/* Toolbar top row */}
+      {/* Status pill tabs + type filter */}
       <div className="px-5 py-4 border-b border-gray-100 flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-sm font-bold text-gray-700">Leave List</h2>
-        <div className="flex flex-wrap items-center gap-2">
-          {/* Date Range */}
-          <DateRangePickerButton
-            value={dateRange}
-            onChange={(newRange) => {
-              setDateRange(newRange);
-              handleSortByChange("");
-              setCurrentPage(1);
-            }}
-          />
-          {/* Leave Type */}
-          <select
-            value={leaveType}
-            onChange={(e) => {
-              setLeaveType(e.target.value);
-              setCurrentPage(1);
-            }}
-            className="border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-600 outline-none focus:border-orange-400 bg-white"
-          >
-            {LEAVE_TYPES.map((t) => (
-              <option key={t}>{t}</option>
-            ))}
-          </select>
-          {/* Sort By */}
-          <select
-            value={sortBy}
-            onChange={(e) => handleSortByChange(e.target.value)}
-            className="border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-600 outline-none focus:border-orange-400 bg-white"
-          >
-            <option value="" disabled hidden>
-              Sort By
-            </option>
-            {SORT_OPTIONS.map((s) => (
-              <option key={s} value={s}>
-                Sort By : {s}
-              </option>
-            ))}
-          </select>
+        <div className="flex items-center gap-2">
+          {STATUS_TABS.map((s) => {
+            const value = s === "All" ? "" : s;
+            const active = status === value;
+            return (
+              <button
+                key={s}
+                onClick={() => {
+                  setStatus(value);
+                  setCurrentPage(1);
+                }}
+                className={`px-3.5 py-1.5 rounded-full text-xs font-semibold border transition ${
+                  active
+                    ? "bg-orange-500 text-white border-orange-500"
+                    : "border-gray-200 text-gray-500 hover:bg-gray-50"
+                }`}
+              >
+                {s === "All" ? "All" : STATUS_LABEL[s]}
+              </button>
+            );
+          })}
         </div>
+
+        <select
+          value={leaveTypeId}
+          onChange={(e) => {
+            setLeaveTypeId(e.target.value);
+            setCurrentPage(1);
+          }}
+          className="border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-600 outline-none focus:border-orange-400 bg-white"
+        >
+          <option value="">All Types</option>
+          {leaveTypes.map((t) => (
+            <option key={t.id} value={t.id}>
+              {t.leaveName}
+            </option>
+          ))}
+        </select>
       </div>
 
       {/* Toolbar second row */}
       <div className="px-5 py-3 border-b border-gray-50 flex items-center justify-between gap-3">
         <div className="flex items-center gap-2 text-sm text-gray-500">
-          <span>Row Per Page</span>
+          <span>Rows per page</span>
           <select
             value={rowsPerPage}
             onChange={(e) => {
@@ -93,9 +113,7 @@ export default function LeaveTable({
               <option key={n}>{n}</option>
             ))}
           </select>
-          <span>Entries</span>
         </div>
-        {/* Search */}
         <div className="flex items-center gap-2 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-500 w-52">
           <Search size={14} className="text-gray-400 shrink-0" />
           <input
@@ -104,14 +122,11 @@ export default function LeaveTable({
               setSearch(e.target.value);
               setCurrentPage(1);
             }}
-            placeholder="Search"
+            placeholder="Search employee..."
             className="outline-none text-sm flex-1 placeholder-gray-400 bg-transparent"
           />
           {search && (
-            <button
-              onClick={() => setSearch("")}
-              className="text-gray-400 hover:text-gray-600"
-            >
+            <button onClick={() => setSearch("")} className="text-gray-400 hover:text-gray-600">
               <X size={12} />
             </button>
           )}
@@ -125,88 +140,84 @@ export default function LeaveTable({
             <tr className="text-left text-xs text-gray-400 uppercase tracking-wider border-b border-gray-100 bg-gray-50/60">
               <th className="px-4 py-3 font-semibold">Employee</th>
               <th className="px-4 py-3 font-semibold">Leave Type</th>
-              <th className="px-4 py-3 font-semibold">From</th>
-              <th className="px-4 py-3 font-semibold">To</th>
+              <th className="px-4 py-3 font-semibold">Start Date</th>
+              <th className="px-4 py-3 font-semibold">End Date</th>
               <th className="px-4 py-3 font-semibold">No of Days</th>
-              <th className="px-4 py-3 font-semibold w-20 text-right">
-                Action
-              </th>
+              <th className="px-4 py-3 font-semibold">Status</th>
+              <th className="px-4 py-3 font-semibold w-24 text-right">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-50">
-            {paginated.length === 0 ? (
+            {loading ? (
               <tr>
-                <td
-                  colSpan={6}
-                  className="text-center py-12 text-gray-400 text-sm"
-                >
+                <td colSpan={7} className="text-center py-12 text-gray-400 text-sm">
+                  Loading...
+                </td>
+              </tr>
+            ) : rows.length === 0 ? (
+              <tr>
+                <td colSpan={7} className="text-center py-12 text-gray-400 text-sm">
                   No leave records found.
                 </td>
               </tr>
             ) : (
-              paginated.map((row) => (
-                <tr
-                  key={row.id}
-                  className="hover:bg-orange-50/30 transition group"
-                >
-                  {/* Employee */}
+              rows.map((row) => (
+                <tr key={row.id} className="hover:bg-orange-50/30 transition group">
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-3">
-                      <div
-                        className={`w-9 h-9 rounded-full ${row.color} flex items-center justify-center text-white text-xs font-bold shrink-0 shadow-sm`}
-                      >
-                        {row.avatar}
+                      <div className="w-9 h-9 rounded-full bg-blue-500 flex items-center justify-center text-white text-xs font-bold shrink-0 shadow-sm">
+                        {initials(row.firstName, row.lastName)}
                       </div>
                       <div>
                         <p className="font-semibold text-gray-800 text-sm">
-                          {row.name}
+                          {row.firstName} {row.lastName}
                         </p>
-                        <p className="text-xs text-gray-400">{row.role}</p>
+                        <p className="text-xs text-gray-400">{row.employeeCode}</p>
                       </div>
                     </div>
                   </td>
-
-                  {/* Leave Type */}
                   <td className="px-4 py-3">
-                    <span className="text-orange-500 font-medium text-sm">
-                      {row.leaveType}
-                    </span>
-                    <ReasonTooltip reason={row.reason} />
-                  </td>
-
-                  {/* From */}
-                  <td className="px-4 py-3 text-gray-600 text-sm">
-                    {row.from}
-                  </td>
-
-                  {/* To */}
-                  <td className="px-4 py-3 text-gray-600 text-sm">
-                    {row.to}
-                  </td>
-
-                  {/* No of Days */}
-                  <td className="px-4 py-3 text-gray-600 text-sm">
-                    {row.days} {row.days === 1 ? "Day" : "Days"}
-                  </td>
-
-                  {/* Actions */}
-                  <td className="px-4 py-3 text-right">
-                    <div className="flex items-center justify-end gap-1">
-                      <button
-                        onClick={() => onEdit(row)}
-                        className="p-1.5 rounded-lg hover:bg-orange-50 text-gray-500 hover:text-orange-500 transition"
-                        title="Edit"
-                      >
-                        <Pencil size={15} />
-                      </button>
-                      <button
-                        onClick={() => onDelete(row)}
-                        className="p-1.5 rounded-lg hover:bg-red-50 text-gray-500 hover:text-red-500 transition"
-                        title="Delete"
-                      >
-                        <Trash2 size={15} />
-                      </button>
+                    <div className="flex items-center gap-2">
+                      <span className={`w-2 h-2 rounded-full ${dotColorFor(row.leaveCode)}`} />
+                      <span className="text-gray-700 font-medium text-sm">{row.leaveName}</span>
+                      <ReasonTooltip reason={row.reason} />
                     </div>
+                  </td>
+                  <td className="px-4 py-3 text-gray-600 text-sm">{formatDate(row.startDate)}</td>
+                  <td className="px-4 py-3 text-gray-600 text-sm">{formatDate(row.endDate)}</td>
+                  <td className="px-4 py-3 text-gray-600 text-sm">
+                    {row.totalDays} {Number(row.totalDays) === 1 ? "Day" : "Days"}
+                  </td>
+                  <td className="px-4 py-3 text-sm">
+                    <span
+                      className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ${
+                        STATUS_BADGE[row.leaveStatus] || "bg-gray-100 text-gray-700"
+                      }`}
+                    >
+                      {STATUS_LABEL[row.leaveStatus] || row.leaveStatus}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3 text-right">
+                    {row.leaveStatus === "PENDING" ? (
+                      <div className="flex items-center justify-end gap-1.5">
+                        <button
+                          onClick={() => onApprove(row)}
+                          title="Approve"
+                          className="w-7 h-7 flex items-center justify-center rounded-full bg-green-50 text-green-600 hover:bg-green-100 transition"
+                        >
+                          <Check size={14} strokeWidth={3} />
+                        </button>
+                        <button
+                          onClick={() => onReject(row)}
+                          title="Reject"
+                          className="w-7 h-7 flex items-center justify-center rounded-full bg-red-50 text-red-500 hover:bg-red-100 transition"
+                        >
+                          <X size={14} strokeWidth={3} />
+                        </button>
+                      </div>
+                    ) : (
+                      <span className="text-xs text-gray-300">—</span>
+                    )}
                   </td>
                 </tr>
               ))
@@ -218,10 +229,8 @@ export default function LeaveTable({
       {/* Pagination */}
       <div className="px-5 py-3 border-t border-gray-50 flex items-center justify-between text-sm text-gray-500">
         <span>
-          Showing{" "}
-          {Math.min((currentPage - 1) * rowsPerPage + 1, filtered.length)}–
-          {Math.min(currentPage * rowsPerPage, filtered.length)} of{" "}
-          {filtered.length} entries
+          Showing {Math.min((currentPage - 1) * rowsPerPage + 1, total)}–
+          {Math.min(currentPage * rowsPerPage, total)} of {total} entries
         </span>
         <div className="flex items-center gap-1">
           <button

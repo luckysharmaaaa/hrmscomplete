@@ -23,19 +23,14 @@ const toMinutes = (value) => {
   if (typeof value === "string" && value.includes(":")) {
     const parts = value.split(":").map(Number);
 
-    if (
-      parts.length >= 2 &&
-      parts.every((part) => !Number.isNaN(part))
-    ) {
+    if (parts.length >= 2 && parts.every((part) => !Number.isNaN(part))) {
       return parts[0] * 60 + parts[1];
     }
   }
 
   const numericValue = Number(value);
 
-  return Number.isNaN(numericValue)
-    ? 0
-    : Math.max(0, Math.round(numericValue));
+  return Number.isNaN(numericValue) ? 0 : Math.max(0, Math.round(numericValue));
 };
 
 const parseTimeToMinutes = (value) => {
@@ -158,10 +153,7 @@ const buildTimeline = (today) => {
   );
 
   // Overtime is a subset of productive time.
-  const cappedOvertime = Math.min(
-    overtimeMins,
-    productiveMinutes
-  );
+  const cappedOvertime = Math.min(overtimeMins, productiveMinutes);
 
   return {
     totalWorking: formatDuration(totalWorkingMinutes),
@@ -193,31 +185,13 @@ const StatPill = ({
 }) => {
   return (
     <div
-      className={`
-        flex items-center gap-3
-        min-w-0
-        px-3.5 py-3
-        rounded-xl
-        border
-        ${bgColor}
-        transition-all duration-200
-      `}
+      className={`flex items-center gap-3 min-w-0 px-4 py-3 rounded-xl border ${bgColor} transition-all duration-200`}
     >
       {/* Icon */}
       <div
-        className={`
-          w-8 h-8
-          shrink-0
-          rounded-lg
-          flex items-center justify-center
-          ${iconBg}
-        `}
+        className={`w-9 h-9 shrink-0 rounded-lg flex items-center justify-center ${iconBg}`}
       >
-        <Icon
-          size={15}
-          strokeWidth={2.2}
-          className={iconColor}
-        />
+        <Icon size={15} strokeWidth={2.2} className={iconColor} />
       </div>
 
       {/* Content */}
@@ -227,14 +201,7 @@ const StatPill = ({
         </p>
 
         <p
-          className={`
-            text-sm
-            font-black
-            leading-none
-            whitespace-nowrap
-            tabular-nums
-            ${textColor}
-          `}
+          className={`text-sm font-black leading-none whitespace-nowrap tabular-nums ${textColor}`}
         >
           {value}
         </p>
@@ -286,47 +253,17 @@ const TimelineBar = ({ today = null }) => {
       : "Target completed";
 
   return (
-    <div
-      className="
-        h-full
-        bg-white
-        rounded-2xl
-        border border-gray-100
-        shadow-sm
-        overflow-hidden
-        flex flex-col
-      "
-    >
+    <div className="h-full bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden flex flex-col">
       {/* ────────────────────────────────────────────────────────────────────
-          HEADER
+          HEADER — px-6 py-4 to match the attendance/regularization card
+          headers, so all three panels share one header height.
       ──────────────────────────────────────────────────────────────────── */}
 
-      <div
-        className="
-          px-5 py-4
-          border-b border-gray-100
-          flex items-center justify-between
-          gap-3
-          shrink-0
-        "
-      >
+      <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between gap-4 shrink-0">
         {/* Left */}
         <div className="flex items-center gap-3 min-w-0">
-          <div
-            className="
-              w-9 h-9
-              shrink-0
-              rounded-lg
-              bg-orange-50
-              border border-orange-100
-              flex items-center justify-center
-            "
-          >
-            <Activity
-              size={15}
-              className="text-orange-500"
-              strokeWidth={2.2}
-            />
+          <div className="w-9 h-9 shrink-0 rounded-xl bg-orange-50 border border-orange-100 flex items-center justify-center">
+            <Activity size={16} className="text-orange-500" strokeWidth={2.2} />
           </div>
 
           <div className="min-w-0">
@@ -334,7 +271,7 @@ const TimelineBar = ({ today = null }) => {
               Today's Timeline
             </p>
 
-            <p className="text-[10px] text-gray-400 leading-tight mt-0.5">
+            <p className="text-[11px] text-gray-400 leading-tight mt-0.5">
               Attendance summary
             </p>
           </div>
@@ -343,20 +280,8 @@ const TimelineBar = ({ today = null }) => {
         {/* Right summary */}
         <div className="flex items-center gap-2 shrink-0">
           {/* Total */}
-          <div
-            className="
-              hidden sm:flex
-              items-center gap-1.5
-              px-3 py-1.5
-              rounded-lg
-              bg-slate-50
-              border border-slate-100
-            "
-          >
-            <Clock
-              size={12}
-              className="text-[#0F265C]"
-            />
+          <div className="hidden sm:flex items-center gap-1.5 h-7 px-3 rounded-lg bg-slate-50 border border-slate-100">
+            <Clock size={12} className="text-[#0F265C]" />
 
             <span className="text-[11px] font-bold text-[#0F265C] tabular-nums">
               {timeline.totalWorking}
@@ -364,21 +289,10 @@ const TimelineBar = ({ today = null }) => {
           </div>
 
           {/* Target */}
-          <div
-            className="
-              flex items-center gap-1.5
-              px-3 py-1.5
-              rounded-lg
-              bg-orange-50
-              border border-orange-100
-            "
-          >
-            <Target
-              size={12}
-              className="text-orange-500"
-            />
+          <div className="flex items-center gap-1.5 h-7 px-3 rounded-lg bg-orange-50 border border-orange-100">
+            <Target size={12} className="text-orange-500" />
 
-            <span className="text-[11px] font-bold text-orange-600">
+            <span className="text-[11px] font-bold text-orange-600 tabular-nums">
               {progressPercent}%
             </span>
           </div>
@@ -389,14 +303,7 @@ const TimelineBar = ({ today = null }) => {
           CONTENT
       ──────────────────────────────────────────────────────────────────── */}
 
-      <div
-        className="
-          flex-1
-          px-5 py-4
-          flex flex-col
-          justify-center
-        "
-      >
+      <div className="flex-1 px-6 py-4 flex flex-col justify-center">
         {/* Three attendance metrics */}
         <div className="grid grid-cols-3 gap-3">
           <StatPill
@@ -435,41 +342,21 @@ const TimelineBar = ({ today = null }) => {
             Uses otherwise empty space without repeating Punch Card data.
         ────────────────────────────────────────────────────────────────── */}
 
-        <div
-          className="
-            mt-4
-            pt-3
-            border-t border-gray-100
-            flex items-center justify-between
-            gap-3
-          "
-        >
+        <div className="mt-4 pt-4 border-t border-gray-100 flex items-center justify-between gap-3">
           <div className="flex items-center gap-1.5 min-w-0">
-            <Target
-              size={12}
-              className="text-gray-400 shrink-0"
-            />
+            <Target size={12} className="text-gray-400 shrink-0" />
 
-            <span className="text-[10px] text-gray-400">
-              Daily target
-            </span>
+            <span className="text-[10px] text-gray-400">Daily target</span>
 
-            <span className="text-[10px] font-bold text-[#0F265C]">
+            <span className="text-[10px] font-bold text-[#0F265C] tabular-nums">
               09h 00m
             </span>
           </div>
 
           <span
-            className={`
-              text-[10px]
-              font-semibold
-              whitespace-nowrap
-              ${
-                remainingMinutes > 0
-                  ? "text-gray-400"
-                  : "text-emerald-600"
-              }
-            `}
+            className={`text-[10px] font-semibold whitespace-nowrap ${
+              remainingMinutes > 0 ? "text-gray-400" : "text-emerald-600"
+            }`}
           >
             {remainingText}
           </span>

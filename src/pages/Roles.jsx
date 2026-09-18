@@ -36,10 +36,6 @@ const Roles = () => {
   // Get All Roles
   // ======================================
 
-  // ======================================
-  // Get All Roles
-  // ======================================
-
   const fetchRoles = async () => {
     try {
       setLoading(true);
@@ -79,6 +75,7 @@ const Roles = () => {
   useEffect(() => {
     fetchRoles();
   }, []);
+
   // ======================================
   // Open Drawer
   // ======================================
@@ -94,11 +91,9 @@ const Roles = () => {
   // ======================================
 
   const handleEditRole = (role) => {
-
     setEditRole(role);
 
     setOpenDrawer(true);
-
   };
 
   // ======================================
@@ -222,36 +217,27 @@ const Roles = () => {
   // ======================================
 
   return (
-    <div className="space-y-6 overflow-hidden ">
-      {/* Header */}
-
+    <div className="space-y-4">
+      {/* Header — mirrors the title/breadcrumb/action layout used across
+          other admin pages (e.g. Employee Attendance) for consistency */}
       <div className="flex items-start justify-between">
         <div>
           <h1 className="text-3xl font-bold text-[#0F265C]">Roles</h1>
 
-          <div className="flex items-center gap-1.5 mt-1 text-xs text-gray-400">
+          <div className="flex items-center gap-1.5 mt-1.5 text-xs text-gray-400 leading-none">
             <span>User Management</span>
-
-            <FiChevronRight size={12} />
-
-            <span className="text-orange-500 font-medium">
-
-              Roles
-
-            </span>
-
+            <FiChevronRight size={12} className="shrink-0" />
+            <span className="text-orange-500 font-medium">Roles</span>
           </div>
         </div>
 
         {/* Right Buttons */}
-
         <div className="flex items-center gap-3">
           {/* Export */}
-
           <div className="dropdown dropdown-end">
             <label
               tabIndex={0}
-              className="btn bg-orange-500 hover:bg-orange-600 border-none text-white animate-fade-in"
+              className="flex items-center gap-2 h-10 px-4 bg-orange-500 hover:bg-orange-600 text-white text-sm font-semibold rounded-lg transition-colors shadow-sm cursor-pointer"
             >
               <DescriptionOutlinedIcon fontSize="small" />
               Export
@@ -260,39 +246,34 @@ const Roles = () => {
 
             <ul
               tabIndex={0}
-              className="dropdown-content z-10 menu p-2 shadow bg-white rounded-box w-56 animate-fade-in"
+              className="dropdown-content menu bg-white border border-gray-100 rounded-xl shadow-xl z-50 w-48 p-1.5 mt-2"
             >
               <li>
-
-                <button>
-
+                <button className="flex items-center gap-3 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-lg">
                   <PictureAsPdfOutlinedIcon
                     fontSize="small"
                     sx={{ color: "#ef4444" }}
                   />
-                  Export as PDF
+                  <span className="font-medium">Export as PDF</span>
                 </button>
               </li>
 
               <li>
-
-                <button>
-
+                <button className="flex items-center gap-3 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-lg">
                   <TableChartOutlinedIcon
                     fontSize="small"
                     sx={{ color: "#16a34a" }}
                   />
-                  Export as Excel
+                  <span className="font-medium">Export as Excel</span>
                 </button>
               </li>
             </ul>
           </div>
 
           {/* Add Role */}
-
           <button
             onClick={handleOpenDrawer}
-            className="flex items-center gap-2 px-4 py-2.5 bg-orange-500 hover:bg-orange-600 text-white rounded-lg"
+            className="flex items-center gap-2 h-10 px-4 bg-orange-500 hover:bg-orange-600 text-white text-sm font-semibold rounded-lg transition-colors shadow-sm shadow-orange-300/30"
           >
             <AddIcon fontSize="small" />
             Add Role
@@ -301,9 +282,8 @@ const Roles = () => {
       </div>
 
       {/* Loading */}
-
       {loading ? (
-        <div className="flex justify-center py-20">
+        <div className="flex justify-center py-24">
           <span className="loading loading-spinner loading-lg text-orange-500"></span>
         </div>
       ) : (
@@ -328,7 +308,5 @@ const Roles = () => {
     </div>
   );
 };
-
-
 
 export default Roles;

@@ -1,107 +1,72 @@
-import React, { useState } from "react";
-import {
-  ChevronRight,
-  ChevronDown,
-  FileText,
-  FileSpreadsheet,
-  Plus,
-} from "lucide-react";
+import React, { useState, useEffect, useCallback } from "react";
+import { ChevronRight, FileText, FileSpreadsheet, ChevronDown, Plus } from "lucide-react";
 
 import AddLeaveModal from "../components/leaveEmployee/AddLeaveModal";
-import { MY_LEAVE_DATA } from "../components/leaveEmployee/leaveEmployeeData";
 import LeaveStatCardsEmployee from "../components/leaveEmployee/LeaveStatCardsEmployee";
 import LeaveTableEmployee from "../components/leaveEmployee/LeaveTableEmployee";
 import DeleteModal from "../components/leaveAdmin/DeleteModal";
+import {
+  getLeaveTypes,
+  getMyApplications,
+  cancelApplication,
+} from "../services/leaveService";
 
 const LeaveEmployee = () => {
   const [modalOpen, setModalOpen] = useState(false);
-  const [leaves, setLeaves] = useState(MY_LEAVE_DATA);
+  const [rows, setRows] = useState([]);
+  const [total, setTotal] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+  const [loading, setLoading] = useState(false);
+  const [leaveTypes, setLeaveTypes] = useState([]);
 
-  // Table state
   const [search, setSearch] = useState("");
-  const [leaveType, setLeaveType] = useState("All Types");
-  const [sortBy, setSortBy] = useState("This Year");
+  const [leaveTypeId, setLeaveTypeId] = useState("");
+  const [status, setStatus] = useState("");
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [currentPage, setCurrentPage] = useState(1);
   const [editItem, setEditItem] = useState(null);
-  const [deleteTarget, setDeleteTarget] = useState(null);
-  const [dateRange, setDateRange] = useState([
-    {
-      startDate: new Date(new Date().getFullYear(), 0, 1),
-      endDate: new Date(new Date().getFullYear(), 11, 31),
-      key: "selection",
-    },
-  ]);
+  const [cancelTarget, setCancelTarget] = useState(null);
 
-  const handleSortByChange = (option) => {
-    setSortBy(option);
-    if (!option || option === "Custom Range") return;
+  useEffect(() => {
+    getLeaveTypes().then(setLeaveTypes).catch(() => {});
+  }, []);
 
-    const today = new Date("2026-06-30"); // mocking today to match data or just use new Date()
-    let start = new Date(); // use actual today so it makes more sense instead of hardcoding 2026-06-30, actually mock data is 2026
-    start = new Date("2026-06-30");
-    let end = new Date("2026-06-30");
+  const fetchApplications = useCallback(() => {
+    setLoading(true);
+    getMyApplications({
+      page: currentPage,
+      limit: rowsPerPage,
+      leaveTypeId: leaveTypeId || undefined,
+      status: status || undefined,
+    })
+      .then((data) => {
+        setRows(data.data);
+        setTotal(data.pagination.total);
+        setTotalPages(data.pagination.totalPages || 1);
+      })
+      .catch(() => {
+        setRows([]);
+        setTotal(0);
+        setTotalPages(1);
+      })
+      .finally(() => setLoading(false));
+  }, [currentPage, rowsPerPage, leaveTypeId, status]);
 
-    if (option === "Last 7 Days") {
-      start.setDate(start.getDate() - 7);
-    } else if (option === "Last 30 Days") {
-      start.setDate(start.getDate() - 30);
-    } else if (option === "Last 3 Months") {
-      start.setMonth(start.getMonth() - 3);
-    } else if (option === "This Year") {
-      start = new Date(start.getFullYear(), 0, 1);
-      end = new Date(start.getFullYear(), 11, 31);
-    }
+  useEffect(() => {
+    fetchApplications();
+  }, [fetchApplications]);
 
-    setDateRange([{ startDate: start, endDate: end, key: "selection" }]);
-    setCurrentPage(1);
+  const handleModalSubmit = () => {
+    fetchApplications();
   };
 
-  // Filter
-  const filtered = leaves.filter((r) => {
-    const matchSearch =
-      r.name?.toLowerCase().includes(search.toLowerCase()) ||
-      r.leaveType.toLowerCase().includes(search.toLowerCase()) ||
-      r.status.toLowerCase().includes(search.toLowerCase());
-    const matchType = leaveType === "All Types" || r.leaveType === leaveType;
-
-    let matchDate = true;
-    if (dateRange && dateRange[0]) {
-      const { startDate, endDate } = dateRange[0];
-      if (startDate && endDate) {
-        const rowFrom = new Date(r.from);
-        const rowTo = new Date(r.to);
-        const filterStart = new Date(startDate);
-        filterStart.setHours(0, 0, 0, 0);
-        const filterEnd = new Date(endDate);
-        filterEnd.setHours(23, 59, 59, 999);
-        matchDate = rowFrom <= filterEnd && rowTo >= filterStart;
-      }
+  const handleCancel = async (id) => {
+    try {
+      await cancelApplication(id);
+      fetchApplications();
+    } catch (err) {
+      alert(err?.response?.data?.message || "Failed to cancel leave request.");
     }
-
-    return matchSearch && matchType && matchDate;
-  });
-
-  // Pagination
-  const totalPages = Math.ceil(filtered.length / rowsPerPage);
-  const paginated = filtered.slice(
-    (currentPage - 1) * rowsPerPage,
-    currentPage * rowsPerPage,
-  );
-
-  const handleAddLeave = (newRecord) => {
-    if (editItem) {
-      setLeaves((prev) =>
-        prev.map((r) => (r.id === newRecord.id ? newRecord : r)),
-      );
-    } else {
-      setLeaves((prev) => [newRecord, ...prev]);
-    }
-    setEditItem(null);
-  };
-
-  const handleDelete = (id) => {
-    setLeaves((p) => p.filter((r) => r.id !== id));
   };
 
   return (
@@ -165,33 +130,33 @@ const LeaveEmployee = () => {
               className="flex items-center gap-2 px-4 py-2.5 bg-orange-500 text-white text-sm font-semibold rounded-lg hover:bg-orange-600 transition shadow-sm"
             >
               <Plus size={15} />
-              Add Leave
+              Apply Leave
             </button>
           </div>
         </div>
         <LeaveStatCardsEmployee />
         {/* Table */}
         <LeaveTableEmployee
-          paginated={paginated}
-          filtered={filtered}
+          rows={rows}
+          loading={loading}
+          total={total}
+          totalPages={totalPages}
+          leaveTypes={leaveTypes}
           search={search}
           setSearch={setSearch}
-          leaveType={leaveType}
-          setLeaveType={setLeaveType}
-          sortBy={sortBy}
-          handleSortByChange={handleSortByChange}
-          dateRange={dateRange}
-          setDateRange={setDateRange}
+          leaveTypeId={leaveTypeId}
+          setLeaveTypeId={setLeaveTypeId}
+          status={status}
+          setStatus={setStatus}
           rowsPerPage={rowsPerPage}
           setRowsPerPage={setRowsPerPage}
           currentPage={currentPage}
           setCurrentPage={setCurrentPage}
-          totalPages={totalPages}
           onEdit={(row) => {
             setEditItem(row);
             setModalOpen(true);
           }}
-          onDelete={(row) => setDeleteTarget(row)}
+          onCancel={(row) => setCancelTarget(row)}
         />
       </div>
 
@@ -202,15 +167,26 @@ const LeaveEmployee = () => {
           setModalOpen(false);
           setEditItem(null);
         }}
-        onSubmit={handleAddLeave}
+        onSubmit={handleModalSubmit}
         editData={editItem}
       />
 
       <DeleteModal
-        open={!!deleteTarget}
-        item={deleteTarget}
-        onClose={() => setDeleteTarget(null)}
-        onConfirm={handleDelete}
+        open={!!cancelTarget}
+        item={cancelTarget}
+        onClose={() => setCancelTarget(null)}
+        onConfirm={handleCancel}
+        title="Cancel Leave Request?"
+        message={
+          cancelTarget && (
+            <>
+              This will cancel your {cancelTarget.leaveName} request. This
+              can't be undone.
+            </>
+          )
+        }
+        confirmLabel="Yes, Cancel"
+        confirmColor="orange"
       />
     </div>
   );

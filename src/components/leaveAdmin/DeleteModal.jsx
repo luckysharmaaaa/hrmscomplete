@@ -1,9 +1,29 @@
 import React from "react";
 import { AlertTriangle } from "lucide-react";
 
-// ── Delete Confirm Modal ──────────────────────────────────────
-export default function DeleteModal({ open, item, onClose, onConfirm }) {
+// ── Generic Confirm Modal (Delete / Cancel / etc.) ─────────────
+export default function DeleteModal({
+  open,
+  item,
+  onClose,
+  onConfirm,
+  title = "Delete Leave Record?",
+  message,
+  confirmLabel = "Yes, Delete",
+  confirmColor = "red",
+}) {
   if (!open || !item) return null;
+
+  const colorClasses =
+    confirmColor === "red"
+      ? "bg-red-500 hover:bg-red-600"
+      : "bg-orange-500 hover:bg-orange-600";
+
+  const iconColorClasses =
+    confirmColor === "red"
+      ? "bg-red-50 text-red-500"
+      : "bg-orange-50 text-orange-500";
+
   return (
     <div className="fixed inset-0 z-[1000] flex items-center justify-center ">
       <div
@@ -12,17 +32,19 @@ export default function DeleteModal({ open, item, onClose, onConfirm }) {
       />
       <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm mx-4 z-10 p-6 text-center">
         <div className="flex justify-center mb-3">
-          <div className="p-3 bg-red-50 rounded-full">
-            <AlertTriangle size={24} className="text-red-500" />
+          <div className={`p-3 rounded-full ${iconColorClasses}`}>
+            <AlertTriangle size={24} />
           </div>
         </div>
-        <h3 className="text-base font-bold text-gray-800 mb-1">
-          Delete Leave Record?
-        </h3>
+        <h3 className="text-base font-bold text-gray-800 mb-1">{title}</h3>
         <p className="text-sm text-gray-500 mb-6">
-          You want to delete the leave record for{" "}
-          <span className="font-semibold text-gray-700">{item.name}</span>. This
-          can't be undone.
+          {message ?? (
+            <>
+              You want to delete the leave record for{" "}
+              <span className="font-semibold text-gray-700">{item.name}</span>.
+              This can't be undone.
+            </>
+          )}
         </p>
         <div className="flex gap-3">
           <button
@@ -36,9 +58,9 @@ export default function DeleteModal({ open, item, onClose, onConfirm }) {
               onConfirm(item.id);
               onClose();
             }}
-            className="flex-1 bg-red-500 text-white py-2.5 rounded-lg text-sm font-semibold hover:bg-red-600 transition"
+            className={`flex-1 text-white py-2.5 rounded-lg text-sm font-semibold transition ${colorClasses}`}
           >
-            Yes, Delete
+            {confirmLabel}
           </button>
         </div>
       </div>

@@ -111,20 +111,14 @@ const CircularRing = ({
   strokeWidth = 7,
   children,
 }) => {
-  const safePercent = Math.min(
-    100,
-    Math.max(0, Number(percent) || 0)
-  );
+  const safePercent = Math.min(100, Math.max(0, Number(percent) || 0));
 
   const r = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * r;
   const strokeDash = (safePercent / 100) * circumference;
 
   return (
-    <div
-      className="relative"
-      style={{ width: size, height: size }}
-    >
+    <div className="relative" style={{ width: size, height: size }}>
       <svg
         width={size}
         height={size}
@@ -148,9 +142,7 @@ const CircularRing = ({
           fill="none"
           stroke="url(#ringGrad)"
           strokeWidth={strokeWidth}
-          strokeDasharray={`${strokeDash} ${
-            circumference - strokeDash
-          }`}
+          strokeDasharray={`${strokeDash} ${circumference - strokeDash}`}
           strokeLinecap="round"
           style={{
             transition: "stroke-dasharray 0.8s ease-in-out",
@@ -158,13 +150,7 @@ const CircularRing = ({
         />
 
         <defs>
-          <linearGradient
-            id="ringGrad"
-            x1="0%"
-            y1="0%"
-            x2="100%"
-            y2="100%"
-          >
+          <linearGradient id="ringGrad" x1="0%" y1="0%" x2="100%" y2="100%">
             <stop offset="0%" stopColor="#f97316" />
             <stop offset="60%" stopColor="#fb923c" />
             <stop offset="100%" stopColor="#fbbf24" />
@@ -180,7 +166,7 @@ const CircularRing = ({
       {/* Percentage — pinned to the ring's own corner with a small pill
           background so it never visually drifts from the ring. */}
       <div
-        className="absolute text-[9px] font-bold text-orange-500 bg-white/90 rounded-full px-1"
+        className="absolute text-[9px] font-bold text-orange-500 bg-white/90 rounded-full px-1.5 py-0.5 tabular-nums shadow-sm"
         style={{
           bottom: -2,
           right: -2,
@@ -194,11 +180,7 @@ const CircularRing = ({
 
 // ── Main component ──────────────────────────────────────────────────────────
 
-const PunchCard = ({
-  user,
-  onPunchIn,
-  onPunchOut,
-}) => {
+const PunchCard = ({ user, onPunchIn, onPunchOut }) => {
   const [now, setNow] = useState(new Date());
 
   /*
@@ -247,22 +229,14 @@ const PunchCard = ({
     if (user?.checkOut || user?.punchOutTime) {
       setPunchedOutToday(true);
     }
-  }, [
-    user?.punchedOut,
-    user?.checkOut,
-    user?.punchOutTime,
-  ]);
+  }, [user?.punchedOut, user?.checkOut, user?.punchOutTime]);
 
   // ── Greeting ──────────────────────────────────────────────────────────────
 
   const h = now.getHours();
 
   const greeting =
-    h < 12
-      ? "Good Morning"
-      : h < 17
-        ? "Good Afternoon"
-        : "Good Evening";
+    h < 12 ? "Good Morning" : h < 17 ? "Good Afternoon" : "Good Evening";
 
   // ── Current date ──────────────────────────────────────────────────────────
 
@@ -364,7 +338,7 @@ const PunchCard = ({
           HEADER — shows elapsed time since Punch In, not a live clock
       ================================================================= */}
 
-      <div className="relative bg-gradient-to-br from-[#0F265C] via-[#1a3a7c] to-[#0f265c] px-4 pt-3.5 pb-9">
+      <div className="relative bg-gradient-to-br from-[#0F265C] via-[#1a3a7c] to-[#0f265c] px-5 pt-5 pb-10">
         {/* Decorative circle */}
         <div className="absolute top-0 right-0 w-16 h-16 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2" />
 
@@ -372,12 +346,12 @@ const PunchCard = ({
         <div className="absolute bottom-0 left-3 w-10 h-10 bg-orange-500/10 rounded-full translate-y-1/2" />
 
         {/* Session time information */}
-        <div className="relative text-center space-y-0.5">
+        <div className="relative text-center space-y-1.5">
           <p className="text-white/60 text-[10px] font-medium tracking-wide uppercase">
             {greeting}
           </p>
 
-          <p className="text-white text-[26px] font-black tracking-tight leading-none tabular-nums">
+          <p className="text-white text-[28px] font-black tracking-tight leading-none tabular-nums">
             {sessionTimeValue}
           </p>
 
@@ -391,10 +365,8 @@ const PunchCard = ({
           AVATAR RING
       ================================================================= */}
 
-      <div className="flex justify-center -mt-7 mb-1 relative z-10">
-        <CircularRing
-          percent={liveProgressPercent}
-        >
+      <div className="flex justify-center -mt-8 relative z-10">
+        <CircularRing percent={liveProgressPercent}>
           <div className="w-[52px] h-[52px] rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white text-sm font-black shadow-lg ring-4 ring-white">
             {user?.avatar || "U"}
           </div>
@@ -402,10 +374,10 @@ const PunchCard = ({
       </div>
 
       {/* ================================================================
-          CONTENT
+          CONTENT — one consistent gap-3 rhythm between every block
       ================================================================= */}
 
-      <div className="flex flex-col px-4 pb-3.5 gap-2">
+      <div className="flex flex-col px-5 pt-3 pb-5 gap-3">
         {/* Employee Name */}
 
         <div className="text-center">
@@ -422,18 +394,18 @@ const PunchCard = ({
             DEPARTMENT / LOCATION
         ================================================================= */}
 
-        <div className="flex items-center justify-center gap-1.5 flex-wrap">
+        <div className="flex items-center justify-center gap-2 flex-wrap">
           {/* Department */}
 
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-50 border border-blue-100 text-blue-600 text-[10px] font-semibold rounded-full">
-            <Briefcase size={9} />
+          <span className="inline-flex items-center gap-1 h-6 px-2.5 bg-blue-50 border border-blue-100 text-blue-600 text-[10px] font-semibold rounded-full">
+            <Briefcase size={10} />
             {user?.department || "-"}
           </span>
 
           {/* Location */}
 
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-50 border border-emerald-100 text-emerald-600 text-[10px] font-semibold rounded-full">
-            <Wifi size={9} />
+          <span className="inline-flex items-center gap-1 h-6 px-2.5 bg-emerald-50 border border-emerald-100 text-emerald-600 text-[10px] font-semibold rounded-full">
+            <Wifi size={10} />
             {user?.location || "Office"}
           </span>
         </div>
@@ -443,27 +415,27 @@ const PunchCard = ({
             (actual clock times from the API — unchanged)
         ================================================================= */}
 
-        <div className="grid grid-cols-2 gap-1.5">
+        <div className="grid grid-cols-2 gap-2">
           {/* Punch In */}
 
-          <div className="bg-emerald-50 border border-emerald-100/80 rounded-lg p-1.5 text-center">
-            <p className="text-[9px] font-semibold text-emerald-500 uppercase tracking-wide mb-0.5">
+          <div className="bg-emerald-50 border border-emerald-100/80 rounded-lg px-2 py-2.5 text-center">
+            <p className="text-[9px] font-semibold text-emerald-500 uppercase tracking-wide mb-1">
               Punch In
             </p>
 
-            <p className="text-xs font-black text-emerald-700">
+            <p className="text-xs font-black text-emerald-700 tabular-nums">
               {user?.punchInTime || "--:--"}
             </p>
           </div>
 
           {/* Punch Out */}
 
-          <div className="bg-slate-50 border border-slate-100 rounded-lg p-1.5 text-center">
-            <p className="text-[9px] font-semibold text-slate-400 uppercase tracking-wide mb-0.5">
+          <div className="bg-slate-50 border border-slate-100 rounded-lg px-2 py-2.5 text-center">
+            <p className="text-[9px] font-semibold text-slate-400 uppercase tracking-wide mb-1">
               Punch Out
             </p>
 
-            <p className="text-xs font-black text-[#0F265C]">
+            <p className="text-xs font-black text-[#0F265C] tabular-nums">
               {user?.punchOutTime || "--:--"}
             </p>
           </div>
@@ -473,19 +445,19 @@ const PunchCard = ({
             SHIFT
         ================================================================= */}
 
-        <div className="flex items-center justify-between px-2.5 py-1.5 bg-slate-50 border border-slate-100 rounded-lg">
+        <div className="flex items-center justify-between gap-3 h-10 px-3 bg-slate-50 border border-slate-100 rounded-lg">
           <div className="flex items-center gap-1.5">
-            <Briefcase size={12} className="text-slate-400" />
+            <Briefcase size={12} className="text-slate-400 shrink-0" />
 
             <span className="text-[11px] font-semibold text-slate-500">
               Shift
             </span>
           </div>
 
-          <div className="flex items-center gap-1 text-[11px]">
-            <Fingerprint size={10} className="text-slate-400" />
+          <div className="flex items-center gap-1.5 text-[11px] min-w-0">
+            <Fingerprint size={10} className="text-slate-400 shrink-0" />
 
-            <span className="font-semibold text-[#0F265C]">
+            <span className="font-semibold text-[#0F265C] truncate">
               {user?.shiftStart || "-"}
               {user?.shiftEnd && user.shiftEnd !== "-"
                 ? ` – ${user.shiftEnd}`
@@ -502,15 +474,11 @@ const PunchCard = ({
           type="button"
           onClick={handlePunch}
           disabled={punchedOutToday}
-          className={`w-full flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-bold transition-all duration-200 active:scale-95 shadow-lg ${
+          className={`w-full flex items-center justify-center gap-2 h-11 rounded-lg text-sm font-bold transition-all duration-200 active:scale-95 shadow-lg ${
             user?.punchedIn || punchedOutToday
               ? "bg-gradient-to-r from-[#0F265C] to-[#1a3a7c] hover:from-[#0a1d4a] text-white shadow-blue-900/25"
               : "bg-gradient-to-r from-orange-500 to-orange-400 hover:from-orange-600 hover:to-orange-500 text-white shadow-orange-500/30"
-          } ${
-            punchedOutToday
-              ? "cursor-not-allowed opacity-80"
-              : ""
-          }`}
+          } ${punchedOutToday ? "cursor-not-allowed opacity-80" : ""}`}
         >
           {user?.punchedIn || punchedOutToday ? (
             <>

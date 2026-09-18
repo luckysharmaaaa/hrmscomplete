@@ -3,6 +3,7 @@ import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
 import { AuthProvider } from "./context/AuthContext";
+import { SidebarProvider, useSidebar } from "./context/SidebarContext";
 
 import Sidebar from "./components/Sidebar";
 import Navbar from "./components/Navbar";
@@ -31,10 +32,32 @@ import Department from "./pages/Department";
 
 import AttendanceRegularizationAdmin from "./pages/AttendanceRegularizationAdmin";
 
-
-function Layout() {
+// ─────────────────────────────────────────────────────────────────────────
+// LayoutContent — this is your original `Layout`, unchanged except for the
+// <main> margin. It now reads `collapsed` from the sidebar context, so its
+// left margin shrinks from 240px to 76px exactly in step with the rail —
+// it has to live BELOW <SidebarProvider> (not inside the same component
+// that creates the provider) to be able to call useSidebar() at all.
+// ─────────────────────────────────────────────────────────────────────────
+function LayoutContent() {
   const location = useLocation();
   const hideLayout = location.pathname === "/";
+  const { collapsed } = useSidebar();
+
+  // ── RESPONSIVE + RAIL-WIDTH FIX ──────────────────────────────────────
+  // Previously: <main className={hideLayout ? "p-0" : "ml-64 mt-20 p-5"}>
+  //
+  // Two issues fixed here:
+  //  1. `ml-64` was unconditional below 1024px too, so on a phone the
+  //     content was pushed 256px right of a ~360-390px viewport. Now it's
+  //     `lg:ml-*` — only applied once the sidebar is actually docked.
+  //  2. The docked sidebar itself is now 240px expanded / 76px collapsed
+  //     (see Sidebar.jsx) instead of a flat 256px, so <main>'s margin has
+  //     to track `collapsed` or the two would drift out of sync and
+  //     leave either a gap or an overlap.
+  const mainMarginClass = hideLayout
+    ? "p-0"
+    : `${collapsed ? "lg:ml-[76px]" : "lg:ml-60"} pt-18 lg:pt-20 px-4 sm:px-6 lg:px-8 py-4 lg:py-5`;
 
   return (
     <div className="min-h-screen bg-slate-100">
@@ -44,9 +67,7 @@ function Layout() {
         {!hideLayout && <Sidebar />}
 
         <main
-          className={`flex-1 ${
-            hideLayout ? "p-0" : "ml-64 mt-20 p-5"
-          } min-h-screen`}
+          className={`flex-1 min-w-0 ${mainMarginClass} min-h-screen overflow-x-hidden transition-all duration-300`}
         >
           <Routes>
             <Route path="/dashboard" element={<Dashboard />} />
@@ -105,6 +126,17 @@ function Layout() {
         </main>
       </div>
     </div>
+  );
+}
+
+// Thin wrapper: sets up the provider, LayoutContent (below it in the tree)
+// consumes it. Keeping this split is what lets <main>'s margin react to
+// the collapsed state without prop-drilling it down from App.
+function Layout() {
+  return (
+    <SidebarProvider>
+      <LayoutContent />
+    </SidebarProvider>
   );
 }
 

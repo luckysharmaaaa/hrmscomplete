@@ -1,51 +1,91 @@
 import React, { useState, useEffect } from "react";
-import { CalendarPlus, X, Info } from "lucide-react";
+import { CalendarPlus, X, Info, Loader2 } from "lucide-react";
 import {
-  LEAVE_TYPES_EMPLOYEE,
-  DAY_TYPES,
-  LEAVE_BALANCE,
-} from "./leaveEmployeeData";
+  getLeaveTypes,
+  getMyBalance,
+  applyLeave,
+  editApplication,
+} from "../../services/Leaveservice";
 
-// ── helpers ────────────────────────────────────────────────────
 const EMPTY_FORM = {
-  leaveType: "",
+  leaveTypeId: "",
   from: "",
   to: "",
-  dayType: "Full Day",
+  dayType: "FULL_DAY",
   reason: "",
 };
 
-/** Returns the number of calendar days between two ISO date strings (inclusive).basically It calculates number of days between two dates. */
-function calcDays(from, to) {
+const DAY_TYPE_OPTIONS = [
+  { value: "FULL_DAY", label: "Full Day" },
+  { value: "FIRST_HALF", label: "First Half" },
+  { value: "SECOND_HALF", label: "Second Half" },
+];
+
+/** Days between two ISO date strings (inclusive). Half day always counts as 0.5. */
+function calcDays(from, to, dayType) {
   if (!from || !to) return "";
-  const ms = new Date(to) - new Date(from); // bigger - smaller
-  if (ms < 0) return ""; //if smaller - bigger (wrong date selected)
-  return Math.round(ms / 86_400_000) + 1; //86_400_000 sec in one day.
+  if (dayType !== "FULL_DAY") return from === to ? 0.5 : "";
+  const ms = new Date(to) - new Date(from);
+  if (ms < 0) return "";
+  return Math.round(ms / 86_400_000) + 1;
 }
 
 // ── Component ──────────────────────────────────────────────────
 export default function AddLeaveModal({ open, onClose, onSubmit, editData }) {
-  const [form, setForm] = useState(editData ?? EMPTY_FORM);
+  const [form, setForm] = useState(EMPTY_FORM);
   const [errors, setErrors] = useState({});
+  const [leaveTypes, setLeaveTypes] = useState([]);
+  const [balances, setBalances] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [apiError, setApiError] = useState("");
 
-  // Reset every time the drawer opens or editData changes
+  // Load leave types + balance whenever the drawer opens
   useEffect(() => {
-    if (open) {
-      setForm(editData ?? EMPTY_FORM);
-      setErrors({});
+    if (!open) return;
+
+    setApiError("");
+    setErrors({});
+
+    if (editData) {
+      setForm({
+        leaveTypeId: String(editData.leaveTypeId ?? ""),
+        from: editData.startDate ?? "",
+        to: editData.endDate ?? "",
+        dayType: editData.dayType ?? "FULL_DAY",
+        reason: editData.reason ?? "",
+      });
+    } else {
+      setForm(EMPTY_FORM);
     }
+
+    setLoading(true);
+    Promise.all([getLeaveTypes(), getMyBalance()])
+      .then(([types, balance]) => {
+        setLeaveTypes(types);
+        setBalances(balance);
+      })
+      .catch(() => setApiError("Failed to load leave types/balance."))
+      .finally(() => setLoading(false));
   }, [open, editData]);
 
-  const days = calcDays(form.from, form.to);
+  const days = calcDays(form.from, form.to, form.dayType);
+
+  const selectedType = leaveTypes.find(
+    (t) => String(t.id) === String(form.leaveTypeId),
+  );
+  const selectedBalance = balances.find(
+    (b) => String(b.leaveSettingId) === String(form.leaveTypeId),
+  );
+
+  const balanceVal = selectedBalance ? Number(selectedBalance.balanceLeave) : null;
   const remaining =
-    form.leaveType && days !== ""
-      ? Math.max(0, (LEAVE_BALANCE[form.leaveType] ?? 0) - Number(days))
-      : "";
+    balanceVal !== null && days !== "" ? Math.max(0, balanceVal - Number(days)) : "";
 
   // ── Validation ─────────────────────────────────────────────
   const validate = () => {
     const e = {};
-    if (!form.leaveType) e.leaveType = "Please select a leave type.";
+    if (!form.leaveTypeId) e.leaveTypeId = "Please select a leave type.";
     if (!form.from) e.from = "Start date is required.";
     if (!form.to) e.to = "End date is required.";
     if (form.from && form.to && new Date(form.to) < new Date(form.from))
@@ -54,24 +94,38 @@ export default function AddLeaveModal({ open, onClose, onSubmit, editData }) {
     return e;
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     const e = validate();
     if (Object.keys(e).length) {
       setErrors(e);
       return;
     }
-    const newRecord = {
-      id: editData?.id || Date.now(),
-      name: editData?.name || "John Doe",
-      role: editData?.role || "Developer",
-      avatar: editData?.avatar || "JD",
-      color: editData?.color || "bg-blue-500",
-      ...form,
-      days: Number(days),
-      status: "Pending",
+
+    const payload = {
+      leaveTypeId: Number(form.leaveTypeId),
+      startDate: form.from,
+      endDate: form.to,
+      dayType: form.dayType,
+      reason: form.reason.trim(),
     };
-    onSubmit?.(newRecord);
-    onClose();
+
+    setSubmitting(true);
+    setApiError("");
+
+    try {
+      const result = editData
+        ? await editApplication(editData.id, payload)
+        : await applyLeave(payload);
+
+      onSubmit?.(result);
+      onClose();
+    } catch (err) {
+      setApiError(
+        err?.response?.data?.message || "Failed to submit leave request.",
+      );
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const set = (field) => (e) => {
@@ -79,8 +133,13 @@ export default function AddLeaveModal({ open, onClose, onSubmit, editData }) {
     setErrors((prev) => ({ ...prev, [field]: undefined }));
   };
 
-  // ── Balance badge colour ────────────────────────────────────
-  const balanceVal = form.leaveType ? LEAVE_BALANCE[form.leaveType] : null;
+  // Force Full Day if the selected type doesn't allow half days
+  useEffect(() => {
+    if (selectedType && !selectedType.allowHalfDay && form.dayType !== "FULL_DAY") {
+      setForm((prev) => ({ ...prev, dayType: "FULL_DAY" }));
+    }
+  }, [selectedType]);
+
   const badgeColour =
     balanceVal === null
       ? ""
@@ -119,7 +178,9 @@ export default function AddLeaveModal({ open, onClose, onSubmit, editData }) {
                 {editData ? "Edit Leave" : "Apply for Leave"}
               </h2>
               <p className="text-xs text-gray-400 font-medium mt-0.5">
-                {editData ? "Update your leave request details" : "Fill in the details and submit your leave request"}
+                {editData
+                  ? "Update your leave request details"
+                  : "Fill in the details and submit your leave request"}
               </p>
             </div>
           </div>
@@ -133,180 +194,206 @@ export default function AddLeaveModal({ open, onClose, onSubmit, editData }) {
 
         {/* ── Form Body ──────────────────────────────────── */}
         <div className="flex-1 overflow-y-auto px-6 py-5 space-y-5">
-          {/* Leave Type */}
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-              Leave Type <span className="text-red-400">*</span>
-            </label>
-            <select
-              value={form.leaveType}
-              onChange={set("leaveType")}
-              className={`w-full border rounded-lg px-3.5 py-2.5 text-sm outline-none bg-white transition
-                ${
-                  errors.leaveType
-                    ? "border-red-400 focus:ring-2 focus:ring-red-100"
-                    : "border-gray-200 focus:border-orange-400 focus:ring-2 focus:ring-orange-100"
-                }`}
-            >
-              <option value="">Select leave type</option>
-              {LEAVE_TYPES_EMPLOYEE.map((t) => (
-                <option key={t}>{t}</option>
-              ))}
-            </select>
-            {errors.leaveType && (
-              <p className="text-xs text-red-500 mt-1">{errors.leaveType}</p>
-            )}
-
-            {/* Balance badge */}
-            {form.leaveType && (
-              <div
-                className={`mt-2 inline-flex items-center gap-1.5 text-xs font-medium border rounded-full px-3 py-1 ${badgeColour}`}
-              >
-                <Info size={12} />
-                Balance: {balanceVal} day{balanceVal !== 1 ? "s" : ""} available
-              </div>
-            )}
-          </div>
-
-          {/* Day Type */}
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Day Type
-            </label>
-            <div className="flex gap-5">
-              {DAY_TYPES.map((type) => (
-                <label
-                  key={type}
-                  className="flex items-center gap-1.5 text-sm text-gray-600 cursor-pointer select-none"
-                >
-                  <input
-                    type="radio"
-                    name="dayType"
-                    value={type}
-                    checked={form.dayType === type}
-                    onChange={() => {
-                      setForm((prev) => ({ ...prev, dayType: type }));
-                    }}
-                    className="accent-orange-500"
-                  />
-                  {type}
-                </label>
-              ))}
+          {loading ? (
+            <div className="flex items-center justify-center py-12 text-gray-400 gap-2">
+              <Loader2 size={18} className="animate-spin" />
+              <span className="text-sm">Loading leave details...</span>
             </div>
-          </div>
-
-          {/* From / To */}
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-                From <span className="text-red-400">*</span>
-              </label>
-              <input
-                type="date"
-                value={form.from}
-                onChange={set("from")}
-                className={`w-full border rounded-lg px-3.5 py-2.5 text-sm outline-none transition
-                  ${
-                    errors.from
-                      ? "border-red-400 focus:ring-2 focus:ring-red-100"
-                      : "border-gray-200 focus:border-orange-400 focus:ring-2 focus:ring-orange-100"
-                  }`}
-              />
-              {errors.from && (
-                <p className="text-xs text-red-500 mt-1">{errors.from}</p>
-              )}
-            </div>
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-                To <span className="text-red-400">*</span>
-              </label>
-              <input
-                type="date"
-                value={form.to}
-                min={form.from || undefined}
-                onChange={set("to")}
-                className={`w-full border rounded-lg px-3.5 py-2.5 text-sm outline-none transition
-                  ${
-                    errors.to
-                      ? "border-red-400 focus:ring-2 focus:ring-red-100"
-                      : "border-gray-200 focus:border-orange-400 focus:ring-2 focus:ring-orange-100"
-                  }`}
-              />
-              {errors.to && (
-                <p className="text-xs text-red-500 mt-1">{errors.to}</p>
-              )}
-            </div>
-          </div>
-
-          {/* Auto-calculated summary card */}
-          {days !== "" && (
-            <div className="grid grid-cols-2 gap-4">
-              <div className="bg-orange-50 border border-orange-100 rounded-xl px-4 py-3">
-                <p className="text-[10px] font-semibold text-orange-400 uppercase tracking-wider mb-1">
-                  No of Days
-                </p>
-                <p className="text-2xl font-bold text-orange-600">{days}</p>
-              </div>
-              {remaining !== "" && (
-                <div
-                  className={`border rounded-xl px-4 py-3 ${
-                    remaining > 0
-                      ? "bg-green-50 border-green-100"
-                      : "bg-red-50 border-red-100"
-                  }`}
-                >
-                  <p
-                    className={`text-[10px] font-semibold uppercase tracking-wider mb-1 ${
-                      remaining > 0 ? "text-green-500" : "text-red-400"
-                    }`}
-                  >
-                    Remaining After
-                  </p>
-                  <p
-                    className={`text-2xl font-bold ${
-                      remaining > 0 ? "text-green-700" : "text-red-600"
-                    }`}
-                  >
-                    {remaining}
-                  </p>
+          ) : (
+            <>
+              {apiError && (
+                <div className="bg-red-50 border border-red-100 text-red-600 text-sm rounded-lg px-4 py-2.5">
+                  {apiError}
                 </div>
               )}
-            </div>
+
+              {/* Leave Type */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                  Leave Type <span className="text-red-400">*</span>
+                </label>
+                <select
+                  value={form.leaveTypeId}
+                  onChange={set("leaveTypeId")}
+                  disabled={!!editData}
+                  className={`w-full border rounded-lg px-3.5 py-2.5 text-sm outline-none bg-white transition disabled:bg-gray-50 disabled:text-gray-400
+                    ${
+                      errors.leaveTypeId
+                        ? "border-red-400 focus:ring-2 focus:ring-red-100"
+                        : "border-gray-200 focus:border-orange-400 focus:ring-2 focus:ring-orange-100"
+                    }`}
+                >
+                  <option value="">Select leave type</option>
+                  {leaveTypes.map((t) => (
+                    <option key={t.id} value={t.id}>
+                      {t.leaveName}
+                    </option>
+                  ))}
+                </select>
+                {errors.leaveTypeId && (
+                  <p className="text-xs text-red-500 mt-1">{errors.leaveTypeId}</p>
+                )}
+
+                {/* Balance badge */}
+                {form.leaveTypeId && balanceVal !== null && (
+                  <div
+                    className={`mt-2 inline-flex items-center gap-1.5 text-xs font-medium border rounded-full px-3 py-1 ${badgeColour}`}
+                  >
+                    <Info size={12} />
+                    Balance: {balanceVal} day{balanceVal !== 1 ? "s" : ""} available
+                  </div>
+                )}
+              </div>
+
+              {/* Day Type */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Day Type
+                </label>
+                <div className="flex gap-5">
+                  {DAY_TYPE_OPTIONS.map(({ value, label }) => (
+                    <label
+                      key={value}
+                      className={`flex items-center gap-1.5 text-sm text-gray-600 cursor-pointer select-none ${
+                        selectedType && !selectedType.allowHalfDay && value !== "FULL_DAY"
+                          ? "opacity-40 cursor-not-allowed"
+                          : ""
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name="dayType"
+                        value={value}
+                        checked={form.dayType === value}
+                        disabled={
+                          selectedType && !selectedType.allowHalfDay && value !== "FULL_DAY"
+                        }
+                        onChange={() =>
+                          setForm((prev) => ({ ...prev, dayType: value }))
+                        }
+                        className="accent-orange-500"
+                      />
+                      {label}
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              {/* From / To */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                    From <span className="text-red-400">*</span>
+                  </label>
+                  <input
+                    type="date"
+                    value={form.from}
+                    onChange={set("from")}
+                    className={`w-full border rounded-lg px-3.5 py-2.5 text-sm outline-none transition
+                      ${
+                        errors.from
+                          ? "border-red-400 focus:ring-2 focus:ring-red-100"
+                          : "border-gray-200 focus:border-orange-400 focus:ring-2 focus:ring-orange-100"
+                      }`}
+                  />
+                  {errors.from && (
+                    <p className="text-xs text-red-500 mt-1">{errors.from}</p>
+                  )}
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                    To <span className="text-red-400">*</span>
+                  </label>
+                  <input
+                    type="date"
+                    value={form.to}
+                    min={form.from || undefined}
+                    disabled={form.dayType !== "FULL_DAY"}
+                    onChange={set("to")}
+                    className={`w-full border rounded-lg px-3.5 py-2.5 text-sm outline-none transition disabled:bg-gray-50
+                      ${
+                        errors.to
+                          ? "border-red-400 focus:ring-2 focus:ring-red-100"
+                          : "border-gray-200 focus:border-orange-400 focus:ring-2 focus:ring-orange-100"
+                      }`}
+                  />
+                  {errors.to && (
+                    <p className="text-xs text-red-500 mt-1">{errors.to}</p>
+                  )}
+                </div>
+              </div>
+
+              {/* Auto-calculated summary card */}
+              {days !== "" && (
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="bg-orange-50 border border-orange-100 rounded-xl px-4 py-3">
+                    <p className="text-[10px] font-semibold text-orange-400 uppercase tracking-wider mb-1">
+                      No of Days
+                    </p>
+                    <p className="text-2xl font-bold text-orange-600">{days}</p>
+                  </div>
+                  {remaining !== "" && (
+                    <div
+                      className={`border rounded-xl px-4 py-3 ${
+                        remaining > 0
+                          ? "bg-green-50 border-green-100"
+                          : "bg-red-50 border-red-100"
+                      }`}
+                    >
+                      <p
+                        className={`text-[10px] font-semibold uppercase tracking-wider mb-1 ${
+                          remaining > 0 ? "text-green-500" : "text-red-400"
+                        }`}
+                      >
+                        Remaining After
+                      </p>
+                      <p
+                        className={`text-2xl font-bold ${
+                          remaining > 0 ? "text-green-700" : "text-red-600"
+                        }`}
+                      >
+                        {remaining}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Reason */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                  Reason <span className="text-red-400">*</span>
+                </label>
+                <textarea
+                  rows={4}
+                  value={form.reason}
+                  onChange={set("reason")}
+                  placeholder="Briefly describe your reason for leave..."
+                  className={`w-full border rounded-lg px-3.5 py-2.5 text-sm outline-none resize-none transition
+                    ${
+                      errors.reason
+                        ? "border-red-400 focus:ring-2 focus:ring-red-100"
+                        : "border-gray-200 focus:border-orange-400 focus:ring-2 focus:ring-orange-100"
+                    }`}
+                />
+                {errors.reason && (
+                  <p className="text-xs text-red-500 mt-1">{errors.reason}</p>
+                )}
+                <p className="text-[11px] text-gray-400 mt-1 text-right">
+                  {form.reason.length} / 300
+                </p>
+              </div>
+
+              {/* Info note */}
+              <div className="flex items-start gap-2.5 bg-blue-50 border border-blue-100 rounded-xl px-4 py-3 text-xs text-blue-700">
+                <Info size={14} className="shrink-0 mt-0.5 text-blue-400" />
+                <span>
+                  Your leave request will be sent to your manager for approval. You
+                  will be notified once a decision is made.
+                </span>
+              </div>
+            </>
           )}
-
-          {/* Reason */}
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-              Reason <span className="text-red-400">*</span>
-            </label>
-            <textarea
-              rows={4}
-              value={form.reason}
-              onChange={set("reason")}
-              placeholder="Briefly describe your reason for leave..."
-              className={`w-full border rounded-lg px-3.5 py-2.5 text-sm outline-none resize-none transition
-                ${
-                  errors.reason
-                    ? "border-red-400 focus:ring-2 focus:ring-red-100"
-                    : "border-gray-200 focus:border-orange-400 focus:ring-2 focus:ring-orange-100"
-                }`}
-            />
-            {errors.reason && (
-              <p className="text-xs text-red-500 mt-1">{errors.reason}</p>
-            )}
-            <p className="text-[11px] text-gray-400 mt-1 text-right">
-              {form.reason.length} / 300
-            </p>
-          </div>
-
-          {/* Info note */}
-          <div className="flex items-start gap-2.5 bg-blue-50 border border-blue-100 rounded-xl px-4 py-3 text-xs text-blue-700">
-            <Info size={14} className="shrink-0 mt-0.5 text-blue-400" />
-            <span>
-              Your leave request will be sent to your manager for approval. You
-              will be notified once a decision is made.
-            </span>
-          </div>
         </div>
 
         {/* ── Footer ─────────────────────────────────────── */}
@@ -319,8 +406,10 @@ export default function AddLeaveModal({ open, onClose, onSubmit, editData }) {
           </button>
           <button
             onClick={handleSubmit}
-            className="px-6 py-2.5 bg-orange-500 hover:bg-orange-600 active:scale-95 text-white rounded-lg text-sm font-semibold transition shadow-sm"
+            disabled={submitting || loading}
+            className="px-6 py-2.5 bg-orange-500 hover:bg-orange-600 active:scale-95 text-white rounded-lg text-sm font-semibold transition shadow-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
           >
+            {submitting && <Loader2 size={14} className="animate-spin" />}
             {editData ? "Update Request" : "Submit Request"}
           </button>
         </div>

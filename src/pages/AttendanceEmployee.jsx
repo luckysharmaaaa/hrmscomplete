@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import {
   ChevronRight, HomeIcon, FileText, FileSpreadsheet, ChevronDown, BarChart3,
 } from "lucide-react";
@@ -26,6 +26,7 @@ import { useAuth } from "../context/AuthContext";
 
 const now = new Date();
 
+
 // YYYY-MM-DD for a given year/month, first or last day
 const monthBounds = (year, month) => {
   const pad2 = (n) => String(n).padStart(2, "0");
@@ -38,6 +39,8 @@ const monthBounds = (year, month) => {
 
 const AttendanceEmployee = () => {
   const { user } = useAuth();
+  // const { user } = useAuth();
+const regularizationRef = useRef(null);
 
   const [reportOpen, setReportOpen] = useState(false);
   const [today, setToday] = useState(null);
@@ -78,6 +81,14 @@ const AttendanceEmployee = () => {
     setSelectedYear(year);
     setSelectedMonth(month);
   };
+  const handleGoToRegularization = () => {
+    regularizationRef.current?.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    });
+  };
+
+
 
   const handlePunchIn = async () => {
     setPunching(true);
@@ -148,6 +159,7 @@ const AttendanceEmployee = () => {
     location: "Office",
   };
 
+
   // Grid now reflects whichever month the user picked, not always "now"
   const tableRecords = buildMonthAttendance(
     history,
@@ -156,13 +168,17 @@ const AttendanceEmployee = () => {
     myRegularizations
   );
 
+
   return (
-    <div>
-      <div className="space-y-3.5">
-        <div className="flex items-start justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-[#0F265C]">Employee Attendance</h1>
-            <nav className="flex items-center gap-1.5 mt-1 text-xs text-gray-400 leading-none">
+    <div className="min-w-0">
+      <div className="space-y-4 min-w-0">
+        {/* HEADER — stacks under the title on phones, sits beside it from sm */}
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+          <div className="min-w-0">
+            <h1 className="text-2xl sm:text-3xl font-bold text-[#0F265C]">
+              Employee Attendance
+            </h1>
+            <nav className="flex items-center gap-1.5 mt-1.5 text-xs text-gray-400 leading-none flex-wrap">
               <HomeIcon size={12} className="shrink-0" />
               <ChevronRight size={12} className="shrink-0" />
               <span>Attendance</span>
@@ -171,9 +187,9 @@ const AttendanceEmployee = () => {
             </nav>
           </div>
 
-          <div className="flex items-center gap-2">
-            <div className="dropdown dropdown-end">
-              <label tabIndex={0} className="flex items-center gap-2 px-4 py-2.5 bg-orange-500 hover:bg-orange-600 text-white text-sm font-semibold rounded-lg border border-gray-200 transition shadow-sm cursor-pointer">
+          <div className="flex items-center gap-3 shrink-0">
+            <div className="dropdown dropdown-end flex-1 sm:flex-none">
+              <label tabIndex={0} className="w-full flex items-center justify-center gap-2 h-10 px-4 bg-orange-500 hover:bg-orange-600 text-white text-sm font-semibold rounded-lg transition-colors shadow-sm cursor-pointer">
                 <FileText size={15} />
                 <span>Export</span>
                 <ChevronDown size={13} />
@@ -196,7 +212,7 @@ const AttendanceEmployee = () => {
 
             <button
               onClick={() => setReportOpen(true)}
-              className="flex items-center gap-2 px-5 py-2.5 bg-orange-500 hover:bg-orange-600 text-white text-sm font-semibold rounded-lg transition shadow-sm shadow-orange-300/30"
+              className="flex-1 sm:flex-none flex items-center justify-center gap-2 h-10 px-4 bg-orange-500 hover:bg-orange-600 text-white text-sm font-semibold rounded-lg transition-colors shadow-sm shadow-orange-300/30"
             >
               <BarChart3 size={15} />
               Report
@@ -204,8 +220,11 @@ const AttendanceEmployee = () => {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 xl:grid-cols-4 gap-3.5 items-start">
-          <div className="xl:col-span-1">
+        {/* PUNCH CARD + STATS
+            Phone/tablet : punch card on top, stats stacked beneath.
+            xl and up    : original 1 + 3 column split. */}
+        <div className="grid grid-cols-1 xl:grid-cols-4 gap-4 items-start min-w-0">
+          <div className="xl:col-span-1 min-w-0 max-w-sm w-full mx-auto xl:max-w-none xl:mx-0">
             <PunchCard
               user={punchCardUser}
               onPunchIn={punching ? undefined : handlePunchIn}
@@ -213,7 +232,7 @@ const AttendanceEmployee = () => {
             />
           </div>
 
-          <div className="xl:col-span-3 flex flex-col gap-3">
+          <div className="xl:col-span-3 flex flex-col gap-4 min-w-0">
             <AttendanceStatsCards history={history} today={today} />
             <TimelineBar today={today} />
           </div>
@@ -225,9 +244,14 @@ const AttendanceEmployee = () => {
           month={selectedMonth}
           onMonthChange={handleMonthChange}
           onSubmitRegularization={handleSubmitRegularization}
+          onGoToRegularization={handleGoToRegularization}
         />
 
-        <EmployeeRegularization requests={myRegularizations} />
+        {/* <EmployeeRegularization requests={myRegularizations} /> */}
+        <EmployeeRegularization
+          requests={myRegularizations}
+          regularizationRef={regularizationRef}
+        />
       </div>
 
       <AttendanceReportModal open={reportOpen} onClose={() => setReportOpen(false)} />

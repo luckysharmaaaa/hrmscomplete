@@ -1,6 +1,3 @@
-// # Corrected `EditAttendanceModal.jsx`
-
-// ```jsx
 import React, { useEffect, useState } from "react";
 import {
   X,
@@ -19,6 +16,81 @@ import {
 // ── Status options ────────────────────────────────────────────────────────────
 const STATUS_OPTIONS = ["Present", "Absent", "Late", "Half Day"];
 
+// ── Convert existing attendance time into <input type="time"> format ─────────
+const toTimeInputValue = (value) => {
+  if (!value || value === "-") {
+    return "";
+  }
+
+  const str = String(value).trim();
+
+  // Already HH:mm
+  if (/^\d{2}:\d{2}$/.test(str)) {
+    return str;
+  }
+
+  // HH:mm:ss
+  if (/^\d{2}:\d{2}:\d{2}$/.test(str)) {
+    return str.substring(0, 5);
+  }
+
+  // MySQL DATETIME
+  // Example: 2026-09-15 09:30:00
+  const mysqlMatch = str.match(
+    /^\d{4}-\d{2}-\d{2}[ T](\d{2}):(\d{2})(?::\d{2})?/
+  );
+
+  if (mysqlMatch) {
+    return `${mysqlMatch[1]}:${mysqlMatch[2]}`;
+  }
+
+  // ISO datetime
+  // Example: 2026-09-15T09:30:00.000Z
+  if (str.includes("T")) {
+    const timePart = str.split("T")[1];
+
+    if (timePart) {
+      const match = timePart.match(/^(\d{2}):(\d{2})/);
+
+      if (match) {
+        return `${match[1]}:${match[2]}`;
+      }
+    }
+  }
+
+  // 9:30 AM / 9:30 PM
+  const amPmMatch = str.match(
+    /^(\d{1,2}):(\d{2})\s*(AM|PM)$/i
+  );
+
+  if (amPmMatch) {
+    let hours = Number(amPmMatch[1]);
+    const minutes = amPmMatch[2];
+    const period = amPmMatch[3].toUpperCase();
+
+    if (period === "PM" && hours !== 12) {
+      hours += 12;
+    }
+
+    if (period === "AM" && hours === 12) {
+      hours = 0;
+    }
+
+    return `${String(hours).padStart(2, "0")}:${minutes}`;
+  }
+
+  // Fallback
+  const parsed = new Date(str);
+
+  if (!Number.isNaN(parsed.getTime())) {
+    return `${String(parsed.getHours()).padStart(2, "0")}:${String(
+      parsed.getMinutes()
+    ).padStart(2, "0")}`;
+  }
+
+  return "";
+};
+
 // ── Field wrapper ─────────────────────────────────────────────────────────────
 const Field = ({ label, icon: Icon, children }) => (
   <div className="flex flex-col gap-1.5">
@@ -33,6 +105,9 @@ const Field = ({ label, icon: Icon, children }) => (
 
 const inputCls =
   "w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-700 outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100 bg-white transition placeholder-gray-300";
+
+const readonlyInputCls =
+  "w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-500 outline-none bg-gray-50 cursor-not-allowed";
 
 // ── Main component ────────────────────────────────────────────────────────────
 const EditAttendanceModal = ({ open, onClose, employee, onSave }) => {
@@ -66,28 +141,30 @@ const EditAttendanceModal = ({ open, onClose, employee, onSave }) => {
 
     setForm({
       date: employee.date ?? "",
-      checkIn:
-        employee.checkIn && employee.checkIn !== "-"
-          ? employee.checkIn
-          : "",
-      checkOut:
-        employee.checkOut && employee.checkOut !== "-"
-          ? employee.checkOut
-          : "",
+
+      // Convert whatever backend/table sends into HH:mm
+      checkIn: toTimeInputValue(employee.checkIn),
+
+      checkOut: toTimeInputValue(employee.checkOut),
+
       breakTime:
         employee.breakTime && employee.breakTime !== "-"
           ? employee.breakTime
           : "",
+
       late:
         employee.late && employee.late !== "-"
           ? employee.late
           : "",
+
       productionHours:
         employee.hours && employee.hours !== "-"
           ? employee.hours
           : "",
+
       status: employee.status ?? "Present",
-      notes: "",
+
+      notes: employee.notes ?? "",
     });
   }, [employee]);
 
@@ -107,19 +184,46 @@ const EditAttendanceModal = ({ open, onClose, employee, onSave }) => {
       return;
     }
 
+    /*
+     * IMPORTANT:
+     *
+     * checkIn/checkOut are intentionally kept as HH:mm here.
+     *
+     * The parent AttendanceAdminTable / API layer should combine:
+     *
+     * date + HH:mm
+     *
+     * into:
+     *
+     * YYYY-MM-DD HH:mm:ss
+     *
+     * before calling the backend.
+     *
+     * This keeps the UI free from strict datetime formatting.
+     */
     const updatedEmployee = {
       ...employee,
+
+      // Date remains unchanged/read-only.
       date: form.date,
+
+      // Native time input gives HH:mm.
       checkIn: form.checkIn || "-",
       checkOut: form.checkOut || "-",
+
+      /*
+       * These values are displayed here but should be recalculated
+       * by the backend from checkIn/checkOut.
+       */
       breakTime: form.breakTime || "-",
       late: form.late || "-",
       hours: form.productionHours || "0.00 Hrs",
+
       status: form.status,
+
       notes: form.notes,
     };
 
-    // Parent component can update the table/API.
     if (typeof onSave === "function") {
       onSave(updatedEmployee);
     }
@@ -163,9 +267,7 @@ const EditAttendanceModal = ({ open, onClose, employee, onSave }) => {
               </h2>
 
               <p className="text-xs text-gray-400 mt-0.5">
-                {employee
-                  ? employee.name
-                  : "Select an employee"}
+                {employee ? employee.name : "Select an employee"}
               </p>
             </div>
           </div>
@@ -183,7 +285,9 @@ const EditAttendanceModal = ({ open, onClose, employee, onSave }) => {
         {employee && (
           <div className="mx-5 mt-5 flex items-center gap-3 p-3.5 bg-orange-50 border border-orange-100 rounded-xl">
             <div
-              className={`w-10 h-10 rounded-full ${employee.avatarColor} flex items-center justify-center text-white text-sm font-bold shrink-0 shadow-sm`}
+              className={`w-10 h-10 rounded-full ${
+                employee.avatarColor
+              } flex items-center justify-center text-white text-sm font-bold shrink-0 shadow-sm`}
             >
               {employee.avatar}
             </div>
@@ -233,31 +337,44 @@ const EditAttendanceModal = ({ open, onClose, employee, onSave }) => {
             <input
               type="date"
               value={form.date}
-              onChange={set("date")}
-              className={inputCls}
+              readOnly
+              className={readonlyInputCls}
+              title="Attendance date cannot be changed from this screen"
             />
+
+            <p className="text-[11px] text-gray-400 mt-0.5">
+              Attendance date is fixed for this record.
+            </p>
           </Field>
 
           {/* Check In / Check Out */}
           <div className="grid grid-cols-2 gap-4">
             <Field label="Check In" icon={AlarmClock}>
               <input
-                type="text"
+                type="time"
                 value={form.checkIn}
                 onChange={set("checkIn")}
-                placeholder="09:00 AM"
                 className={inputCls}
+                aria-label="Check In"
               />
+
+              <p className="text-[11px] text-gray-400">
+                Select the actual check-in time.
+              </p>
             </Field>
 
             <Field label="Check Out" icon={AlarmClock}>
               <input
-                type="text"
+                type="time"
                 value={form.checkOut}
                 onChange={set("checkOut")}
-                placeholder="06:45 PM"
                 className={inputCls}
+                aria-label="Check Out"
               />
+
+              <p className="text-[11px] text-gray-400">
+                Select the actual check-out time.
+              </p>
             </Field>
           </div>
 
@@ -267,20 +384,28 @@ const EditAttendanceModal = ({ open, onClose, employee, onSave }) => {
               <input
                 type="text"
                 value={form.breakTime}
-                onChange={set("breakTime")}
-                placeholder="30 Min"
-                className={inputCls}
+                readOnly
+                className={readonlyInputCls}
+                placeholder="Calculated"
               />
+
+              <p className="text-[11px] text-gray-400">
+                Calculated by attendance rules.
+              </p>
             </Field>
 
             <Field label="Late" icon={AlertCircle}>
               <input
                 type="text"
                 value={form.late}
-                onChange={set("late")}
-                placeholder="0 Min"
-                className={inputCls}
+                readOnly
+                className={readonlyInputCls}
+                placeholder="Calculated"
               />
+
+              <p className="text-[11px] text-gray-400">
+                Recalculated after saving.
+              </p>
             </Field>
           </div>
 
@@ -289,10 +414,14 @@ const EditAttendanceModal = ({ open, onClose, employee, onSave }) => {
             <input
               type="text"
               value={form.productionHours}
-              onChange={set("productionHours")}
-              placeholder="8.55 Hrs"
-              className={inputCls}
+              readOnly
+              className={readonlyInputCls}
+              placeholder="Calculated"
             />
+
+            <p className="text-[11px] text-gray-400">
+              Recalculated from Check In, Check Out and shift rules.
+            </p>
           </Field>
 
           {/* Status */}
@@ -329,9 +458,9 @@ const EditAttendanceModal = ({ open, onClose, employee, onSave }) => {
             />
 
             <p className="text-xs text-blue-600 leading-relaxed">
-              Changes will be saved to the employee's
-              attendance record and may affect their
-              production hours calculation.
+              Check In and Check Out can be changed using the time
+              picker. Late time and production hours are automatically
+              recalculated from the updated attendance times.
             </p>
           </div>
         </div>

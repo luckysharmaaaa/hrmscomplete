@@ -88,7 +88,10 @@ const UserTable = ({ roles = [] }) => {
           email: item.email,
           phone: item.phone,
 
+          // status: Number(item.status) === 1 ? "Active" : "Inactive",
           status: Number(item.status) === 1 ? "Active" : "Inactive",
+
+
 
           statusValue: Number(item.status),
 
@@ -472,11 +475,10 @@ const UserTable = ({ roles = [] }) => {
                   {/* Status */}
                   <td>
                     <span
-                      className={`badge text-white ${
-                        user.status === "Active"
+                      className={`badge text-white ${user.status === "Active"
                           ? "badge-success"
                           : "badge-error"
-                      }`}
+                        }`}
                     >
                       {user.status}
                     </span>
@@ -530,9 +532,8 @@ const UserTable = ({ roles = [] }) => {
               <button
                 key={page}
                 onClick={() => setCurrentPage(page)}
-                className={`join-item btn btn-sm ${
-                  safePage === page ? "btn-warning text-white" : ""
-                }`}
+                className={`join-item btn btn-sm ${safePage === page ? "btn-warning text-white" : ""
+                  }`}
               >
                 {page}
               </button>

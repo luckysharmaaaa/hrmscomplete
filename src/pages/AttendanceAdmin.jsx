@@ -6,12 +6,28 @@ import {
   FileSpreadsheet,
   HomeIcon,
 } from "lucide-react";
+
 import AttendanceDetailsToday from "../components/attendanceAdmin/AttendanceDetailsToday";
 import AttendanceAdminTable from "../components/attendanceAdmin/AttendanceAdminTable";
 import AttendanceReportModal from "../components/attendanceAdmin/AttendanceReportModal";
 
 const AttendanceAdmin = () => {
   const [reportOpen, setReportOpen] = useState(false);
+
+  /**
+   * Filters currently selected inside AttendanceAdminTable.
+   *
+   * AttendanceDetailsToday uses the same filters.
+   */
+  const [attendanceFilters, setAttendanceFilters] = useState({
+    startDate: new Date().toLocaleDateString("en-CA"),
+    endDate: new Date().toLocaleDateString("en-CA"),
+    departmentId: "",
+    designationId: "",
+    employeeId: "",
+    status: "",
+    search: "",
+  });
 
   return (
     <div>
@@ -25,9 +41,19 @@ const AttendanceAdmin = () => {
 
             <nav className="flex items-center gap-1.5 mt-1 text-xs text-gray-400 leading-none">
               <HomeIcon size={12} className="shrink-0" />
-              <ChevronRight size={12} className="shrink-0" />
+
+              <ChevronRight
+                size={12}
+                className="shrink-0"
+              />
+
               <span>Attendance</span>
-              <ChevronRight size={12} className="shrink-0" />
+
+              <ChevronRight
+                size={12}
+                className="shrink-0"
+              />
+
               <span className="text-orange-500 font-medium">
                 Attendance Admin
               </span>
@@ -42,7 +68,9 @@ const AttendanceAdmin = () => {
                 className="flex items-center gap-2 px-4 py-2.5 bg-orange-500 hover:bg-orange-600 text-white text-sm font-semibold rounded-lg transition shadow-sm cursor-pointer"
               >
                 <FileText size={16} />
+
                 <span>Export</span>
+
                 <ChevronDown size={14} />
               </label>
 
@@ -52,8 +80,14 @@ const AttendanceAdmin = () => {
               >
                 <li>
                   <a className="flex items-center gap-3 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-lg">
-                    <FileText size={16} className="text-red-500 shrink-0" />
-                    <span className="font-medium">Export as PDF</span>
+                    <FileText
+                      size={16}
+                      className="text-red-500 shrink-0"
+                    />
+
+                    <span className="font-medium">
+                      Export as PDF
+                    </span>
                   </a>
                 </li>
 
@@ -63,7 +97,10 @@ const AttendanceAdmin = () => {
                       size={16}
                       className="text-green-600 shrink-0"
                     />
-                    <span className="font-medium">Export as Excel</span>
+
+                    <span className="font-medium">
+                      Export as Excel
+                    </span>
                   </a>
                 </li>
               </ul>
@@ -78,11 +115,15 @@ const AttendanceAdmin = () => {
           </div>
         </div>
 
-        {/* AttendanceDetailsToday */}
-        <AttendanceDetailsToday />
+        {/* Attendance Summary */}
+        <AttendanceDetailsToday
+          filters={attendanceFilters}
+        />
 
         {/* Attendance Admin Table */}
-        <AttendanceAdminTable />
+        <AttendanceAdminTable
+          onFiltersChange={setAttendanceFilters}
+        />
       </div>
 
       {/* Attendance Report Side Panel */}

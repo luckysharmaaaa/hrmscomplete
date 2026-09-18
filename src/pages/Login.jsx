@@ -125,99 +125,87 @@ function Login() {
       </div>
 
       {/* RIGHT SIDE */}
-      <div className="w-full lg:w-[57%] flex justify-center items-center bg-white px-3">
+      <div className="w-full lg:w-[57%] flex justify-center items-center bg-white px-6">
         <form
           onSubmit={handleSubmit}
-          className="w-full max-w-sm flex flex-col py-3"
+          className="w-full max-w-sm flex flex-col py-6"
         >
           {/* Logo */}
-          <div className="text-center mb-3">
+          <div className="text-center mb-4">
             <img src={logo_img} alt="logo" className="w-24 mx-auto" />
           </div>
 
           {/* Heading */}
-          <div className="text-center mb-3">
-            <h1 className="text-[22px] font-bold text-[#1b2559]">
-              Sign In
-            </h1>
+          <div className="text-center mb-6">
+            <h1 className="text-2xl font-bold text-[#1b2559]">Sign In</h1>
 
-            <p className="text-gray-500 mt-1 text-xs">
+            <p className="text-gray-500 mt-1.5 text-sm">
               Please enter your details to sign in
             </p>
           </div>
 
           {/* Email */}
-          <div className="mb-3">
-            <label className="block text-sm font-medium mb-1 text-gray-700">
+          <div className="mb-4">
+            <label className="block text-sm font-medium mb-1.5 text-gray-700">
               Email Address
             </label>
 
-            <div className="flex items-center border border-gray-300 rounded-lg bg-white focus-within:border-orange-500">
+            <div className="flex items-center h-11 border border-gray-300 rounded-lg bg-white focus-within:border-orange-500 transition-colors">
               <input
                 type="email"
                 name="email"
                 placeholder="Enter email"
                 value={formData.email}
                 onChange={handleChange}
-                className="w-full px-3 py-2 outline-none text-sm rounded-lg"
+                className="w-full h-full px-3.5 outline-none text-sm rounded-lg"
               />
 
-              <div className="px-3 text-gray-400">
+              <div className="px-3.5 text-gray-400">
                 <Mail size={16} />
               </div>
             </div>
 
             {errors.email && (
-              <p className="text-red-500 text-xs mt-1">
-                {errors.email}
-              </p>
+              <p className="text-red-500 text-xs mt-1.5">{errors.email}</p>
             )}
           </div>
 
           {/* Password */}
-          <div className="mb-3">
-            <label className="block text-sm font-medium mb-1 text-gray-700">
+          <div className="mb-4">
+            <label className="block text-sm font-medium mb-1.5 text-gray-700">
               Password
             </label>
 
-            <div className="flex items-center border border-gray-300 rounded-lg bg-white focus-within:border-orange-500">
+            <div className="flex items-center h-11 border border-gray-300 rounded-lg bg-white focus-within:border-orange-500 transition-colors">
               <input
                 type={showPassword ? "text" : "password"}
                 name="password"
                 placeholder="Enter password"
                 value={formData.password}
                 onChange={handleChange}
-                className="w-full px-3 py-2 outline-none text-sm rounded-lg"
+                className="w-full h-full px-3.5 outline-none text-sm rounded-lg"
               />
 
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="px-3 text-gray-400"
+                className="px-3.5 text-gray-400"
               >
-                {showPassword ? (
-                  <Eye size={16} />
-                ) : (
-                  <EyeOff size={16} />
-                )}
+                {showPassword ? <Eye size={16} /> : <EyeOff size={16} />}
               </button>
             </div>
 
             {errors.password && (
-              <p className="text-red-500 text-xs mt-1">
-                {errors.password}
-              </p>
+              <p className="text-red-500 text-xs mt-1.5">{errors.password}</p>
             )}
 
             {apiError && (
-              <p className="text-red-500 text-xs mt-1">
-                {apiError}
-              </p>
+              <p className="text-red-500 text-xs mt-1.5">{apiError}</p>
             )}
           </div>
 
           {/* Remember Me */}
-          <div className="flex justify-between items-center mb-3 text-xs">
+          <div className="flex justify-between items-center mb-5 text-sm">
             <label className="flex items-center gap-2 text-gray-600">
               <input
                 type="checkbox"
@@ -228,10 +216,7 @@ function Login() {
               Remember Me
             </label>
 
-            <button
-              type="button"
-              className="text-red-500 hover:underline"
-            >
+            <button type="button" className="text-red-500 hover:underline">
               Forgot Password?
             </button>
           </div>
@@ -239,19 +224,19 @@ function Login() {
           {/* Login Button */}
           <button
             type="submit"
-            className="w-full h-9 bg-orange-500 hover:bg-orange-600 text-white rounded-lg font-medium text-sm"
+            className="w-full h-11 bg-orange-500 hover:bg-orange-600 text-white rounded-lg font-medium text-sm transition-colors"
           >
             Sign In
           </button>
 
           {/* Divider */}
-          <div className="flex items-center my-2">
+          <div className="flex items-center my-4">
             <div className="flex-1 border-t border-gray-300"></div>
-            <span className="mx-2 text-gray-400 text-xs">Or</span>
+            <span className="mx-3 text-gray-400 text-xs">Or</span>
             <div className="flex-1 border-t border-gray-300"></div>
           </div>
 
-          <p className="text-center text-gray-500 text-sm mb-3">
+          <p className="text-center text-gray-500 text-sm mb-4">
             Continue with Google
           </p>
 
@@ -259,17 +244,13 @@ function Login() {
             <button
               type="button"
               onClick={handleGoogleLogin}
-              className="w-full h-10 border border-gray-300 rounded-lg flex items-center justify-center hover:bg-gray-50"
+              className="w-full h-11 border border-gray-300 rounded-lg flex items-center justify-center hover:bg-gray-50 transition-colors"
             >
-              <img
-                src={google_icon}
-                alt="Google"
-                className="w-6 h-6"
-              />
+              <img src={google_icon} alt="Google" className="w-6 h-6" />
             </button>
           </div>
 
-          <div className="text-center pt-4">
+          <div className="text-center pt-6">
             <p className="text-xs text-gray-500">
               Copyright © 2026 - SmartHR
             </p>

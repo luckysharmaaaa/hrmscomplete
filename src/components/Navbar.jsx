@@ -8,6 +8,8 @@ import {
   Lock,
   LogOut,
   ChevronDown,
+  Menu,
+  X,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
@@ -15,12 +17,17 @@ import { logout as logoutApi } from "../services/loginAPI";
 import { getFileUrl } from "../services/profileApi";
 import { getInitials, getAvatarColor } from "../utils/avatar";
 import { useAuth } from "../context/AuthContext";
+import { useSidebar } from "../context/SidebarContext";
 
 function Navbar() {
   const navigate = useNavigate();
   const { user, roles, profileImage, refreshUser, clearUser } = useAuth();
+  const { toggle, collapsed } = useSidebar();
 
   const [open, setOpen] = useState(false);
+  // Phone-only: the search field is hidden by default and expands over
+  // the bar when tapped, so the header never overflows on a 360px screen.
+  const [searchOpen, setSearchOpen] = useState(false);
   const dropdownRef = useRef(null);
 
   // =========================================================
@@ -74,12 +81,12 @@ function Navbar() {
       <img
         src={avatarUrl}
         alt={fullName}
-        className="rounded-full border object-cover"
+        className="rounded-full border object-cover shrink-0"
         style={{ width: size, height: size }}
       />
     ) : (
       <div
-        className="rounded-full border flex items-center justify-center text-white font-semibold"
+        className="rounded-full border flex items-center justify-center text-white font-semibold shrink-0"
         style={{ width: size, height: size, backgroundColor: avatarColor }}
       >
         {initials}
@@ -87,81 +94,162 @@ function Navbar() {
     );
 
   return (
-    <nav className="fixed top-0 left-64 right-0 h-18 bg-white border-b border-gray-200 px-8 flex items-center justify-between z-30">
-      {/* Search */}
-      <div className="relative w-[320px]">
-        <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
-        <input
-          type="text"
-          placeholder="Search in HRMS"
-          className="w-full h-11 pl-12 pr-4 rounded-lg border border-gray-200 bg-[#FAFAFA] outline-none focus:border-orange-400"
-        />
+    <nav
+      className={`fixed top-0 left-0 right-0 h-18 bg-white border-b border-gray-200 px-4 sm:px-6 lg:px-8 flex items-center justify-between gap-3 z-30 transition-all duration-300 ${
+        collapsed ? "lg:left-[76px]" : "lg:left-60"
+      }`}
+    >
+      {/* Left: hamburger (below lg) + search */}
+      <div className="flex items-center gap-3 min-w-0 flex-1">
+        <button
+          type="button"
+          onClick={toggle}
+          className="lg:hidden w-10 h-10 shrink-0 flex items-center justify-center rounded-lg text-gray-600 hover:bg-orange-50 hover:text-orange-500 transition-colors"
+          aria-label="Open menu"
+        >
+          <Menu size={20} />
+        </button>
+
+        {/* Search — full field from sm up, expandable overlay on phones */}
+        <div className="relative hidden sm:block w-full max-w-[320px]">
+          <Search
+            size={18}
+            className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
+          />
+          <input
+            type="text"
+            placeholder="Search in HRMS"
+            className="w-full h-11 pl-12 pr-4 rounded-lg border border-gray-200 bg-[#FAFAFA] text-sm outline-none focus:border-orange-400"
+          />
+        </div>
+
+        {/* Phone search trigger */}
+        <button
+          type="button"
+          onClick={() => setSearchOpen(true)}
+          className="sm:hidden w-10 h-10 shrink-0 flex items-center justify-center rounded-lg text-gray-600 hover:bg-orange-50 hover:text-orange-500 transition-colors"
+          aria-label="Search"
+        >
+          <Search size={19} />
+        </button>
+
+        {/* Phone search overlay */}
+        {searchOpen && (
+          <div className="sm:hidden absolute inset-x-0 top-0 h-18 bg-white px-4 flex items-center gap-2 z-40">
+            <div className="relative flex-1">
+              <Search
+                size={18}
+                className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
+              />
+              <input
+                autoFocus
+                type="text"
+                placeholder="Search in HRMS"
+                className="w-full h-11 pl-12 pr-4 rounded-lg border border-gray-200 bg-[#FAFAFA] text-sm outline-none focus:border-orange-400"
+              />
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setSearchOpen(false)}
+              className="w-10 h-10 shrink-0 flex items-center justify-center rounded-lg text-gray-500 hover:bg-gray-50"
+              aria-label="Close search"
+            >
+              <X size={18} />
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Right Side */}
-      <div className="flex items-center gap-5">
-        <button className="text-gray-600 hover:text-orange-500">
-          <Settings size={20} />
+      <div className="flex items-center gap-1 sm:gap-3 lg:gap-4 shrink-0">
+        {/* Secondary icons hide first as width shrinks — they're the least
+            important controls in the bar. */}
+        <button className="hidden md:flex w-9 h-9 items-center justify-center rounded-lg text-gray-600 hover:bg-orange-50 hover:text-orange-500 transition-colors">
+          <Settings size={19} />
         </button>
 
-        <button className="text-gray-600 hover:text-orange-500">
-          <Mail size={20} />
+        <button className="hidden md:flex w-9 h-9 items-center justify-center rounded-lg text-gray-600 hover:bg-orange-50 hover:text-orange-500 transition-colors">
+          <Mail size={19} />
         </button>
 
-        <button className="relative text-gray-600 hover:text-orange-500">
-          <Bell size={20} />
-          <span className="absolute -top-1 -right-1 bg-red-500 w-2 h-2 rounded-full" />
+        <button className="relative w-9 h-9 flex items-center justify-center rounded-lg text-gray-600 hover:bg-orange-50 hover:text-orange-500 transition-colors">
+          <Bell size={19} />
+          <span className="absolute top-1.5 right-1.5 bg-red-500 w-2 h-2 rounded-full" />
         </button>
 
         {/* Profile */}
-        <div className="relative border-l pl-5" ref={dropdownRef}>
-          <button onClick={() => setOpen(!open)} className="flex items-center gap-3">
-            <Avatar size={40} />
+        <div
+          className="relative sm:pl-4 sm:ml-1 sm:border-l border-gray-200"
+          ref={dropdownRef}
+        >
+          <button
+            onClick={() => setOpen(!open)}
+            className="flex items-center gap-2 lg:gap-3 py-1.5 pr-1 rounded-lg hover:bg-gray-50 transition-colors"
+          >
+            <Avatar size={38} />
 
-            <div className="text-left">
-              <h3 className="text-sm font-semibold">{fullName}</h3>
-              <p className="text-xs text-gray-500">{roleName}</p>
+            {/* Name block is the first thing to go on narrow screens —
+                the avatar alone still identifies the user. */}
+            <div className="hidden lg:block text-left leading-tight max-w-[140px]">
+              <h3 className="text-sm font-semibold text-gray-800 truncate">
+                {fullName}
+              </h3>
+              <p className="text-xs text-gray-500 truncate">{roleName}</p>
             </div>
 
-            <ChevronDown size={16} className={`transition ${open ? "rotate-180" : ""}`} />
+            <ChevronDown
+              size={16}
+              className={`hidden sm:block text-gray-400 transition-transform duration-150 ${
+                open ? "rotate-180" : ""
+              }`}
+            />
           </button>
 
           {open && (
-            <div className="absolute right-0 mt-4 w-80 bg-white rounded-xl shadow-xl border border-gray-200 overflow-hidden">
-              <div className="px-5 py-4 border-b bg-gray-50">
+            <div className="absolute right-0 mt-3 w-[min(20rem,calc(100vw-2rem))] bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden">
+              <div className="px-5 py-4 border-b border-gray-100 bg-gray-50">
                 <div className="flex items-center gap-3">
-                  <Avatar size={56} />
+                  <Avatar size={52} />
 
                   <div className="min-w-0">
-                    <p className="font-semibold text-[#0F265C] text-base truncate">{fullName}</p>
+                    <p className="font-semibold text-[#0F265C] text-base truncate">
+                      {fullName}
+                    </p>
                     <p className="text-sm text-gray-500 truncate">{email}</p>
-                    <p className="text-xs text-orange-500 mt-1">{roleName}</p>
+                    <p className="text-xs text-orange-500 mt-1 font-medium">
+                      {roleName}
+                    </p>
                   </div>
                 </div>
               </div>
 
-              <div className="px-5 py-3 space-y-3">
-                <div className="flex justify-between gap-4">
-                  <span className="text-xs text-gray-500">Email</span>
+              <div className="px-5 py-4 space-y-3">
+                <div className="flex justify-between items-center gap-4">
+                  <span className="text-xs text-gray-500 shrink-0">Email</span>
                   <span className="text-sm font-medium text-gray-700 text-right break-all">
                     {email}
                   </span>
                 </div>
 
-                <div className="flex justify-between gap-4">
-                  <span className="text-xs text-gray-500">Phone</span>
-                  <span className="text-sm font-medium text-gray-700 text-right">{phone}</span>
+                <div className="flex justify-between items-center gap-4">
+                  <span className="text-xs text-gray-500 shrink-0">Phone</span>
+                  <span className="text-sm font-medium text-gray-700 text-right">
+                    {phone}
+                  </span>
                 </div>
 
-                <div className="flex justify-between gap-4">
-                  <span className="text-xs text-gray-500">Role</span>
-                  <span className="text-sm font-medium text-gray-700 text-right">{roleName}</span>
+                <div className="flex justify-between items-center gap-4">
+                  <span className="text-xs text-gray-500 shrink-0">Role</span>
+                  <span className="text-sm font-medium text-gray-700 text-right">
+                    {roleName}
+                  </span>
                 </div>
 
-                <div className="flex justify-between items-center">
-                  <span className="text-xs text-gray-500">Status</span>
+                <div className="flex justify-between items-center gap-4">
+                  <span className="text-xs text-gray-500 shrink-0">Status</span>
                   <span
-                    className={`px-2 py-1 text-xs rounded-full ${
+                    className={`px-2.5 py-1 text-xs font-medium rounded-full ${
                       status === "Active"
                         ? "bg-green-100 text-green-600"
                         : "bg-gray-100 text-gray-600"
@@ -172,15 +260,15 @@ function Navbar() {
                 </div>
               </div>
 
-              <div className="border-t">
+              <div className="border-t border-gray-100">
                 <button
                   onClick={() => {
                     navigate("/profile");
                     setOpen(false);
                   }}
-                  className="w-full px-5 py-3 flex items-center gap-3 hover:bg-orange-50 text-gray-700"
+                  className="w-full px-5 py-3 flex items-center gap-3 text-sm hover:bg-orange-50 text-gray-700 transition-colors"
                 >
-                  <User size={18} />
+                  <User size={18} className="shrink-0" />
                   My Profile
                 </button>
 
@@ -189,17 +277,17 @@ function Navbar() {
                     navigate("/profile?tab=password");
                     setOpen(false);
                   }}
-                  className="w-full px-5 py-3 flex items-center gap-3 hover:bg-orange-50 text-gray-700"
+                  className="w-full px-5 py-3 flex items-center gap-3 text-sm hover:bg-orange-50 text-gray-700 transition-colors"
                 >
-                  <Lock size={18} />
+                  <Lock size={18} className="shrink-0" />
                   Update Password
                 </button>
 
                 <button
                   onClick={handleLogout}
-                  className="w-full px-5 py-3 flex items-center gap-3 text-red-500 hover:bg-red-50"
+                  className="w-full px-5 py-3 flex items-center gap-3 text-sm text-red-500 hover:bg-red-50 transition-colors"
                 >
-                  <LogOut size={18} />
+                  <LogOut size={18} className="shrink-0" />
                   Logout
                 </button>
               </div>
