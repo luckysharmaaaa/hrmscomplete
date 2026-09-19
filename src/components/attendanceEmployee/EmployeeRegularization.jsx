@@ -15,7 +15,7 @@ import {
   formatDateLabel,
   formatTime,
   deriveRequestType,
-} from "../../utils/Attendanceregularization";
+} from "../../utils/attendanceRegularization";
 
 /* ============================================================
    STATUS CONFIG

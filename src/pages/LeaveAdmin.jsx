@@ -9,7 +9,7 @@ import {
   getAdminApplications,
   approveApplication,
   rejectApplication,
-} from "../services/Leaveservice";
+} from "../services/leaveService";
 
 // ── Main LeaveAdmin Page ──────────────────────────────────────
 export default function LeaveAdmin() {

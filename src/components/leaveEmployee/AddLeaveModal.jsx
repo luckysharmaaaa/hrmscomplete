@@ -5,7 +5,7 @@ import {
   getMyBalance,
   applyLeave,
   editApplication,
-} from "../../services/Leaveservice";
+} from "../../services/leaveService";
 
 const EMPTY_FORM = {
   leaveTypeId: "",

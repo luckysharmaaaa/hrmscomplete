@@ -12,7 +12,7 @@ import {
 import { uploadMedia } from "../../services/mediaApi";
 import { getMediaUsesByObject } from "../../services/mediaUsesApi";
 
-import UserForm from "./UserForm";
+import UserForm from "./Userform";
 
 // Converts relative image path into complete backend URL
 const FILE_BASE_URL = "http://localhost:5000";

@@ -6,7 +6,7 @@ import * as Yup from "yup";
 import { createUser } from "../../services/userApi";
 import { uploadMedia } from "../../services/mediaApi";
 
-import UserForm from "./UserForm";
+import UserForm from "./Userform";
 
 // ============================================================
 // VALIDATION SCHEMA
