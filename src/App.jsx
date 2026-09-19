@@ -73,16 +73,11 @@ function LayoutContent() {
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/user" element={<User />} />
             <Route path="/profile" element={<Profile />} />
-<<<<<<< HEAD
             <Route path="/roles" element={<Roles />} />
             <Route path="/modules" element={<Modules />} />
 
             <Route path="/leave-admin" element={<LeaveAdmin />} />
             <Route path="/leave-employee" element={<LeaveEmployee />} />
-=======
-            <Route path="/employees" element={<EmployeeList />} />
-          <Route path="/employees-details" element={<EmployeeDetails />} />
->>>>>>> 48803cdf87bb9703070cb4e65ff9e45b5189e42a
             <Route path="/leave-setting" element={<LeaveSetting />} />
 
             <Route
@@ -139,7 +134,6 @@ function LayoutContent() {
 // the collapsed state without prop-drilling it down from App.
 function Layout() {
   return (
-<<<<<<< HEAD
     <SidebarProvider>
       <LayoutContent />
     </SidebarProvider>
@@ -173,18 +167,4 @@ function App() {
   );
 }
 
-=======
-    <BrowserRouter>
-      <Routes>
-        {/* Login Page */}
-        <Route path="/" element={<Login />} />
-
-        {/* All Other Pages */}
-        <Route path="/*" element={<Layout />} />
-      </Routes>
-    </BrowserRouter>
-  );
-}
-
->>>>>>> 48803cdf87bb9703070cb4e65ff9e45b5189e42a
 export default App;
