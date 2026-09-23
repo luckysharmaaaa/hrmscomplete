@@ -1,68 +1,96 @@
 import api from "./api";
 
-// ==============================
-// Login API
-// ==============================
-export const login = async (loginData) => {
-  try {
-    const response = await api.post("/auth/login", loginData);
+// =========================================================
+// AUTH
+// =========================================================
 
-    console.log("Login Response:", response.data);
-
-    // Save token and user details
-    if (response.data?.data?.accessToken) {
-  localStorage.setItem(
-    "token",
-    response.data.data.accessToken
-  );
-
-  localStorage.setItem(
-    "refreshToken",
-    response.data.data.refreshToken
-  );
-
-  localStorage.setItem(
-    "user",
-    JSON.stringify(response.data.data.user)
-  );
-}
-
-    return response.data;
-
-  } catch (error) {
-    console.error(
-      "Login API Error:",
-      error.response?.data || error.message
-    );
-
-    throw error;
-  }
+export const loginUser = (email, password) => {
+  return api.post("/auth/login", {
+    email,
+    password,
+  });
 };
 
-
-// ==============================
-// Logout
-// ==============================
-export const logout = () => {
-  localStorage.removeItem("token");
-  localStorage.removeItem("refreshToken");
-  localStorage.removeItem("user");
-};
-
-
-// ==============================
-// Get Token
-// ==============================
-export const getToken = () => {
-  return localStorage.getItem("token");
-};
-
-
-// ==============================
-// Get Current User
-// ==============================
 export const getUser = () => {
-  const user = localStorage.getItem("user");
+  return api.get("/auth/me");
+};
 
-  return user ? JSON.parse(user) : null;
+export const logout = () => {
+  return api.post("/auth/logout");
+};
+
+export const refreshToken = (refreshTokenValue) => {
+  return api.post("/auth/refresh-token", {
+    refreshToken: refreshTokenValue,
+  });
+};
+
+// First-time access for employees who don't have a company email yet.
+// The backend always answers with the same generic success message, whether
+// or not the email is registered.
+export const requestFirstTimeAccess = (email) => {
+  return api.post("/auth/first-time-access", {
+    email,
+  });
+};
+
+// =========================================================
+// PASSWORD
+// =========================================================
+
+export const forgotPassword = (email) => {
+  return api.post("/auth/forgot-password", {
+    email,
+  });
+};
+
+export const resetPassword = (token, password) => {
+  return api.post("/auth/reset-password", {
+    token,
+    password,
+  });
+};
+
+export const changePassword = (
+  currentPassword,
+  newPassword
+) => {
+  return api.post("/auth/change-password", {
+    currentPassword,
+    newPassword,
+  });
+};
+
+// =========================================================
+// PROFILE
+// =========================================================
+
+export const updateProfile = (data) => {
+  return api.put("/auth/profile", data);
+};
+
+export const uploadProfilePhoto = (formData) => {
+  return api.post("/auth/profile/photo", formData, {
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
+  });
+};
+
+export const removeProfilePhoto = () => {
+  return api.delete("/auth/profile/photo");
+};
+
+export default {
+  loginUser,
+  getUser,
+  logout,
+  refreshToken,
+  requestFirstTimeAccess,
+  forgotPassword,
+  resetPassword,
+  changePassword,
+  updateProfile,
+  uploadProfilePhoto,
+  removeProfilePhoto,
 };

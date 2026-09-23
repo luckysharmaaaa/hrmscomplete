@@ -1,36 +1,70 @@
-import React, { useRef, useState } from "react";
-import { Camera, Trash2, Loader2 } from "lucide-react";
+import React, { useEffect, useRef, useState } from "react";
+import { Camera, Loader2, Trash2 } from "lucide-react";
 import { toast } from "react-toastify";
 
-import { uploadProfileImage, removeProfileImage, getFileUrl } from "../../services/profileApi";
+import {
+  uploadProfileImage,
+  removeProfileImage,
+  getFileUrl,
+} from "../../services/profileApi";
 import { getInitials, getAvatarColor } from "../../utils/avatar";
 
 const ALLOWED_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
 const MAX_SIZE_BYTES = 2 * 1024 * 1024; // 2MB
 
-const ProfileImage = ({ user, profileImage, onChange }) => {
+const ProfileImage = ({ user, roles = [], profileImage, onChange }) => {
   const fileInputRef = useRef(null);
+  const cancelButtonRef = useRef(null);
 
   const [previewUrl, setPreviewUrl] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [confirmRemove, setConfirmRemove] = useState(false);
   const [removing, setRemoving] = useState(false);
+  const [imageFailed, setImageFailed] = useState(false);
 
   const firstName = user?.firstName || "";
   const lastName = user?.lastName || "";
+  const fullName = `${firstName} ${lastName}`.trim();
   const initials = getInitials(firstName, lastName);
   const avatarColor = getAvatarColor(user?.email || `${firstName}${lastName}`);
 
-  const currentImageUrl = previewUrl || getFileUrl(profileImage?.fileURL);
+  const storedImageUrl = getFileUrl(profileImage?.fileURL);
+  const currentImageUrl = previewUrl || (imageFailed ? null : storedImageUrl);
+
+  // A new photo gets a fresh chance to load.
+  useEffect(() => {
+    setImageFailed(false);
+  }, [storedImageUrl]);
+
+  // Dialog: focus Cancel on open, close on Escape.
+  useEffect(() => {
+    if (!confirmRemove) return undefined;
+
+    cancelButtonRef.current?.focus();
+
+    const handleKeyDown = (event) => {
+      if (event.key === "Escape" && !removing) {
+        setConfirmRemove(false);
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [confirmRemove, removing]);
 
   const validateFile = (file) => {
     if (!ALLOWED_TYPES.includes(file.type)) {
-      toast.error("Only JPG, PNG, or WEBP images are allowed.");
+      toast.error("Upload a JPG, PNG or WebP image.", {
+        toastId: "photo-type",
+      });
       return false;
     }
 
     if (file.size > MAX_SIZE_BYTES) {
-      toast.error("Image size must be under 2MB.");
+      toast.error("Choose an image smaller than 2 MB.", {
+        toastId: "photo-size",
+      });
       return false;
     }
 
@@ -44,22 +78,24 @@ const ProfileImage = ({ user, profileImage, onChange }) => {
     if (!file) return;
     if (!validateFile(file)) return;
 
-    // URL.createObjectURL is used ONLY for the temporary local preview
-    // while the upload is in flight — never as the permanent source.
+    // Object URL is only the temporary preview while the upload is in flight.
     const localPreview = URL.createObjectURL(file);
     setPreviewUrl(localPreview);
     setUploading(true);
 
     try {
       const response = await uploadProfileImage(file);
-      toast.success(response?.message || "Profile photo uploaded successfully");
+
+      toast.success(response?.message || "Profile photo updated");
+
       onChange?.({
         mediaID: response?.data?.mediaID,
         fileURL: response?.data?.fileURL,
       });
     } catch (error) {
       toast.error(
-        error?.response?.data?.message || "Failed to upload profile photo",
+        error?.response?.data?.message ||
+          "Couldn't upload your photo. Try again."
       );
     } finally {
       URL.revokeObjectURL(localPreview);
@@ -73,12 +109,14 @@ const ProfileImage = ({ user, profileImage, onChange }) => {
 
     try {
       const response = await removeProfileImage();
-      toast.success(response?.message || "Profile photo removed successfully");
+
+      toast.success(response?.message || "Profile photo removed");
       onChange?.(null);
       setConfirmRemove(false);
     } catch (error) {
       toast.error(
-        error?.response?.data?.message || "Failed to remove profile photo",
+        error?.response?.data?.message ||
+          "Couldn't remove your photo. Try again."
       );
     } finally {
       setRemoving(false);
@@ -86,19 +124,25 @@ const ProfileImage = ({ user, profileImage, onChange }) => {
   };
 
   return (
-    <div className="bg-slate-50 rounded-xl p-6 flex flex-col sm:flex-row sm:items-center gap-6">
-      <div className="relative w-24 h-24 shrink-0">
-        <div className="w-24 h-24 rounded-full overflow-hidden border-2 border-white shadow-sm flex items-center justify-center">
+    <section
+      aria-label="Profile photo"
+      className="flex flex-col gap-6 rounded-2xl border border-slate-200 bg-white p-6 sm:flex-row sm:items-center lg:p-8"
+    >
+      {/* Avatar */}
+      <div className="relative h-24 w-24 shrink-0">
+        <div className="flex h-24 w-24 items-center justify-center overflow-hidden rounded-full border border-slate-200 shadow-sm">
           {currentImageUrl ? (
             <img
               src={currentImageUrl}
-              alt="Profile"
-              className="w-full h-full object-cover"
+              alt={fullName ? `${fullName}'s profile photo` : "Profile photo"}
+              onError={() => setImageFailed(true)}
+              className="h-full w-full object-cover"
             />
           ) : (
             <div
-              className="w-full h-full flex items-center justify-center text-white text-2xl font-semibold"
+              className="flex h-full w-full items-center justify-center text-2xl font-semibold text-white"
               style={{ backgroundColor: avatarColor }}
+              aria-hidden="true"
             >
               {initials}
             </div>
@@ -106,70 +150,117 @@ const ProfileImage = ({ user, profileImage, onChange }) => {
         </div>
 
         {uploading && (
-          <div className="absolute inset-0 rounded-full bg-black/40 flex items-center justify-center">
+          <div className="absolute inset-0 flex items-center justify-center rounded-full bg-black/40">
             <Loader2 className="animate-spin text-white" size={22} />
           </div>
         )}
+
+        <button
+          type="button"
+          onClick={() => fileInputRef.current?.click()}
+          disabled={uploading}
+          aria-label="Change profile photo"
+          className="absolute -bottom-1 -right-1 flex h-9 w-9 items-center justify-center rounded-full border-2 border-white bg-orange-500 text-white shadow-sm transition hover:bg-orange-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/40 disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          <Camera size={16} />
+        </button>
       </div>
 
-      <div>
-        <h3 className="text-lg font-semibold text-[#0F265C]">
-          {firstName || lastName ? `${firstName} ${lastName}`.trim() : "Profile Photo"}
-        </h3>
+      {/* Identity */}
+      <div className="min-w-0 flex-1">
+        <h2 className="truncate text-xl font-semibold text-[#041D5F]">
+          {fullName || "Your profile"}
+        </h2>
 
-        <p className="text-gray-500 text-sm mt-1">{user?.email}</p>
+        {user?.email && (
+          <p className="mt-0.5 truncate text-sm text-slate-500">
+            {user.email}
+          </p>
+        )}
 
-        <p className="text-gray-400 text-xs mt-1">JPG, PNG or WEBP (Max 2MB)</p>
+        {roles.length > 0 && (
+          <ul className="mt-3 flex flex-wrap gap-2" aria-label="Roles">
+            {roles.map((role) => (
+              <li
+                key={role.id ?? role.roleName}
+                className="rounded-full bg-blue-50 px-2.5 py-1 text-xs font-medium text-[#041D5F]"
+              >
+                {role.roleName}
+              </li>
+            ))}
+          </ul>
+        )}
 
-        <div className="flex gap-3 mt-4">
+        <div className="mt-4 flex flex-wrap items-center gap-3">
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
             disabled={uploading}
-            className="flex items-center gap-2 bg-[#FF7A21] text-white px-4 py-2 rounded-md hover:opacity-90 disabled:opacity-60 text-sm font-medium"
+            className="inline-flex h-10 items-center gap-2 rounded-lg bg-orange-500 px-4 text-sm font-semibold text-white transition hover:bg-orange-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/40 disabled:cursor-not-allowed disabled:opacity-60"
           >
             <Camera size={16} />
-            {uploading ? "Uploading..." : "Upload Photo"}
+            {uploading ? "Uploading..." : "Upload photo"}
           </button>
-
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/jpeg,image/png,image/webp"
-            className="hidden"
-            onChange={handleFileSelect}
-          />
 
           {profileImage && (
             <button
               type="button"
               onClick={() => setConfirmRemove(true)}
-              className="flex items-center gap-2 border border-gray-300 px-4 py-2 rounded-md hover:bg-gray-100 text-sm font-medium text-gray-700"
+              disabled={uploading}
+              className="inline-flex h-10 items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-300 disabled:cursor-not-allowed disabled:opacity-60"
             >
               <Trash2 size={16} />
               Remove
             </button>
           )}
+
+          <p className="text-xs text-slate-500">
+            JPG, PNG or WebP, up to 2 MB
+          </p>
         </div>
+
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/jpeg,image/png,image/webp"
+          className="hidden"
+          onChange={handleFileSelect}
+        />
       </div>
 
+      {/* Remove confirmation */}
       {confirmRemove && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 px-4">
-          <div className="bg-white rounded-xl shadow-xl max-w-sm w-full p-6">
-            <h4 className="text-lg font-semibold text-[#0F265C]">
-              Remove Profile Photo?
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4"
+          onClick={() => !removing && setConfirmRemove(false)}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="remove-photo-title"
+            aria-describedby="remove-photo-desc"
+            onClick={(e) => e.stopPropagation()}
+            className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl"
+          >
+            <h4
+              id="remove-photo-title"
+              className="text-lg font-semibold text-[#041D5F]"
+            >
+              Remove profile photo?
             </h4>
 
-            <p className="text-sm text-gray-500 mt-2">
-              This will remove your current profile photo.
+            <p id="remove-photo-desc" className="mt-2 text-sm text-slate-500">
+              Your initials will be shown instead. You can upload a new photo
+              at any time.
             </p>
 
-            <div className="flex justify-end gap-3 mt-6">
+            <div className="mt-6 flex justify-end gap-3">
               <button
+                ref={cancelButtonRef}
                 type="button"
                 onClick={() => setConfirmRemove(false)}
                 disabled={removing}
-                className="px-4 py-2 rounded-lg border border-gray-300 hover:bg-gray-100 text-sm"
+                className="h-10 rounded-lg border border-slate-300 px-4 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-300 disabled:opacity-60"
               >
                 Cancel
               </button>
@@ -178,15 +269,16 @@ const ProfileImage = ({ user, profileImage, onChange }) => {
                 type="button"
                 onClick={handleRemove}
                 disabled={removing}
-                className="px-4 py-2 rounded-lg bg-red-500 text-white hover:bg-red-600 text-sm disabled:opacity-60"
+                className="inline-flex h-10 items-center gap-2 rounded-lg bg-red-600 px-4 text-sm font-semibold text-white transition hover:bg-red-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500/40 disabled:opacity-60"
               >
-                {removing ? "Removing..." : "Remove"}
+                {removing && <Loader2 size={16} className="animate-spin" />}
+                {removing ? "Removing..." : "Remove photo"}
               </button>
             </div>
           </div>
         </div>
       )}
-    </div>
+    </section>
   );
 };
 

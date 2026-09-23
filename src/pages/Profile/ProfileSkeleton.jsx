@@ -1,39 +1,49 @@
 import React from "react";
 
 const Line = ({ className = "" }) => (
-  <div className={`bg-gray-200 rounded animate-pulse ${className}`} />
+  <div
+    className={`rounded bg-slate-200 motion-safe:animate-pulse ${className}`}
+  />
 );
 
-const ProfileSkeleton = () => {
-  return (
-    <div className="animate-pulse">
-      <div className="flex items-center gap-6 mb-8">
-        <div className="w-24 h-24 rounded-full bg-gray-200" />
-        <div className="space-y-2">
-          <Line className="h-4 w-40" />
-          <Line className="h-3 w-56" />
-        </div>
-      </div>
+const SectionSkeleton = ({ fields }) => (
+  <div className="grid gap-6 rounded-2xl border border-slate-200 bg-white p-6 lg:grid-cols-[240px_minmax(0,1fr)] lg:gap-12 lg:p-8">
+    <div className="space-y-2">
+      <Line className="h-4 w-36" />
+      <Line className="h-3 w-full max-w-[200px]" />
+    </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {Array.from({ length: 4 }).map((_, i) => (
-          <div key={i} className="space-y-2">
-            <Line className="h-3 w-24" />
-            <Line className="h-11 w-full" />
-          </div>
-        ))}
-      </div>
-
-      <div className="mt-10 space-y-4">
-        <Line className="h-4 w-48" />
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <Line key={i} className="h-11 w-full" />
-          ))}
+    <div className="grid gap-5 sm:grid-cols-2">
+      {Array.from({ length: fields }).map((_, i) => (
+        <div key={i} className="space-y-2">
+          <Line className="h-3 w-24" />
+          <Line className="h-11 w-full" />
         </div>
+      ))}
+    </div>
+  </div>
+);
+
+const ProfileSkeleton = () => (
+  <div
+    className="space-y-6"
+    role="status"
+    aria-busy="true"
+    aria-label="Loading your profile"
+  >
+    <div className="flex flex-col gap-6 rounded-2xl border border-slate-200 bg-white p-6 sm:flex-row sm:items-center lg:p-8">
+      <div className="h-24 w-24 shrink-0 rounded-full bg-slate-200 motion-safe:animate-pulse" />
+
+      <div className="flex-1 space-y-3">
+        <Line className="h-5 w-48" />
+        <Line className="h-3 w-64" />
+        <Line className="h-10 w-40" />
       </div>
     </div>
-  );
-};
+
+    <SectionSkeleton fields={4} />
+    <SectionSkeleton fields={6} />
+  </div>
+);
 
 export default ProfileSkeleton;

@@ -13,6 +13,7 @@ export const getFileUrl = (fileURL) => {
 
 // ==============================
 // Get My Profile
+// (Prefer useAuth().refreshUser() in components: it shares one request.)
 // ==============================
 export const getMyProfile = async () => {
   const response = await api.get("/auth/me");
@@ -29,10 +30,11 @@ export const updateMyProfile = async (payload) => {
 
 // ==============================
 // Upload Profile Photo
+// Backend: POST /auth/profile/photo, multer field name is "file".
 // ==============================
 export const uploadProfileImage = async (file) => {
   const formData = new FormData();
-  formData.append("photo", file);
+  formData.append("file", file);
 
   const response = await api.post("/auth/profile/photo", formData, {
     headers: { "Content-Type": "multipart/form-data" },
@@ -51,8 +53,9 @@ export const removeProfileImage = async () => {
 
 // ==============================
 // Change Password
+// Backend: POST /auth/change-password (was PUT here).
 // ==============================
 export const changePassword = async (payload) => {
-  const response = await api.put("/auth/change-password", payload);
+  const response = await api.post("/auth/change-password", payload);
   return response.data;
 };

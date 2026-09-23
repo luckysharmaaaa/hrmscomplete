@@ -1,264 +1,351 @@
 import React, { useState } from "react";
-import login_bg from "../assets/images/Login_bg.png";
-import logo_img from "../assets/images/logo.svg";
-import google_icon from "../assets/images/google_icon_img.png";
+import {
+  AlertCircle,
+  Eye,
+  EyeOff,
+  Loader2,
+  Lock,
+  Mail,
+} from "lucide-react";
 import { useNavigate } from "react-router-dom";
-
-import { FaFacebookF, FaApple } from "react-icons/fa";
-import { Mail, EyeOff, Eye } from "lucide-react";
-import { login } from "../services/loginAPI";
 import { toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
 
-function Login() {
+import login from "../assets/images/logo.png";
+import loginBg from "../assets/images/Login_bg.png";
+import { loginUser } from "../services/loginAPI";
+import { useAuth } from "../context/AuthContext";
+import {
+  COMPANY_EMAIL_DOMAIN,
+  COMPANY_NAME,
+  FIRST_TIME_ACCESS_ENABLED,
+  isCompanyEmail,
+} from "../config/company";
+
+const inputClass =
+  "h-12 w-full rounded-lg border border-slate-200 bg-white pl-11 pr-4 text-sm text-slate-800 outline-none transition-all duration-200 placeholder:text-slate-400 hover:border-slate-300 focus:border-[#F28C28] focus:ring-2 focus:ring-[#F28C28]/10 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-400";
+
+const Login = () => {
   const navigate = useNavigate();
+  const { login: authLogin } = useAuth();
 
   const [formData, setFormData] = useState({
     email: "",
     password: "",
-    rememberMe: false,
   });
 
-  const [errors, setErrors] = useState({});
-  const [apiError, setApiError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [showCompanyEmailNotice, setShowCompanyEmailNotice] =
+    useState(false);
 
-  // Google Login
-  const handleGoogleLogin = async () => {
-    try {
-      // const response = await googleLogin();
-      // console.log(response);
+  const emailLabel = COMPANY_EMAIL_DOMAIN ? "Work email" : "Email address";
+  const emailPlaceholder = COMPANY_EMAIL_DOMAIN
+    ? `name@${COMPANY_EMAIL_DOMAIN}`
+    : "Enter your email";
+  const subtitle = COMPANY_EMAIL_DOMAIN
+    ? `Sign in to your ${COMPANY_NAME} account.`
+    : "Sign in to your account to continue.";
 
-      navigate("/users");
-    } catch (error) {
-      console.log(error);
-      toast.error("Google login failed");
-    }
-  };
-
-  // Handle Input Change
+  // ============================================================
+  // INPUT CHANGE
+  // ============================================================
   const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
+    const { name, value } = e.target;
 
     setFormData((prev) => ({
       ...prev,
-      [name]: type === "checkbox" ? checked : value,
+      [name]: value,
     }));
 
-    setErrors((prev) => ({
-      ...prev,
-      [name]: "",
-    }));
-
-    setApiError("");
+    if (name === "email" && showCompanyEmailNotice) {
+      setShowCompanyEmailNotice(false);
+    }
   };
 
-  // Validation
-  const validateForm = () => {
-    const newErrors = {};
+  // Tell the user about a non-company email as soon as they leave the field.
+  const handleEmailBlur = () => {
+    const value = formData.email.trim();
 
-    if (!formData.email.trim()) {
-      newErrors.email = "Email is required";
-    } else if (
-      !/^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i.test(formData.email)
-    ) {
-      newErrors.email = "Invalid email address";
+    if (value && !isCompanyEmail(value)) {
+      setShowCompanyEmailNotice(true);
     }
-
-    if (!formData.password) {
-      newErrors.password = "Password is required";
-    } else if (formData.password.length < 6) {
-      newErrors.password = "Password must be at least 6 characters";
-    }
-
-    setErrors(newErrors);
-
-    if (Object.keys(newErrors).length > 0) {
-      toast.error(Object.values(newErrors)[0]);
-      return false;
-    }
-
-    return true;
   };
 
-  // Submit Form
+  // ============================================================
+  // LOGIN
+  // ============================================================
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    setApiError("");
+    // Prevent duplicate login requests
+    if (loading) {
+      return;
+    }
 
-    if (!validateForm()) return;
+    const email = formData.email.trim();
+    const password = formData.password;
+
+    // ----------------------------------------------------------
+    // VALIDATION
+    // ----------------------------------------------------------
+    if (!email) {
+      toast.error(`Please enter your ${emailLabel.toLowerCase()}`, {
+        toastId: "login-validation",
+      });
+      return;
+    }
+
+    if (!password) {
+      toast.error("Please enter your password", {
+        toastId: "login-validation",
+      });
+      return;
+    }
+
+    // Friendly hint only. The backend enforces the real rule.
+    if (!isCompanyEmail(email)) {
+      setShowCompanyEmailNotice(true);
+      return;
+    }
 
     try {
-      const response = await login({
-        email: formData.email,
-        password: formData.password,
+      setLoading(true);
+
+      const response = await loginUser(email, password);
+
+      const data =
+        response?.data?.data ||
+        response?.data ||
+        response;
+
+      if (!data?.accessToken) {
+        throw new Error("Authentication token was not received");
+      }
+
+      // Stores tokens AND updates AuthContext, so Navbar/Profile see the
+      // user immediately without making their own /auth/me calls.
+      await authLogin(data);
+
+      toast.success("Login successful");
+
+      navigate("/profile", {
+        replace: true,
       });
-
-      console.log(response);
-
-      toast.success("Login Successful!");
-
-      navigate("/profile");
     } catch (error) {
-      console.error(error);
-
       const message =
-        error.response?.data?.message ||
-        error.response?.data?.error ||
-        "Invalid email or password";
+        error?.response?.data?.message ||
+        error?.response?.data?.error?.message ||
+        error?.message ||
+        "Unable to sign in. Please try again.";
 
-      setApiError(message);
-      toast.error(message);
+      toast.error(message, { toastId: "login-error" });
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div className="flex h-screen overflow-hidden bg-white">
-      {/* LEFT IMAGE */}
-      <div className="w-[43%] hidden lg:block">
-        <img
-          src={login_bg}
-          alt="login background"
-          className="w-full h-full object-cover"
-        />
-      </div>
+    <div className="min-h-screen w-full bg-white">
+      <div className="grid min-h-screen grid-cols-1 lg:grid-cols-2">
 
-      {/* RIGHT SIDE */}
-      <div className="w-full lg:w-[57%] flex justify-center items-center bg-white px-6">
-        <form
-          onSubmit={handleSubmit}
-          className="w-full max-w-sm flex flex-col py-6"
-        >
-          {/* Logo */}
-          <div className="text-center mb-4">
-            <img src={logo_img} alt="logo" className="w-24 mx-auto" />
-          </div>
+        {/* LEFT SIDE — existing image only */}
+        <div className="relative hidden min-h-screen lg:block">
+          <img
+            src={loginBg}
+            alt="SmartHR"
+            className="absolute inset-0 h-full w-full object-cover"
+          />
+        </div>
 
-          {/* Heading */}
-          <div className="text-center mb-6">
-            <h1 className="text-2xl font-bold text-[#1b2559]">Sign In</h1>
+        {/* RIGHT SIDE */}
+        <div className="flex min-h-screen items-center justify-center bg-white px-5 py-10 sm:px-8 lg:px-10 xl:px-16">
+          <div className="flex w-full max-w-[410px] flex-col items-center">
 
-            <p className="text-gray-500 mt-1.5 text-sm">
-              Please enter your details to sign in
-            </p>
-          </div>
-
-          {/* Email */}
-          <div className="mb-4">
-            <label className="block text-sm font-medium mb-1.5 text-gray-700">
-              Email Address
-            </label>
-
-            <div className="flex items-center h-11 border border-gray-300 rounded-lg bg-white focus-within:border-orange-500 transition-colors">
-              <input
-                type="email"
-                name="email"
-                placeholder="Enter email"
-                value={formData.email}
-                onChange={handleChange}
-                className="w-full h-full px-3.5 outline-none text-sm rounded-lg"
+            {/* LOGO */}
+            <div className="mb-9 flex w-full justify-center">
+              <img
+                src={login}
+                alt="Technovatic Solutions"
+                className="h-auto max-h-14 w-auto max-w-[160px] object-contain"
               />
-
-              <div className="px-3.5 text-gray-400">
-                <Mail size={16} />
-              </div>
             </div>
 
-            {errors.email && (
-              <p className="text-red-500 text-xs mt-1.5">{errors.email}</p>
-            )}
-          </div>
+            {/* HEADING */}
+            <div className="mb-8 w-full text-center">
+              <h1 className="text-[30px] font-semibold leading-tight tracking-tight text-[#17233C] sm:text-[32px]">
+                Welcome back
+              </h1>
 
-          {/* Password */}
-          <div className="mb-4">
-            <label className="block text-sm font-medium mb-1.5 text-gray-700">
-              Password
-            </label>
-
-            <div className="flex items-center h-11 border border-gray-300 rounded-lg bg-white focus-within:border-orange-500 transition-colors">
-              <input
-                type={showPassword ? "text" : "password"}
-                name="password"
-                placeholder="Enter password"
-                value={formData.password}
-                onChange={handleChange}
-                className="w-full h-full px-3.5 outline-none text-sm rounded-lg"
-              />
-
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="px-3.5 text-gray-400"
-              >
-                {showPassword ? <Eye size={16} /> : <EyeOff size={16} />}
-              </button>
+              <p className="mt-2 text-sm leading-6 text-slate-500">
+                {subtitle}
+              </p>
             </div>
 
-            {errors.password && (
-              <p className="text-red-500 text-xs mt-1.5">{errors.password}</p>
-            )}
-
-            {apiError && (
-              <p className="text-red-500 text-xs mt-1.5">{apiError}</p>
-            )}
-          </div>
-
-          {/* Remember Me */}
-          <div className="flex justify-between items-center mb-5 text-sm">
-            <label className="flex items-center gap-2 text-gray-600">
-              <input
-                type="checkbox"
-                name="rememberMe"
-                checked={formData.rememberMe}
-                onChange={handleChange}
-              />
-              Remember Me
-            </label>
-
-            <button type="button" className="text-red-500 hover:underline">
-              Forgot Password?
-            </button>
-          </div>
-
-          {/* Login Button */}
-          <button
-            type="submit"
-            className="w-full h-11 bg-orange-500 hover:bg-orange-600 text-white rounded-lg font-medium text-sm transition-colors"
-          >
-            Sign In
-          </button>
-
-          {/* Divider */}
-          <div className="flex items-center my-4">
-            <div className="flex-1 border-t border-gray-300"></div>
-            <span className="mx-3 text-gray-400 text-xs">Or</span>
-            <div className="flex-1 border-t border-gray-300"></div>
-          </div>
-
-          <p className="text-center text-gray-500 text-sm mb-4">
-            Continue with Google
-          </p>
-
-          <div className="flex justify-center">
-            <button
-              type="button"
-              onClick={handleGoogleLogin}
-              className="w-full h-11 border border-gray-300 rounded-lg flex items-center justify-center hover:bg-gray-50 transition-colors"
+            {/* FORM */}
+            <form
+              onSubmit={handleSubmit}
+              className="w-full space-y-5"
+              noValidate
             >
-              <img src={google_icon} alt="Google" className="w-6 h-6" />
-            </button>
-          </div>
+              {/* EMAIL */}
+              <div className="w-full">
+                <label
+                  htmlFor="email"
+                  className="mb-2 block text-sm font-medium text-slate-700"
+                >
+                  {emailLabel}
+                </label>
 
-          <div className="text-center pt-6">
-            <p className="text-xs text-gray-500">
-              Copyright © 2026 - SmartHR
-            </p>
+                <div className="relative">
+                  <Mail
+                    size={18}
+                    strokeWidth={1.8}
+                    className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
+                  />
+
+                  <input
+                    id="email"
+                    name="email"
+                    type="email"
+                    value={formData.email}
+                    onChange={handleChange}
+                    onBlur={handleEmailBlur}
+                    autoComplete="email"
+                    placeholder={emailPlaceholder}
+                    disabled={loading}
+                    aria-invalid={showCompanyEmailNotice}
+                    aria-describedby={
+                      showCompanyEmailNotice
+                        ? "company-email-notice"
+                        : undefined
+                    }
+                    className={inputClass}
+                  />
+                </div>
+
+                {showCompanyEmailNotice && (
+                  <div
+                    id="company-email-notice"
+                    role="alert"
+                    className="mt-3 flex gap-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-5 text-amber-800"
+                  >
+                    <AlertCircle
+                      size={18}
+                      className="mt-0.5 shrink-0"
+                    />
+                    <p>
+                      Please sign in using your official BytesBrick company account.
+                      {FIRST_TIME_ACCESS_ENABLED &&
+                        " If you are accessing the portal for the first time, use First-Time Employee Access below."}
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              {/* PASSWORD */}
+              <div className="w-full">
+                <div className="mb-2 flex items-center justify-between gap-4">
+                  <label
+                    htmlFor="password"
+                    className="block text-sm font-medium text-slate-700"
+                  >
+                    Password
+                  </label>
+
+                  <button
+                    type="button"
+                    onClick={() => navigate("/forgot-password")}
+                    disabled={loading}
+                    className="shrink-0 text-sm font-medium text-[#F28C28] transition-colors hover:text-[#D87516] focus:outline-none focus:ring-2 focus:ring-[#F28C28]/20 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    Forgot password?
+                  </button>
+                </div>
+
+                <div className="relative">
+                  <Lock
+                    size={18}
+                    strokeWidth={1.8}
+                    className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
+                  />
+
+                  <input
+                    id="password"
+                    name="password"
+                    type={showPassword ? "text" : "password"}
+                    value={formData.password}
+                    onChange={handleChange}
+                    autoComplete="current-password"
+                    placeholder="Enter your password"
+                    disabled={loading}
+                    className={`${inputClass} pr-12`}
+                  />
+
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword((prev) => !prev)}
+                    disabled={loading}
+                    aria-label={
+                      showPassword ? "Hide password" : "Show password"
+                    }
+                    className="absolute right-3 top-1/2 flex -translate-y-1/2 items-center justify-center rounded-md p-1 text-slate-400 transition-colors hover:text-slate-600 focus:outline-none focus:ring-2 focus:ring-slate-200 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {showPassword ? (
+                      <EyeOff size={18} strokeWidth={1.8} />
+                    ) : (
+                      <Eye size={18} strokeWidth={1.8} />
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              {/* SIGN IN */}
+              <button
+                type="submit"
+                disabled={loading}
+                className="mt-2 flex h-12 w-full items-center justify-center gap-2 rounded-lg bg-[#F28C28] px-4 text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:bg-[#E17E1C] hover:shadow focus:outline-none focus:ring-2 focus:ring-[#F28C28]/30 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-70 disabled:hover:shadow-sm"
+              >
+                {loading ? (
+                  <>
+                    <Loader2 size={18} className="animate-spin" />
+                    <span>Signing in...</span>
+                  </>
+                ) : (
+                  "Sign in"
+                )}
+              </button>
+            </form>
+
+            {/* FIRST-TIME ACCESS */}
+            {FIRST_TIME_ACCESS_ENABLED && (
+              <div className="mt-8 w-full border-t border-slate-200 pt-6 text-center">
+                <p className="text-sm text-slate-500">
+                  Don&apos;t have your {COMPANY_NAME} email yet?
+                </p>
+
+                <button
+                  type="button"
+                  onClick={() => navigate("/first-time-access")}
+                  disabled={loading}
+                  className="mt-3 flex h-12 w-full items-center justify-center rounded-lg border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 transition-colors hover:border-[#F28C28] hover:text-[#D87516] focus:outline-none focus:ring-2 focus:ring-[#F28C28]/20 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  First-Time Employee Access
+                </button>
+              </div>
+            )}
+
+            {/* FOOTER */}
+            <div className="mt-9 w-full">
+              <p className="text-center text-xs leading-5 text-slate-400">
+                © {new Date().getFullYear()} SmartHR.{" "}
+                All rights reserved.
+              </p>
+            </div>
           </div>
-        </form>
+        </div>
       </div>
     </div>
   );
-}
+};
 
 export default Login;

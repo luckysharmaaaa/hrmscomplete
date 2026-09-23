@@ -1,0 +1,12 @@
+[33mcommit 59d0b9165936f0f85584296bf870a4ddb4823149[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mlucky_dev[m[33m, [m[1;31morigin/lucky_dev[m[33m)[m
+Author: sameer.hasan <sameer.hasan@mindforceresearch.com>
+Date:   Sat Sep 19 17:40:47 2026 +0530
+
+    Fix import paths for consistency in service and component naming
+
+ src/components/attendanceEmployee/EmployeeRegularization.jsx | 2 [32m+[m[31m-[m
+ src/components/leaveEmployee/AddLeaveModal.jsx               | 2 [32m+[m[31m-[m
+ src/components/user/AddUserDrawer.jsx                        | 2 [32m+[m[31m-[m
+ src/components/user/EditUserModal.jsx                        | 2 [32m+[m[31m-[m
+ src/pages/LeaveAdmin.jsx                                     | 2 [32m+[m[31m-[m
+ 5 files changed, 5 insertions(+), 5 deletions(-)

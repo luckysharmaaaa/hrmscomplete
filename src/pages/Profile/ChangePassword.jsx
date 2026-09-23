@@ -1,16 +1,114 @@
 import React, { useState } from "react";
 import { useFormik } from "formik";
-import { Eye, EyeOff } from "lucide-react";
+import { Check, Circle, Eye, EyeOff, Loader2 } from "lucide-react";
 import { toast } from "react-toastify";
 
-import { passwordSchema } from "./profileValidation";
+import { Field, SettingsSection, inputClass } from "./ProfileUi";
+import { PASSWORD_RULES, passwordSchema } from "./profileValidation";
 import { changePassword } from "../../services/profileApi";
 
-const ChangePassword = () => {
-  const [showCurrent, setShowCurrent] = useState(false);
-  const [showNew, setShowNew] = useState(false);
-  const [showConfirm, setShowConfirm] = useState(false);
+const STRENGTH_LEVELS = [
+  { label: "Too weak", bar: "bg-red-500", text: "text-red-600" },
+  { label: "Weak", bar: "bg-red-500", text: "text-red-600" },
+  { label: "Fair", bar: "bg-amber-500", text: "text-amber-600" },
+  { label: "Good", bar: "bg-lime-500", text: "text-lime-700" },
+  { label: "Strong", bar: "bg-green-600", text: "text-green-700" },
+];
 
+const PasswordField = ({ formik, name, label, autoComplete, placeholder, hint }) => {
+  const [visible, setVisible] = useState(false);
+  const error = formik.touched[name] && formik.errors[name];
+
+  return (
+    <Field id={name} label={label} required error={error} hint={hint}>
+      <div className="relative">
+        <input
+          id={name}
+          name={name}
+          type={visible ? "text" : "password"}
+          value={formik.values[name]}
+          onChange={formik.handleChange}
+          onBlur={formik.handleBlur}
+          autoComplete={autoComplete}
+          placeholder={placeholder}
+          aria-invalid={Boolean(error)}
+          aria-describedby={
+            error ? `${name}-error` : hint ? `${name}-hint` : undefined
+          }
+          className={`${inputClass(Boolean(error))} pr-12`}
+        />
+
+        <button
+          type="button"
+          onClick={() => setVisible((prev) => !prev)}
+          aria-label={visible ? `Hide ${label.toLowerCase()}` : `Show ${label.toLowerCase()}`}
+          aria-pressed={visible}
+          className="absolute right-1.5 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-md text-slate-400 transition hover:text-slate-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/40"
+        >
+          {visible ? <EyeOff size={18} /> : <Eye size={18} />}
+        </button>
+      </div>
+    </Field>
+  );
+};
+
+const PasswordChecklist = ({ password }) => {
+  const results = PASSWORD_RULES.map((rule) => ({
+    ...rule,
+    met: rule.test(password),
+  }));
+
+  const score = results.filter((rule) => rule.met).length;
+  const level = password ? STRENGTH_LEVELS[score] : null;
+
+  return (
+    <div className="rounded-lg bg-slate-50 p-4">
+      <div className="flex items-center justify-between gap-3">
+        <p className="text-sm font-medium text-slate-700">
+          Password requirements
+        </p>
+
+        {level && (
+          <p className={`text-xs font-semibold ${level.text}`} aria-live="polite">
+            {level.label}
+          </p>
+        )}
+      </div>
+
+      <div className="mt-2 flex gap-1.5" aria-hidden="true">
+        {[1, 2, 3, 4, 5].map((segment) => (
+          <span
+            key={segment}
+            className={`h-1.5 flex-1 rounded-full transition-colors ${
+              password && segment <= score ? level.bar : "bg-slate-200"
+            }`}
+          />
+        ))}
+      </div>
+
+      <ul className="mt-3 space-y-1.5">
+        {results.map((rule) => (
+          <li
+            key={rule.id}
+            className={`flex items-center gap-2 text-xs ${
+              rule.met ? "text-green-700" : "text-slate-500"
+            }`}
+          >
+            {rule.met ? (
+              <Check size={14} aria-hidden="true" />
+            ) : (
+              <Circle size={14} aria-hidden="true" />
+            )}
+            <span>{rule.label}</span>
+            <span className="sr-only">{rule.met ? "(met)" : "(not met)"}</span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+};
+
+const ChangePassword = () => {
   const formik = useFormik({
     initialValues: {
       currentPassword: "",
@@ -26,11 +124,12 @@ const ChangePassword = () => {
           confirmPassword: values.confirmPassword,
         });
 
-        toast.success(response?.message || "Password updated successfully");
+        toast.success(response?.message || "Password updated");
         resetForm();
       } catch (error) {
         toast.error(
-          error?.response?.data?.message || "Failed to update password",
+          error?.response?.data?.message ||
+            "Couldn't update your password. Try again.",
         );
       } finally {
         setSubmitting(false);
@@ -38,136 +137,71 @@ const ChangePassword = () => {
     },
   });
 
-  const {
-    values,
-    errors,
-    touched,
-    handleChange,
-    handleBlur,
-    handleSubmit,
-    resetForm,
-    isSubmitting,
-  } = formik;
+  const { values, touched, errors, handleSubmit, resetForm, isSubmitting, dirty } =
+    formik;
 
-  const fieldClass = (name) =>
-    `w-full border rounded-lg px-4 py-3 pr-12 outline-none focus:border-[#FF7A21] ${
-      touched[name] && errors[name] ? "border-red-400" : "border-gray-300"
-    }`;
+  const passwordsMatch =
+    values.confirmPassword !== "" &&
+    values.confirmPassword === values.newPassword;
 
   return (
-    <form onSubmit={handleSubmit} noValidate>
-      <div className="border-b border-gray-200 pb-5 mb-8">
-        <h2 className="text-2xl font-semibold text-[#0F265C]">Update Password</h2>
-        <p className="text-sm text-gray-500 mt-1">
-          Change your account password to keep your account secure.
-        </p>
-      </div>
-
-      <div className="space-y-6 max-w-lg">
-        {/* Current Password */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Current Password
-          </label>
-          <div className="relative">
-            <input
-              type={showCurrent ? "text" : "password"}
+    <form onSubmit={handleSubmit} noValidate className="space-y-6">
+      <SettingsSection
+        title="Change password"
+        description="Choose a strong password that you don't use for any other account."
+      >
+        <div className="grid gap-8 lg:grid-cols-2 lg:items-start">
+          <div className="space-y-5">
+            <PasswordField
+              formik={formik}
               name="currentPassword"
-              value={values.currentPassword}
-              onChange={handleChange}
-              onBlur={handleBlur}
-              placeholder="Enter Current Password"
-              className={fieldClass("currentPassword")}
+              label="Current password"
+              autoComplete="current-password"
             />
-            <button
-              type="button"
-              onClick={() => setShowCurrent(!showCurrent)}
-              className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500"
-            >
-              {showCurrent ? <EyeOff size={20} /> : <Eye size={20} />}
-            </button>
-          </div>
-          {touched.currentPassword && errors.currentPassword && (
-            <p className="text-xs text-red-500 mt-1">{errors.currentPassword}</p>
-          )}
-        </div>
 
-        {/* New Password */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            New Password
-          </label>
-          <div className="relative">
-            <input
-              type={showNew ? "text" : "password"}
+            <PasswordField
+              formik={formik}
               name="newPassword"
-              value={values.newPassword}
-              onChange={handleChange}
-              onBlur={handleBlur}
-              placeholder="Enter New Password"
-              className={fieldClass("newPassword")}
+              label="New password"
+              autoComplete="new-password"
             />
-            <button
-              type="button"
-              onClick={() => setShowNew(!showNew)}
-              className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500"
-            >
-              {showNew ? <EyeOff size={20} /> : <Eye size={20} />}
-            </button>
-          </div>
-          <p className="text-xs text-gray-400 mt-1">Minimum 8 characters.</p>
-          {touched.newPassword && errors.newPassword && (
-            <p className="text-xs text-red-500 mt-1">{errors.newPassword}</p>
-          )}
-        </div>
 
-        {/* Confirm Password */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Confirm Password
-          </label>
-          <div className="relative">
-            <input
-              type={showConfirm ? "text" : "password"}
+            <PasswordField
+              formik={formik}
               name="confirmPassword"
-              value={values.confirmPassword}
-              onChange={handleChange}
-              onBlur={handleBlur}
-              placeholder="Confirm New Password"
-              className={fieldClass("confirmPassword")}
+              label="Confirm new password"
+              autoComplete="new-password"
+              hint={
+                passwordsMatch && !(touched.confirmPassword && errors.confirmPassword)
+                  ? "Passwords match."
+                  : undefined
+              }
             />
-            <button
-              type="button"
-              onClick={() => setShowConfirm(!showConfirm)}
-              className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500"
-            >
-              {showConfirm ? <EyeOff size={20} /> : <Eye size={20} />}
-            </button>
+
+            <div className="flex justify-end gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => resetForm()}
+                disabled={isSubmitting || !dirty}
+                className="h-10 rounded-lg border border-slate-300 bg-white px-4 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-300 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                Clear
+              </button>
+
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className="inline-flex h-10 min-w-[150px] items-center justify-center gap-2 rounded-lg bg-orange-500 px-5 text-sm font-semibold text-white transition hover:bg-orange-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/40 disabled:cursor-not-allowed disabled:opacity-70"
+              >
+                {isSubmitting && <Loader2 size={16} className="animate-spin" />}
+                {isSubmitting ? "Updating..." : "Update password"}
+              </button>
+            </div>
           </div>
-          {touched.confirmPassword && errors.confirmPassword && (
-            <p className="text-xs text-red-500 mt-1">{errors.confirmPassword}</p>
-          )}
+
+          <PasswordChecklist password={values.newPassword} />
         </div>
-      </div>
-
-      <div className="flex justify-end gap-3 mt-10">
-        <button
-          type="button"
-          onClick={() => resetForm()}
-          disabled={isSubmitting}
-          className="px-6 py-2.5 border border-gray-300 rounded-lg hover:bg-gray-100 disabled:opacity-60"
-        >
-          Cancel
-        </button>
-
-        <button
-          type="submit"
-          disabled={isSubmitting}
-          className="px-6 py-2.5 bg-[#FF7A21] text-white rounded-lg hover:opacity-90 disabled:opacity-60"
-        >
-          {isSubmitting ? "Updating..." : "Update Password"}
-        </button>
-      </div>
+      </SettingsSection>
     </form>
   );
 };
