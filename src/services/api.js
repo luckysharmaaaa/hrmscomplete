@@ -1,6 +1,7 @@
 import axios from "axios";
 
-export const API_URL = "http://localhost:5000/api/v1";
+// export const API_URL = "http://localhost:5000/api/v1";
+export const API_URL = import.meta.env.VITE_API_URL;
 
 // Fired when the session can no longer be recovered (refresh failed / no
 // refresh token). AuthContext listens and clears its state; the router then

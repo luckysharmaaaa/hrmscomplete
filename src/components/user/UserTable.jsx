@@ -33,6 +33,27 @@ const resolveImageUrl = (path) => {
   return `${FILE_BASE_URL}${path.startsWith("/") ? "" : "/"}${path}`;
 };
 
+// Shows whether this user still needs their official company email
+// assigned (created with only a personal alternateEmail so far), or
+// already has one — mirrors the backend's `pendingCompanyEmail` flag.
+const EmailStatusCell = ({ user }) =>
+  user.pendingCompanyEmail ? (
+    <span
+      className="badge badge-warning badge-outline gap-1 whitespace-nowrap"
+      title={
+        user.alternateEmail
+          ? `Signs in with personal email: ${user.alternateEmail}`
+          : undefined
+      }
+    >
+      New — No Official Email
+    </span>
+  ) : (
+    <span className="badge badge-success badge-outline gap-1 whitespace-nowrap">
+      Official Email
+    </span>
+  );
+
 const UserTable = ({ roles = [] }) => {
   const [users, setUsers] = useState([]);
 
@@ -86,6 +107,8 @@ const UserTable = ({ roles = [] }) => {
           name: `${item.firstName} ${item.lastName}`,
 
           email: item.email,
+          alternateEmail: item.alternateEmail,
+          pendingCompanyEmail: !!item.pendingCompanyEmail,
           phone: item.phone,
 
           // status: Number(item.status) === 1 ? "Active" : "Inactive",
@@ -208,7 +231,8 @@ const UserTable = ({ roles = [] }) => {
   const filtered = users.filter((u) => {
     const matchSearch =
       u.name.toLowerCase().includes(search.toLowerCase()) ||
-      u.email.toLowerCase().includes(search.toLowerCase());
+      (u.email || "").toLowerCase().includes(search.toLowerCase()) ||
+      (u.alternateEmail || "").toLowerCase().includes(search.toLowerCase());
 
     const matchRole = roleFilter
       ? u.roles.some((role) => role.roleName === roleFilter)
@@ -380,6 +404,12 @@ const UserTable = ({ roles = [] }) => {
 
               <th>
                 <span className="inline-flex items-center">
+                  Email Status
+                </span>
+              </th>
+
+              <th>
+                <span className="inline-flex items-center">
                   Created Date
                   <SortIcon />
                 </span>
@@ -406,7 +436,7 @@ const UserTable = ({ roles = [] }) => {
           <tbody>
             {paginated.length === 0 ? (
               <tr>
-                <td colSpan={7} className="text-center py-10 text-gray-500">
+                <td colSpan={8} className="text-center py-10 text-gray-500">
                   No users found.
                 </td>
               </tr>
@@ -446,7 +476,18 @@ const UserTable = ({ roles = [] }) => {
                   </td>
 
                   {/* Email */}
-                  <td>{user.email}</td>
+                  <td>
+                    {user.email || (
+                      <span className="text-gray-400 italic">
+                        {user.alternateEmail || "—"}
+                      </span>
+                    )}
+                  </td>
+
+                  {/* Email Status */}
+                  <td>
+                    <EmailStatusCell user={user} />
+                  </td>
 
                   {/* Created Date */}
                   <td>{user.date}</td>

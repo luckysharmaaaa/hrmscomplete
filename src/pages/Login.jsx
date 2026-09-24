@@ -234,9 +234,10 @@ const Login = () => {
                       className="mt-0.5 shrink-0"
                     />
                     <p>
-                      Please sign in using your official BytesBrick company account.
+                      Please use your official company email address
+                      (name@{COMPANY_EMAIL_DOMAIN}) to sign in.
                       {FIRST_TIME_ACCESS_ENABLED &&
-                        " If you are accessing the portal for the first time, use First-Time Employee Access below."}
+                        " New employee? Use First-Time Employee Access below."}
                     </p>
                   </div>
                 )}

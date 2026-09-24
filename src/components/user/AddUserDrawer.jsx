@@ -5,6 +5,7 @@ import * as Yup from "yup";
 
 import { createUser } from "../../services/userApi";
 import { uploadMedia } from "../../services/mediaApi";
+import { isCompanyEmail, COMPANY_EMAIL_DOMAIN } from "../../config/company";
 
 import UserForm from "./Userform";
 
@@ -12,6 +13,10 @@ import UserForm from "./Userform";
 // VALIDATION SCHEMA
 // ============================================================
 // Defines validation rules for the User form fields.
+//
+// Email rule: provide EITHER an official company email (email) OR a
+// personal email (alternateEmail) for an employee who doesn't have
+// their company email yet — at least one is required.
 const validationSchema = Yup.object({
   firstName: Yup.string()
     .min(2, "First Name must be at least 2 characters")
@@ -23,7 +28,28 @@ const validationSchema = Yup.object({
 
   email: Yup.string()
     .email("Enter a valid email address")
-    .required("Email is required"),
+    .test(
+      "is-company-domain",
+      `Official email must be a @${COMPANY_EMAIL_DOMAIN} address`,
+      (value) => !value || isCompanyEmail(value),
+    )
+    .when("alternateEmail", {
+      is: (value) => !value,
+      then: (schema) =>
+        schema.required(
+          "Provide an official company email, or a personal email below",
+        ),
+      otherwise: (schema) => schema.notRequired(),
+    }),
+
+  alternateEmail: Yup.string()
+    .email("Enter a valid email address")
+    .test(
+      "not-company-domain",
+      `Personal email must not be a @${COMPANY_EMAIL_DOMAIN} address — use the official email field for that`,
+      (value) => !value || !isCompanyEmail(value),
+    )
+    .notRequired(),
 
   password: Yup.string()
     .min(8, "Password must be at least 8 characters")
@@ -105,25 +131,32 @@ const AddUserDrawer = ({ open, onClose, onSuccess, roles = [] }) => {
         : [...prev, roleId]
     );
   };
-  // Saves the selected image file and creates a preview URL.
-  const handleImageChange = (file) => {
-    if (profileImagePreview?.startsWith("blob:")) {
-        URL.revokeObjectURL(profileImagePreview);
-    }
-
-    setProfileImageFile(file);
-    setProfileImagePreview(URL.createObjectURL(file));
-    
-  };
 
   // ==========================================================
   // IMAGE CHANGE HANDLER
   // ==========================================================
+  // Saves the selected image file and creates a preview URL.
+  const handleImageChange = (file) => {
+    if (profileImagePreview?.startsWith("blob:")) {
+      URL.revokeObjectURL(profileImagePreview);
+    }
+
+    setProfileImageFile(file);
+    setProfileImagePreview(URL.createObjectURL(file));
+  };
+
   // ==========================================================
   // REMOVE IMAGE HANDLER
   // ==========================================================
   // Removes the selected image and its preview.
+  // (Previously this didn't revoke the blob: URL created in
+  // handleImageChange, so every "remove and re-pick a photo" cycle
+  // leaked an object URL for the life of the tab.)
   const handleRemoveImage = () => {
+    if (profileImagePreview?.startsWith("blob:")) {
+      URL.revokeObjectURL(profileImagePreview);
+    }
+
     setProfileImageFile(null);
     setProfileImagePreview(null);
   };
@@ -156,6 +189,9 @@ const AddUserDrawer = ({ open, onClose, onSuccess, roles = [] }) => {
     setSelectedRoles([]);
     setStatus(true);
 
+    if (profileImagePreview?.startsWith("blob:")) {
+      URL.revokeObjectURL(profileImagePreview);
+    }
     setProfileImageFile(null);
     setProfileImagePreview(null);
 
@@ -173,6 +209,7 @@ const AddUserDrawer = ({ open, onClose, onSuccess, roles = [] }) => {
       firstName: "",
       lastName: "",
       email: "",
+      alternateEmail: "",
       password: "",
       confirmPassword: "",
       phone: "",
@@ -223,7 +260,13 @@ const AddUserDrawer = ({ open, onClose, onSuccess, roles = [] }) => {
         const payload = {
           firstName: values.firstName,
           lastName: values.lastName,
-          email: values.email,
+
+          // Official company email. Left out entirely when the
+          // employee doesn't have one yet — alternateEmail carries
+          // their personal email instead.
+          email: values.email.trim() || null,
+          alternateEmail: values.alternateEmail.trim() || null,
+
           phone: values.phone,
           password: values.password,
 
@@ -275,8 +318,6 @@ const AddUserDrawer = ({ open, onClose, onSuccess, roles = [] }) => {
         // ======================================================
         const response = await createUser(payload);
 
-        console.log("Create User Response:", response.data);
-
         // ======================================================
         // STEP 5: CHECK USER CREATION RESPONSE
         // ======================================================
@@ -285,12 +326,20 @@ const AddUserDrawer = ({ open, onClose, onSuccess, roles = [] }) => {
           // This ID is required for profile image mapping.
           const userId = response.data.data.id;
 
-          console.log("New User ID:", userId);
-
           // ====================================================
           // STEP 6: UPLOAD PROFILE IMAGE
           // ====================================================
           // Profile image is uploaded only if a file was selected.
+          //
+          // NOTE: by this point the user has already been created
+          // successfully. If the image upload fails, we still treat
+          // this as a successful "add user" — we warn about the photo
+          // specifically and close the drawer, instead of leaving it
+          // open as if nothing had happened. (Previously a failed
+          // image upload left the drawer open with the same form
+          // values still in it, which read as "user creation failed"
+          // and invited the admin to hit submit again — creating a
+          // second, duplicate user.)
           if (profileImageFile) {
             try {
               // Create multipart/form-data object.
@@ -316,59 +365,39 @@ const AddUserDrawer = ({ open, onClose, onSuccess, roles = [] }) => {
               formData.append("objectID", String(userId));
               formData.append("objectType", "user");
 
-              console.log("Uploading profile image...");
-
-              // Debug FormData values.
-              for (const [key, value] of formData.entries()) {
-                console.log(`${key}:`, value);
-              }
-
               // =================================================
               // CALL MEDIA UPLOAD API
               // =================================================
               // "users" is passed as the module.
-              const mediaResponse = await uploadMedia(
-                formData,
-                "users"
-              );
+              const mediaResponse = await uploadMedia(formData, "users");
 
-              console.log("Media Response:", mediaResponse.data);
-
-              // =================================================
-              // CHECK IMAGE UPLOAD RESPONSE
-              // =================================================
               if (!mediaResponse.data.success) {
-                toast.error(
-                  mediaResponse.data.message ||
-                    "Failed to upload profile image."
+                toast.warn(
+                  `User created, but the profile photo didn't upload: ${
+                    mediaResponse.data.message || "please add it from the user's profile."
+                  }`
                 );
-
-                return;
               }
-
-              // Get uploaded media ID.
-              const mediaId = mediaResponse.data.data.mediaId;
-
-              console.log("Uploaded Media ID:", mediaId);
             } catch (imageError) {
               // =================================================
               // IMAGE UPLOAD ERROR
               // =================================================
               console.error("Image Upload Error:", imageError);
 
-              toast.error(
-                imageError.response?.data?.message ||
-                  "Failed to upload profile image."
+              toast.warn(
+                "User created, but the profile photo didn't upload. You can add it from the user's profile."
               );
-
-              return;
+              // Deliberately no `return` here — the user record exists,
+              // so we still finish the success path below.
             }
           }
 
           // ====================================================
           // STEP 7: SUCCESS
           // ====================================================
-          toast.success(response.data.message);
+          if (!profileImageFile) {
+            toast.success(response.data.message);
+          }
 
           // Reset the complete form.
           resetAll(resetForm);
@@ -438,4 +467,3 @@ const AddUserDrawer = ({ open, onClose, onSuccess, roles = [] }) => {
 };
 
 export default AddUserDrawer;
-

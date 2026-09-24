@@ -36,6 +36,7 @@ const UserForm = ({
   mode,
   formik,
   isPasswordOptional = false,
+  pendingCompanyEmail = false,
 
   roles = [],
   selectedRoles = [],
@@ -203,19 +204,20 @@ const UserForm = ({
                 />
               </div>
 
-              {/* ================= Email ================= */}
+              {/* ================= Email (official company email) ================= */}
               <div>
                 <label className="label">
                   <span className="label-text font-medium">
-                    Email
+                    Official Email
                   </span>
                 </label>
 
                 <input
                   type="email"
                   name="email"
-                  placeholder="Enter email address"
-                  className={`input input-bordered w-full ${
+                  placeholder="name@bytesbrick.com"
+                  disabled={Boolean(formik.values.alternateEmail)}
+                  className={`input input-bordered w-full disabled:bg-gray-100 disabled:cursor-not-allowed ${
                     formik.touched.email && formik.errors.email
                       ? "border-red-500"
                       : ""
@@ -229,6 +231,68 @@ const UserForm = ({
                   error={formik.errors.email}
                   touched={formik.touched.email}
                 />
+
+                {formik.values.alternateEmail ? (
+                  <p className="text-xs text-gray-400 mt-1">
+                    Clear the Personal Email field to enter an official
+                    email instead.
+                  </p>
+                ) : (
+                  !formik.values.email && (
+                    <p className="text-xs text-gray-400 mt-1">
+                      Leave blank if this employee doesn't have one yet
+                      — use Personal Email instead.
+                    </p>
+                  )
+                )}
+              </div>
+
+              {/* ================= Personal Email (no official email yet) ================= */}
+              <div>
+                <label className="label">
+                  <span className="label-text font-medium">
+                    Personal Email
+                    <span className="ml-1 text-xs font-normal text-gray-400">
+                      (if no official email yet)
+                    </span>
+                  </span>
+                </label>
+
+                <input
+                  type="email"
+                  name="alternateEmail"
+                  placeholder="name@gmail.com"
+                  disabled={Boolean(formik.values.email)}
+                  className={`input input-bordered w-full disabled:bg-gray-100 disabled:cursor-not-allowed ${
+                    formik.touched.alternateEmail &&
+                    formik.errors.alternateEmail
+                      ? "border-red-500"
+                      : ""
+                  }`}
+                  value={formik.values.alternateEmail}
+                  onChange={formik.handleChange}
+                  onBlur={formik.handleBlur}
+                />
+
+                <FieldError
+                  error={formik.errors.alternateEmail}
+                  touched={formik.touched.alternateEmail}
+                />
+
+                {formik.values.email ? (
+                  <p className="text-xs text-gray-400 mt-1">
+                    Clear the Official Email field to use a personal
+                    email instead.
+                  </p>
+                ) : (
+                  pendingCompanyEmail && (
+                    <p className="text-xs text-amber-600 mt-1">
+                      This user currently signs in with their personal
+                      email. They'll switch to the official email
+                      automatically once you assign one above.
+                    </p>
+                  )
+                )}
               </div>
 
               {/* ================= Phone ================= */}

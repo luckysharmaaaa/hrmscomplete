@@ -1,22 +1,21 @@
-// Single source of truth for company identity on the frontend.
-// Set these in .env (Vite):
+// Set these in .env (Vite). The domain defaults to bytesbrick.com, so the
+// company-email-only rule is always on.
 //   VITE_COMPANY_NAME=BytesBrick
 //   VITE_COMPANY_EMAIL_DOMAIN=bytesbrick.com
-//
-// If VITE_COMPANY_EMAIL_DOMAIN is empty, domain enforcement and the
-// "First-Time Employee Access" option are switched off and Login behaves
-// exactly as it did before.
+//   VITE_FIRST_TIME_ACCESS=true   (optional; leave unset while it is not used)
 
 export const COMPANY_NAME = import.meta.env.VITE_COMPANY_NAME || "BytesBrick";
 
 export const COMPANY_EMAIL_DOMAIN = String(
-  import.meta.env.VITE_COMPANY_EMAIL_DOMAIN || ""
+  import.meta.env.VITE_COMPANY_EMAIL_DOMAIN || "bytesbrick.com"
 )
   .trim()
   .toLowerCase()
   .replace(/^@/, "");
 
-export const FIRST_TIME_ACCESS_ENABLED = Boolean(COMPANY_EMAIL_DOMAIN);
+// Off by default: sign-in is company-email only.
+export const FIRST_TIME_ACCESS_ENABLED =
+  import.meta.env.VITE_FIRST_TIME_ACCESS === "true";
 
 /**
  * Friendly UI check only. The backend is the authority on who may sign in.
