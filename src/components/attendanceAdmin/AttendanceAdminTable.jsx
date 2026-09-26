@@ -13,6 +13,7 @@ import { toast } from "react-toastify";
 
 import DateRangePickerButton from "../user/DateRangePickerButton";
 import EditAttendanceModal from "./EditAttendanceModal";
+import Can from "../rbac/Can";
 
 import {
   getAdminAttendance,
@@ -347,6 +348,17 @@ const parseTimeToMySQL = (dateStr, timeStr) => {
 
 // ============================================================
 // REVERSE STATUS MAP
+// ============================================================
+//
+// NOTE: "Late" is intentionally absent here. It is not a real
+// attendanceStatus value — it is derived from
+// (attendanceStatus === "PRESENT" && isLate === 1). If
+// EditAttendanceModal ever offers "Late" as a savable status,
+// this map will silently drop the status field from the update
+// payload (see the guard in handleSaveAttendance). Confirm with
+// EditAttendanceModal.jsx whether "Late" is meant to be editable;
+// if so it needs to set { attendanceStatus: "PRESENT", isLate: 1 }
+// instead of going through this map.
 // ============================================================
 
 const REVERSE_STATUS_MAP = {
@@ -1206,37 +1218,44 @@ const AttendanceAdminTable = ({ onFiltersChange }) => {
 
                             /* =================================
                                PENDING / REJECTED / NONE
+                               RBAC: only users with
+                               attendance-admin:edit see this
+                               button. Everyone else (e.g. a
+                               view-only role) sees the row but
+                               cannot open the edit modal.
                             ================================= */
 
-                            <button
-                              type="button"
-                              onClick={() =>
-                                setEditEmployee(row)
-                              }
-                              className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-xs font-semibold transition ${
-                                isPending
-                                  ? "bg-amber-50 border-amber-200 text-amber-700 hover:bg-amber-100"
-                                  : "bg-gray-50 border-gray-100 text-gray-600 hover:bg-orange-50 hover:border-orange-200 hover:text-orange-600"
-                              }`}
-                              title={
-                                isPending
-                                  ? "Edit pending regularization"
-                                  : regularizationAction ===
-                                    "REJECTED"
-                                  ? "Submit regularization again"
-                                  : "Regularize attendance"
-                              }
-                            >
-                              {isPending ? (
-                                <Pencil size={13} />
-                              ) : (
-                                <ClipboardEdit size={13} />
-                              )}
+                            <Can module="attendance-admin" action="edit">
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setEditEmployee(row)
+                                }
+                                className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-xs font-semibold transition ${
+                                  isPending
+                                    ? "bg-amber-50 border-amber-200 text-amber-700 hover:bg-amber-100"
+                                    : "bg-gray-50 border-gray-100 text-gray-600 hover:bg-orange-50 hover:border-orange-200 hover:text-orange-600"
+                                }`}
+                                title={
+                                  isPending
+                                    ? "Edit pending regularization"
+                                    : regularizationAction ===
+                                      "REJECTED"
+                                    ? "Submit regularization again"
+                                    : "Regularize attendance"
+                                }
+                              >
+                                {isPending ? (
+                                  <Pencil size={13} />
+                                ) : (
+                                  <ClipboardEdit size={13} />
+                                )}
 
-                              {isPending
-                                ? "Edit"
-                                : "Regularize"}
-                            </button>
+                                {isPending
+                                  ? "Edit"
+                                  : "Regularize"}
+                              </button>
+                            </Can>
                           )}
 
                         </div>

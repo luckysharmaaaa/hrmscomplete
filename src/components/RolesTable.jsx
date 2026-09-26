@@ -283,18 +283,7 @@ const RolesTable = ({ roles, setRoles, onEditRole, onDeleteRole }) => {
 
                   <td className="px-5 py-3">
                     <div className="flex justify-center gap-1">
-                      <button
-                        onClick={() =>
-                          navigate("/rolespermissions", {
-                            state: { role: item },
-                          })
-                        }
-                        title="Manage permissions"
-                        aria-label={`Manage permissions for ${item.roleName}`}
-                        className="p-1.5 rounded-lg hover:bg-blue-50 text-blue-500 transition"
-                      >
-                        <FiShield size={15} />
-                      </button>
+                      
 
                       <button
                         onClick={() => onEditRole(item)}

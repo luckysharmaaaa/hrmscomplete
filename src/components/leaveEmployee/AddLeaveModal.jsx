@@ -21,6 +21,16 @@ const DAY_TYPE_OPTIONS = [
   { value: "SECOND_HALF", label: "Second Half" },
 ];
 
+// Converts ISO string / Date to "YYYY-MM-DD" (local time) for <input type="date">
+const toInputDate = (v) => {
+  if (!v) return "";
+  if (/^\d{4}-\d{2}-\d{2}$/.test(v)) return v;
+  const d = new Date(v);
+  if (isNaN(d)) return "";
+  const p = (n) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+};
+
 /** Days between two ISO date strings (inclusive). Half day always counts as 0.5. */
 function calcDays(from, to, dayType) {
   if (!from || !to) return "";
@@ -50,8 +60,8 @@ export default function AddLeaveModal({ open, onClose, onSubmit, editData }) {
     if (editData) {
       setForm({
         leaveTypeId: String(editData.leaveTypeId ?? ""),
-        from: editData.startDate ?? "",
-        to: editData.endDate ?? "",
+        from: toInputDate(editData.startDate),
+        to: toInputDate(editData.endDate),
         dayType: editData.dayType ?? "FULL_DAY",
         reason: editData.reason ?? "",
       });
@@ -69,7 +79,11 @@ export default function AddLeaveModal({ open, onClose, onSubmit, editData }) {
       .finally(() => setLoading(false));
   }, [open, editData]);
 
-  const days = calcDays(form.from, form.to, form.dayType);
+  // Half-day leave is always a single day, so "to" follows "from"
+  const isFullDay = form.dayType === "FULL_DAY";
+  const effectiveTo = isFullDay ? form.to : form.from;
+
+  const days = calcDays(form.from, effectiveTo, form.dayType);
 
   const selectedType = leaveTypes.find(
     (t) => String(t.id) === String(form.leaveTypeId),
@@ -87,8 +101,8 @@ export default function AddLeaveModal({ open, onClose, onSubmit, editData }) {
     const e = {};
     if (!form.leaveTypeId) e.leaveTypeId = "Please select a leave type.";
     if (!form.from) e.from = "Start date is required.";
-    if (!form.to) e.to = "End date is required.";
-    if (form.from && form.to && new Date(form.to) < new Date(form.from))
+    if (isFullDay && !form.to) e.to = "End date is required.";
+    if (form.from && effectiveTo && new Date(effectiveTo) < new Date(form.from))
       e.to = "End date must be after start date.";
     if (!form.reason.trim()) e.reason = "Please provide a reason.";
     return e;
@@ -104,7 +118,7 @@ export default function AddLeaveModal({ open, onClose, onSubmit, editData }) {
     const payload = {
       leaveTypeId: Number(form.leaveTypeId),
       startDate: form.from,
-      endDate: form.to,
+      endDate: effectiveTo,
       dayType: form.dayType,
       reason: form.reason.trim(),
     };
@@ -306,9 +320,9 @@ export default function AddLeaveModal({ open, onClose, onSubmit, editData }) {
                   </label>
                   <input
                     type="date"
-                    value={form.to}
+                    value={effectiveTo}
                     min={form.from || undefined}
-                    disabled={form.dayType !== "FULL_DAY"}
+                    disabled={!isFullDay}
                     onChange={set("to")}
                     className={`w-full border rounded-lg px-3.5 py-2.5 text-sm outline-none transition disabled:bg-gray-50
                       ${
@@ -366,6 +380,7 @@ export default function AddLeaveModal({ open, onClose, onSubmit, editData }) {
                 </label>
                 <textarea
                   rows={4}
+                  maxLength={300}
                   value={form.reason}
                   onChange={set("reason")}
                   placeholder="Briefly describe your reason for leave..."

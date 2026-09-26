@@ -13,13 +13,12 @@ const ALLOWED_IMAGE_TYPES = [
 ];
 
 // Default image shown when user has no profile image
-import DEFAULT_AVATAR  from "../../assets/images/avatar_logo.webp"
-
+import DEFAULT_AVATAR from "../../assets/images/avatar_logo.webp";
 
 // Reusable validation error component
 export const FieldError = ({ error, touched }) =>
   touched && error ? (
-    <p className="text-red-500 text-xs mt-1">{error}</p>
+    <p className="text-danger-500 text-xs mt-1">{error}</p>
   ) : null;
 
 /**
@@ -92,6 +91,11 @@ const UserForm = ({
     onImageChange(file);
   };
 
+  const inputCls = (hasError) =>
+    `input input-bordered w-full bg-surface border-border-subtle text-text-primary focus:border-accent-500 focus:outline-none focus:ring-2 focus:ring-accent-500/10 ${
+      hasError ? "border-danger-500" : ""
+    }`;
+
   return (
     <>
       {/* ================= Backdrop ================= */}
@@ -102,25 +106,28 @@ const UserForm = ({
         />
       )}
 
-      {/* ================= Sliding Panel ================= */}
+      {/* ================= Sliding Panel — opens from the right, fixed
+          usable width instead of the previous invalid `w-200` utility
+          (which isn't a real Tailwind class and would have rendered
+          with no width at all). ================= */}
       <div
-        className={`fixed top-0 right-0 h-full w-200 bg-white z-1000 transition-transform duration-300 shadow-2xl flex flex-col ${
+        className={`fixed top-0 right-0 h-full w-full max-w-3xl bg-surface z-1000 transition-transform duration-base ease-standard shadow-2xl flex flex-col ${
           open ? "translate-x-0" : "translate-x-full"
         }`}
       >
         {/* ================= Header ================= */}
-        <div className="flex items-center justify-between p-5 border-b border-gray-100 bg-white shrink-0">
+        <div className="flex items-center justify-between p-5 border-b border-border-subtle bg-surface shrink-0">
           <div className="flex items-center gap-3.5">
-            <div className="p-2.5 bg-orange-50 text-orange-500 rounded-xl shrink-0 shadow-sm border border-orange-100/30">
+            <div className="p-2.5 bg-accent-500/10 text-accent-500 rounded-xl shrink-0 shadow-sm border border-accent-500/20">
               <User size={22} />
             </div>
 
             <div>
-              <h2 className="text-2xl font-bold text-[#0F265C] tracking-tight leading-tight">
+              <h2 className="text-2xl font-bold text-primary-700 tracking-tight leading-tight">
                 {isEdit ? "Edit User" : "Add User"}
               </h2>
 
-              <p className="text-xs text-gray-400 font-medium mt-1">
+              <p className="text-xs text-text-secondary font-medium mt-1">
                 {isEdit
                   ? "Update user profile information"
                   : "Create a new user profile and allocate module access permissions"}
@@ -132,9 +139,9 @@ const UserForm = ({
           <button
             type="button"
             onClick={onClose}
-            className="w-8 h-8 flex items-center justify-center rounded-md border border-gray-200 text-gray-400 hover:bg-red-50 hover:border-red-200 hover:text-red-500 transition-all text-base cursor-pointer"
+            className="w-8 h-8 flex items-center justify-center rounded-md border border-border-subtle text-text-disabled hover:bg-danger-50 hover:border-danger-500/30 hover:text-danger-500 transition-colors duration-fast ease-standard"
           >
-            ✕
+            <X size={16} />
           </button>
         </div>
 
@@ -151,7 +158,7 @@ const UserForm = ({
               {/* ================= First Name ================= */}
               <div>
                 <label className="label">
-                  <span className="label-text font-medium">
+                  <span className="label-text font-medium text-text-primary">
                     First Name
                   </span>
                 </label>
@@ -160,11 +167,7 @@ const UserForm = ({
                   type="text"
                   name="firstName"
                   placeholder="Enter first name"
-                  className={`input input-bordered w-full ${
-                    formik.touched.firstName && formik.errors.firstName
-                      ? "border-red-500"
-                      : ""
-                  }`}
+                  className={inputCls(formik.touched.firstName && formik.errors.firstName)}
                   value={formik.values.firstName}
                   onChange={formik.handleChange}
                   onBlur={formik.handleBlur}
@@ -179,7 +182,7 @@ const UserForm = ({
               {/* ================= Last Name ================= */}
               <div>
                 <label className="label">
-                  <span className="label-text font-medium">
+                  <span className="label-text font-medium text-text-primary">
                     Last Name
                   </span>
                 </label>
@@ -188,11 +191,7 @@ const UserForm = ({
                   type="text"
                   name="lastName"
                   placeholder="Enter last name"
-                  className={`input input-bordered w-full ${
-                    formik.touched.lastName && formik.errors.lastName
-                      ? "border-red-500"
-                      : ""
-                  }`}
+                  className={inputCls(formik.touched.lastName && formik.errors.lastName)}
                   value={formik.values.lastName}
                   onChange={formik.handleChange}
                   onBlur={formik.handleBlur}
@@ -207,7 +206,7 @@ const UserForm = ({
               {/* ================= Email (official company email) ================= */}
               <div>
                 <label className="label">
-                  <span className="label-text font-medium">
+                  <span className="label-text font-medium text-text-primary">
                     Official Email
                   </span>
                 </label>
@@ -217,11 +216,7 @@ const UserForm = ({
                   name="email"
                   placeholder="name@bytesbrick.com"
                   disabled={Boolean(formik.values.alternateEmail)}
-                  className={`input input-bordered w-full disabled:bg-gray-100 disabled:cursor-not-allowed ${
-                    formik.touched.email && formik.errors.email
-                      ? "border-red-500"
-                      : ""
-                  }`}
+                  className={`${inputCls(formik.touched.email && formik.errors.email)} disabled:bg-background disabled:cursor-not-allowed`}
                   value={formik.values.email}
                   onChange={formik.handleChange}
                   onBlur={formik.handleBlur}
@@ -233,13 +228,13 @@ const UserForm = ({
                 />
 
                 {formik.values.alternateEmail ? (
-                  <p className="text-xs text-gray-400 mt-1">
+                  <p className="text-xs text-text-secondary mt-1">
                     Clear the Personal Email field to enter an official
                     email instead.
                   </p>
                 ) : (
                   !formik.values.email && (
-                    <p className="text-xs text-gray-400 mt-1">
+                    <p className="text-xs text-text-secondary mt-1">
                       Leave blank if this employee doesn't have one yet
                       — use Personal Email instead.
                     </p>
@@ -250,9 +245,9 @@ const UserForm = ({
               {/* ================= Personal Email (no official email yet) ================= */}
               <div>
                 <label className="label">
-                  <span className="label-text font-medium">
+                  <span className="label-text font-medium text-text-primary">
                     Personal Email
-                    <span className="ml-1 text-xs font-normal text-gray-400">
+                    <span className="ml-1 text-xs font-normal text-text-disabled">
                       (if no official email yet)
                     </span>
                   </span>
@@ -263,12 +258,7 @@ const UserForm = ({
                   name="alternateEmail"
                   placeholder="name@gmail.com"
                   disabled={Boolean(formik.values.email)}
-                  className={`input input-bordered w-full disabled:bg-gray-100 disabled:cursor-not-allowed ${
-                    formik.touched.alternateEmail &&
-                    formik.errors.alternateEmail
-                      ? "border-red-500"
-                      : ""
-                  }`}
+                  className={`${inputCls(formik.touched.alternateEmail && formik.errors.alternateEmail)} disabled:bg-background disabled:cursor-not-allowed`}
                   value={formik.values.alternateEmail}
                   onChange={formik.handleChange}
                   onBlur={formik.handleBlur}
@@ -280,13 +270,13 @@ const UserForm = ({
                 />
 
                 {formik.values.email ? (
-                  <p className="text-xs text-gray-400 mt-1">
+                  <p className="text-xs text-text-secondary mt-1">
                     Clear the Official Email field to use a personal
                     email instead.
                   </p>
                 ) : (
                   pendingCompanyEmail && (
-                    <p className="text-xs text-amber-600 mt-1">
+                    <p className="text-xs text-warning-600 mt-1">
                       This user currently signs in with their personal
                       email. They'll switch to the official email
                       automatically once you assign one above.
@@ -298,7 +288,7 @@ const UserForm = ({
               {/* ================= Phone ================= */}
               <div>
                 <label className="label">
-                  <span className="label-text font-medium">
+                  <span className="label-text font-medium text-text-primary">
                     Phone
                   </span>
                 </label>
@@ -307,11 +297,7 @@ const UserForm = ({
                   type="text"
                   name="phone"
                   placeholder="Enter phone number"
-                  className={`input input-bordered w-full ${
-                    formik.touched.phone && formik.errors.phone
-                      ? "border-red-500"
-                      : ""
-                  }`}
+                  className={inputCls(formik.touched.phone && formik.errors.phone)}
                   value={formik.values.phone}
                   onChange={formik.handleChange}
                   onBlur={formik.handleBlur}
@@ -326,7 +312,7 @@ const UserForm = ({
               {/* ================= Password ================= */}
               <div>
                 <label className="label">
-                  <span className="label-text font-medium">
+                  <span className="label-text font-medium text-text-primary">
                     Password
                     {isPasswordOptional ? " (optional)" : ""}
                   </span>
@@ -341,11 +327,7 @@ const UserForm = ({
                         ? "Leave blank to keep current password"
                         : "Minimum 8 characters"
                     }
-                    className={`input input-bordered w-full pr-10 ${
-                      formik.touched.password && formik.errors.password
-                        ? "border-red-500"
-                        : ""
-                    }`}
+                    className={`${inputCls(formik.touched.password && formik.errors.password)} pr-10`}
                     value={formik.values.password}
                     onChange={formik.handleChange}
                     onBlur={formik.handleBlur}
@@ -354,7 +336,7 @@ const UserForm = ({
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary"
                   >
                     {showPassword ? (
                       <VisibilityIcon fontSize="small" />
@@ -373,7 +355,7 @@ const UserForm = ({
               {/* ================= Confirm Password ================= */}
               <div>
                 <label className="label">
-                  <span className="label-text font-medium">
+                  <span className="label-text font-medium text-text-primary">
                     Confirm Password
                   </span>
                 </label>
@@ -383,12 +365,7 @@ const UserForm = ({
                     type={showConfirm ? "text" : "password"}
                     name="confirmPassword"
                     placeholder="Repeat password"
-                    className={`input input-bordered w-full pr-10 ${
-                      formik.touched.confirmPassword &&
-                      formik.errors.confirmPassword
-                        ? "border-red-500"
-                        : ""
-                    }`}
+                    className={`${inputCls(formik.touched.confirmPassword && formik.errors.confirmPassword)} pr-10`}
                     value={formik.values.confirmPassword}
                     onChange={formik.handleChange}
                     onBlur={formik.handleBlur}
@@ -397,7 +374,7 @@ const UserForm = ({
                   <button
                     type="button"
                     onClick={() => setShowConfirm(!showConfirm)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary"
                   >
                     {showConfirm ? (
                       <VisibilityIcon fontSize="small" />
@@ -418,11 +395,11 @@ const UserForm = ({
             {/* ================= Assign Roles ================= */}
             <div className="mt-8">
               <div className="mb-4">
-                <h3 className="text-lg font-semibold text-[#0F265C]">
+                <h3 className="text-lg font-semibold text-primary-700">
                   Assign Roles
                 </h3>
 
-                <p className="text-sm text-gray-500">
+                <p className="text-sm text-text-secondary">
                   Select one or more roles for this user.
                 </p>
               </div>
@@ -431,21 +408,22 @@ const UserForm = ({
                 {roles.map((role) => (
                   <label
                     key={role.id}
-                    className={`cursor-pointer rounded-xl border p-4 transition-all duration-200 ${
+                    className={`cursor-pointer rounded-xl border p-4 transition-colors duration-fast ease-standard ${
                       selectedRoles.includes(role.id)
-                        ? "border-orange-500 bg-orange-50"
-                        : "border-gray-200 bg-white hover:border-orange-300"
+                        ? "border-accent-500 bg-accent-500/5"
+                        : "border-border-subtle bg-surface hover:border-accent-400"
                     }`}
                   >
                     <div className="flex items-center gap-3">
                       <input
                         type="checkbox"
-                        className="checkbox checkbox-warning checkbox-sm"
+                        className="checkbox checkbox-sm"
+                        style={{ accentColor: "#F97316" }}
                         checked={selectedRoles.includes(role.id)}
                         onChange={() => onRoleChange(role.id)}
                       />
 
-                      <span className="font-medium text-gray-700">
+                      <span className="font-medium text-text-primary">
                         {role.roleName}
                       </span>
                     </div>
@@ -456,21 +434,21 @@ const UserForm = ({
                         {/* ================= Profile Image ================= */}
             <div className="mt-8">
               <div className="mb-4">
-                <h3 className="text-lg font-semibold text-[#0F265C]">
+                <h3 className="text-lg font-semibold text-primary-700">
                   Profile Image
                 </h3>
 
-                <p className="text-sm text-gray-500">
+                <p className="text-sm text-text-secondary">
                   Upload a profile picture (JPG, JPEG, PNG, WEBP).
                 </p>
               </div>
 
-              <div className="rounded-xl border border-gray-200 bg-white p-6">
+              <div className="rounded-xl border border-border-subtle bg-surface p-6">
                 <div className="flex flex-col md:flex-row items-center gap-6">
 
                   {/* Profile image preview */}
                   <div className="relative">
-                    <div className="w-28 h-28 rounded-full border-2 border-dashed border-orange-300 bg-orange-50 overflow-hidden flex items-center justify-center">
+                    <div className="w-28 h-28 rounded-full border-2 border-dashed border-accent-500/40 bg-accent-500/5 overflow-hidden flex items-center justify-center">
                       <img
                         src={displayImage}
                         className="w-full h-full object-cover"
@@ -486,7 +464,7 @@ const UserForm = ({
                       <button
                         type="button"
                         onClick={onRemoveImage}
-                        className="absolute -top-2 -right-2 w-8 h-8 rounded-full bg-red-500 text-white flex items-center justify-center shadow hover:bg-red-600 transition"
+                        className="absolute -top-2 -right-2 w-8 h-8 rounded-full bg-danger-500 text-white flex items-center justify-center shadow hover:bg-danger-600 transition-colors duration-fast ease-standard"
                       >
                         <X size={16} />
                       </button>
@@ -495,11 +473,11 @@ const UserForm = ({
 
                   {/* Image actions */}
                   <div className="flex-1">
-                    <h4 className="text-base font-semibold text-gray-800 mb-2">
+                    <h4 className="text-base font-semibold text-text-primary mb-2">
                       Upload Photo
                     </h4>
 
-                    <p className="text-sm text-gray-500 mb-4">
+                    <p className="text-sm text-text-secondary mb-4">
                       Supported formats: JPG, JPEG, PNG and WEBP
                       <br />
                       Recommended size: 300 × 300 px
@@ -508,7 +486,7 @@ const UserForm = ({
                     <div className="flex items-center gap-3">
 
                       {/* Choose Image */}
-                      <label className="btn bg-orange-500 hover:bg-orange-600 border-none text-white">
+                      <label className="btn bg-accent-500 hover:bg-accent-600 border-none text-white">
                         Choose Image
 
                         <input
@@ -519,13 +497,13 @@ const UserForm = ({
                         />
                       </label>
 
-                      {/* ================= NEW: Save Image ================= */}
+                      {/* ================= Save Image ================= */}
                       {isEdit && (
                         <button
                           type="button"
                           onClick={onSaveProfileImage}
                           disabled={isSavingImage}
-                          className="btn bg-green-500 hover:bg-green-600 border-none text-white disabled:opacity-50"
+                          className="btn bg-success-500 hover:bg-success-600 border-none text-white disabled:opacity-50"
                         >
                           {isSavingImage ? "Saving..." : "Save Image"}
                         </button>
@@ -539,11 +517,11 @@ const UserForm = ({
             {/* ================= Address ================= */}
             <div className="mt-8">
               <div className="mb-4">
-                <h3 className="text-lg font-semibold text-[#0F265C]">
+                <h3 className="text-lg font-semibold text-primary-700">
                   Address
                 </h3>
 
-                <p className="text-sm text-gray-500">
+                <p className="text-sm text-text-secondary">
                   Add an address for this user (optional).
                 </p>
               </div>
@@ -553,14 +531,14 @@ const UserForm = ({
                 {/* Address Type */}
                 <div>
                   <label className="label">
-                    <span className="label-text font-medium">
+                    <span className="label-text font-medium text-text-primary">
                       Address Type
                     </span>
                   </label>
 
                   <select
                     name="addressType"
-                    className="select select-bordered w-full"
+                    className="select select-bordered w-full bg-surface border-border-subtle text-text-primary"
                     value={addressData.addressType}
                     onChange={onAddressChange}
                   >
@@ -576,7 +554,7 @@ const UserForm = ({
                 {/* House Number */}
                 <div>
                   <label className="label">
-                    <span className="label-text font-medium">
+                    <span className="label-text font-medium text-text-primary">
                       House No/Name
                     </span>
                   </label>
@@ -585,7 +563,7 @@ const UserForm = ({
                     type="text"
                     name="houseNo"
                     placeholder="Enter house number"
-                    className="input input-bordered w-full"
+                    className="input input-bordered w-full bg-surface border-border-subtle text-text-primary"
                     value={addressData.houseNo}
                     onChange={onAddressChange}
                   />
@@ -594,7 +572,7 @@ const UserForm = ({
                 {/* Address Line 1 */}
                 <div>
                   <label className="label">
-                    <span className="label-text font-medium">
+                    <span className="label-text font-medium text-text-primary">
                       Address Line 1
                     </span>
                   </label>
@@ -603,7 +581,7 @@ const UserForm = ({
                     type="text"
                     name="addressLine1"
                     placeholder="Enter address line 1"
-                    className="input input-bordered w-full"
+                    className="input input-bordered w-full bg-surface border-border-subtle text-text-primary"
                     value={addressData.addressLine1}
                     onChange={onAddressChange}
                   />
@@ -612,7 +590,7 @@ const UserForm = ({
                 {/* Address Line 2 */}
                 <div>
                   <label className="label">
-                    <span className="label-text font-medium">
+                    <span className="label-text font-medium text-text-primary">
                       Address Line 2
                     </span>
                   </label>
@@ -621,7 +599,7 @@ const UserForm = ({
                     type="text"
                     name="addressLine2"
                     placeholder="Enter address line 2"
-                    className="input input-bordered w-full"
+                    className="input input-bordered w-full bg-surface border-border-subtle text-text-primary"
                     value={addressData.addressLine2}
                     onChange={onAddressChange}
                   />
@@ -630,7 +608,7 @@ const UserForm = ({
                 {/* Landmark */}
                 <div>
                   <label className="label">
-                    <span className="label-text font-medium">
+                    <span className="label-text font-medium text-text-primary">
                       Landmark
                     </span>
                   </label>
@@ -639,7 +617,7 @@ const UserForm = ({
                     type="text"
                     name="landmark"
                     placeholder="Enter landmark"
-                    className="input input-bordered w-full"
+                    className="input input-bordered w-full bg-surface border-border-subtle text-text-primary"
                     value={addressData.landmark}
                     onChange={onAddressChange}
                   />
@@ -648,7 +626,7 @@ const UserForm = ({
                 {/* Locality */}
                 <div>
                   <label className="label">
-                    <span className="label-text font-medium">
+                    <span className="label-text font-medium text-text-primary">
                       Locality
                     </span>
                   </label>
@@ -657,7 +635,7 @@ const UserForm = ({
                     type="text"
                     name="locality"
                     placeholder="Enter locality"
-                    className="input input-bordered w-full"
+                    className="input input-bordered w-full bg-surface border-border-subtle text-text-primary"
                     value={addressData.locality}
                     onChange={onAddressChange}
                   />
@@ -666,7 +644,7 @@ const UserForm = ({
                 {/* City */}
                 <div>
                   <label className="label">
-                    <span className="label-text font-medium">
+                    <span className="label-text font-medium text-text-primary">
                       City
                     </span>
                   </label>
@@ -675,7 +653,7 @@ const UserForm = ({
                     type="text"
                     name="city"
                     placeholder="Enter city"
-                    className="input input-bordered w-full"
+                    className="input input-bordered w-full bg-surface border-border-subtle text-text-primary"
                     value={addressData.city}
                     onChange={onAddressChange}
                   />
@@ -684,7 +662,7 @@ const UserForm = ({
                 {/* State */}
                 <div>
                   <label className="label">
-                    <span className="label-text font-medium">
+                    <span className="label-text font-medium text-text-primary">
                       State
                     </span>
                   </label>
@@ -693,7 +671,7 @@ const UserForm = ({
                     type="text"
                     name="state"
                     placeholder="Enter state"
-                    className="input input-bordered w-full"
+                    className="input input-bordered w-full bg-surface border-border-subtle text-text-primary"
                     value={addressData.state}
                     onChange={onAddressChange}
                   />
@@ -702,7 +680,7 @@ const UserForm = ({
                 {/* Zip Code */}
                 <div>
                   <label className="label">
-                    <span className="label-text font-medium">
+                    <span className="label-text font-medium text-text-primary">
                       Zip Code
                     </span>
                   </label>
@@ -711,7 +689,7 @@ const UserForm = ({
                     type="text"
                     name="zipCode"
                     placeholder="Enter zip code"
-                    className="input input-bordered w-full"
+                    className="input input-bordered w-full bg-surface border-border-subtle text-text-primary"
                     value={addressData.zipCode}
                     onChange={onAddressChange}
                   />
@@ -720,7 +698,7 @@ const UserForm = ({
                 {/* Country ID */}
                 <div>
                   <label className="label">
-                    <span className="label-text font-medium">
+                    <span className="label-text font-medium text-text-primary">
                       Country ID
                     </span>
                   </label>
@@ -729,7 +707,7 @@ const UserForm = ({
                     type="text"
                     name="countryID"
                     placeholder="Enter country ID"
-                    className="input input-bordered w-full"
+                    className="input input-bordered w-full bg-surface border-border-subtle text-text-primary"
                     value={addressData.countryID}
                     onChange={onAddressChange}
                   />
@@ -738,7 +716,7 @@ const UserForm = ({
                 {/* Country Code */}
                 <div>
                   <label className="label">
-                    <span className="label-text font-medium">
+                    <span className="label-text font-medium text-text-primary">
                       Country Code
                     </span>
                   </label>
@@ -747,7 +725,7 @@ const UserForm = ({
                     type="text"
                     name="countryCode"
                     placeholder="e.g. IN"
-                    className="input input-bordered w-full"
+                    className="input input-bordered w-full bg-surface border-border-subtle text-text-primary"
                     value={addressData.countryCode}
                     onChange={onAddressChange}
                   />
@@ -756,7 +734,7 @@ const UserForm = ({
                 {/* Phone Code */}
                 <div>
                   <label className="label">
-                    <span className="label-text font-medium">
+                    <span className="label-text font-medium text-text-primary">
                       Phone Code
                     </span>
                   </label>
@@ -765,7 +743,7 @@ const UserForm = ({
                     type="text"
                     name="phoneCode"
                     placeholder="e.g. +91"
-                    className="input input-bordered w-full"
+                    className="input input-bordered w-full bg-surface border-border-subtle text-text-primary"
                     value={addressData.phoneCode}
                     onChange={onAddressChange}
                   />
@@ -774,7 +752,7 @@ const UserForm = ({
                 {/* Address Phone */}
                 <div>
                   <label className="label">
-                    <span className="label-text font-medium">
+                    <span className="label-text font-medium text-text-primary">
                       Address Phone
                     </span>
                   </label>
@@ -783,7 +761,7 @@ const UserForm = ({
                     type="text"
                     name="phone"
                     placeholder="Enter phone number"
-                    className="input input-bordered w-full"
+                    className="input input-bordered w-full bg-surface border-border-subtle text-text-primary"
                     value={addressData.phone}
                     onChange={onAddressChange}
                   />
@@ -795,14 +773,15 @@ const UserForm = ({
                     type="checkbox"
                     name="isDefault"
                     id="isDefault"
-                    className="checkbox checkbox-warning checkbox-sm"
+                    className="checkbox checkbox-sm"
+                    style={{ accentColor: "#F97316" }}
                     checked={addressData.isDefault}
                     onChange={onAddressChange}
                   />
 
                   <label
                     htmlFor="isDefault"
-                    className="text-sm font-medium text-gray-700"
+                    className="text-sm font-medium text-text-primary"
                   >
                     Set as default address
                   </label>
@@ -812,23 +791,23 @@ const UserForm = ({
             </div>
           </div>
                     {/* ================= Footer ================= */}
-          <div className="shrink-0 bg-white border-t py-2 px-10 flex items-center justify-between">
+          <div className="shrink-0 bg-surface border-t border-border-subtle py-3 px-6 flex items-center justify-between">
 
             {/* ================= Status ================= */}
             <div className="flex items-center gap-3">
-              <label className="text-sm font-semibold text-gray-700">
+              <label className="text-sm font-semibold text-text-primary">
                 Status
               </label>
 
               <button
                 type="button"
                 onClick={onStatusToggle}
-                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-300 ${
-                  status ? "bg-orange-500" : "bg-gray-300"
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-fast ease-standard ${
+                  status ? "bg-accent-500" : "bg-border-strong"
                 }`}
               >
                 <span
-                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-300 ${
+                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-fast ease-standard ${
                     status ? "translate-x-6" : "translate-x-1"
                   }`}
                 />
@@ -836,7 +815,7 @@ const UserForm = ({
 
               <span
                 className={`text-sm font-medium ${
-                  status ? "text-orange-500" : "text-gray-500"
+                  status ? "text-accent-500" : "text-text-secondary"
                 }`}
               >
                 {status ? "Active" : "Inactive"}
@@ -850,7 +829,7 @@ const UserForm = ({
               <button
                 type="button"
                 onClick={onClose}
-                className="px-5 py-1.5 border rounded-md hover:bg-gray-100"
+                className="px-5 py-2 border border-border-subtle text-text-primary rounded-md hover:bg-background transition-colors duration-fast ease-standard"
               >
                 Cancel
               </button>
@@ -859,7 +838,7 @@ const UserForm = ({
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="px-5 py-1.5 bg-orange-500 hover:bg-orange-600 text-white rounded-md disabled:opacity-50"
+                className="px-5 py-2 bg-accent-500 hover:bg-accent-600 text-white rounded-md disabled:opacity-50 transition-colors duration-fast ease-standard"
               >
                 {isSubmitting ? submittingLabel : submitLabel}
               </button>

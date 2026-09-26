@@ -8,6 +8,11 @@ export const API_URL = import.meta.env.VITE_API_URL;
 // sends the user to /login. No page reload, so no request loop.
 export const AUTH_EXPIRED_EVENT = "auth:expired";
 
+// Fired on every 403 from the API. AuthContext listens and re-loads the
+// user's permissions, so a menu item / button that an admin has just revoked
+// disappears without the user having to log out.
+export const FORBIDDEN_EVENT = "auth:forbidden";
+
 const AUTH_STORAGE_KEYS = [
   "token",
   "accessToken",
@@ -104,6 +109,13 @@ api.interceptors.response.use(
     const original = error.config;
     const status = error.response?.status;
     const url = original?.url || "";
+
+    // 403 = logged in but not allowed. Tell the app so it can re-sync the
+    // user's permissions; the caller still receives the error to show a message.
+    if (status === 403) {
+      window.dispatchEvent(new Event(FORBIDDEN_EVENT));
+      return Promise.reject(error);
+    }
 
     const skip =
       status !== 401 ||

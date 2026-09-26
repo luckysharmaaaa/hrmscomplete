@@ -2,45 +2,60 @@ import React from "react";
 import { ChevronLeft, ChevronRight, CalendarDays } from "lucide-react";
 
 const MONTH_NAMES = [
-  "January", "February", "March", "April", "May", "June",
-  "July", "August", "September", "October", "November", "December",
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
 ];
 
-// month is 1-12, year is e.g. 2026. onChange(year, month).
 const MonthYearPicker = ({ year, month, onChange }) => {
   const goPrev = () => {
-    if (month === 1) onChange(year - 1, 12);
-    else onChange(year, month - 1);
+    if (month === 1) {
+      onChange(year - 1, 12);
+    } else {
+      onChange(year, month - 1);
+    }
   };
 
   const goNext = () => {
-    if (month === 12) onChange(year + 1, 1);
-    else onChange(year, month + 1);
+    if (month === 12) {
+      onChange(year + 1, 1);
+    } else {
+      onChange(year, month + 1);
+    }
   };
 
   return (
-    <div className="flex items-center gap-1 border border-gray-200 rounded-lg px-2 py-1.5 bg-white">
+    <div className="flex h-10 items-center gap-1 rounded-lg border border-gray-200 bg-white px-1.5 shadow-sm">
       <button
         type="button"
         onClick={goPrev}
-        className="p-1 rounded hover:bg-gray-100 text-gray-500"
+        className="flex h-7 w-7 items-center justify-center rounded-md text-gray-400 transition hover:bg-gray-50 hover:text-gray-700"
         aria-label="Previous month"
       >
-        <ChevronLeft size={14} />
+        <ChevronLeft size={15} />
       </button>
 
-      <span className="flex items-center gap-1.5 px-2 text-sm font-medium text-gray-700 min-w-[130px] justify-center">
-        <CalendarDays size={13} className="text-gray-400" />
+      <span className="flex min-w-[130px] items-center justify-center gap-1.5 px-2 text-sm font-semibold text-gray-700">
+        <CalendarDays size={14} className="text-orange-500" />
         {MONTH_NAMES[month - 1]} {year}
       </span>
 
       <button
         type="button"
         onClick={goNext}
-        className="p-1 rounded hover:bg-gray-100 text-gray-500"
+        className="flex h-7 w-7 items-center justify-center rounded-md text-gray-400 transition hover:bg-gray-50 hover:text-gray-700"
         aria-label="Next month"
       >
-        <ChevronRight size={14} />
+        <ChevronRight size={15} />
       </button>
     </div>
   );

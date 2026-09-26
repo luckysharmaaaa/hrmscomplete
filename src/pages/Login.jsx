@@ -1,11 +1,11 @@
 import React, { useState } from "react";
 import {
-  AlertCircle,
   Eye,
   EyeOff,
   Loader2,
   Lock,
   Mail,
+  UserPlus,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
@@ -14,15 +14,16 @@ import login from "../assets/images/logo.png";
 import loginBg from "../assets/images/Login_bg.png";
 import { loginUser } from "../services/loginAPI";
 import { useAuth } from "../context/AuthContext";
-import {
-  COMPANY_EMAIL_DOMAIN,
-  COMPANY_NAME,
-  FIRST_TIME_ACCESS_ENABLED,
-  isCompanyEmail,
-} from "../config/company";
+import { COMPANY_NAME } from "../config/company";
 
 const inputClass =
   "h-12 w-full rounded-lg border border-slate-200 bg-white pl-11 pr-4 text-sm text-slate-800 outline-none transition-all duration-200 placeholder:text-slate-400 hover:border-slate-300 focus:border-[#F28C28] focus:ring-2 focus:ring-[#F28C28]/10 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-400";
+
+// Reassuring, MNC-style copy — a failed login never says "wrong domain" or
+// "invalid email"; it quietly points a new employee toward the right path
+// without making them feel like something is broken.
+const LOGIN_FAILED_MESSAGE =
+  "We couldn't sign you in with that email and password. If you're new and don't have your company email yet, use the personal email HR registered for you.";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -35,16 +36,6 @@ const Login = () => {
 
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [showCompanyEmailNotice, setShowCompanyEmailNotice] =
-    useState(false);
-
-  const emailLabel = COMPANY_EMAIL_DOMAIN ? "Work email" : "Email address";
-  const emailPlaceholder = COMPANY_EMAIL_DOMAIN
-    ? `name@${COMPANY_EMAIL_DOMAIN}`
-    : "Enter your email";
-  const subtitle = COMPANY_EMAIL_DOMAIN
-    ? `Sign in to your ${COMPANY_NAME} account.`
-    : "Sign in to your account to continue.";
 
   // ============================================================
   // INPUT CHANGE
@@ -56,19 +47,6 @@ const Login = () => {
       ...prev,
       [name]: value,
     }));
-
-    if (name === "email" && showCompanyEmailNotice) {
-      setShowCompanyEmailNotice(false);
-    }
-  };
-
-  // Tell the user about a non-company email as soon as they leave the field.
-  const handleEmailBlur = () => {
-    const value = formData.email.trim();
-
-    if (value && !isCompanyEmail(value)) {
-      setShowCompanyEmailNotice(true);
-    }
   };
 
   // ============================================================
@@ -89,7 +67,7 @@ const Login = () => {
     // VALIDATION
     // ----------------------------------------------------------
     if (!email) {
-      toast.error(`Please enter your ${emailLabel.toLowerCase()}`, {
+      toast.error("Please enter your email address", {
         toastId: "login-validation",
       });
       return;
@@ -99,12 +77,6 @@ const Login = () => {
       toast.error("Please enter your password", {
         toastId: "login-validation",
       });
-      return;
-    }
-
-    // Friendly hint only. The backend enforces the real rule.
-    if (!isCompanyEmail(email)) {
-      setShowCompanyEmailNotice(true);
       return;
     }
 
@@ -132,11 +104,17 @@ const Login = () => {
         replace: true,
       });
     } catch (error) {
+      // 401/400 covers both "wrong password" and "email not recognized"
+      // (company domain rejected, or personal email not yet registered)
+      // — the reassuring message fits both without sounding alarming.
+      const status = error?.response?.status;
+
       const message =
-        error?.response?.data?.message ||
-        error?.response?.data?.error?.message ||
-        error?.message ||
-        "Unable to sign in. Please try again.";
+        status === 401 || status === 400
+          ? error?.response?.data?.message || LOGIN_FAILED_MESSAGE
+          : error?.response?.data?.message ||
+            error?.message ||
+            "Unable to sign in. Please try again.";
 
       toast.error(message, { toastId: "login-error" });
     } finally {
@@ -177,7 +155,7 @@ const Login = () => {
               </h1>
 
               <p className="mt-2 text-sm leading-6 text-slate-500">
-                {subtitle}
+                Sign in to your {COMPANY_NAME} account.
               </p>
             </div>
 
@@ -193,7 +171,7 @@ const Login = () => {
                   htmlFor="email"
                   className="mb-2 block text-sm font-medium text-slate-700"
                 >
-                  {emailLabel}
+                  Work email
                 </label>
 
                 <div className="relative">
@@ -209,38 +187,25 @@ const Login = () => {
                     type="email"
                     value={formData.email}
                     onChange={handleChange}
-                    onBlur={handleEmailBlur}
                     autoComplete="email"
-                    placeholder={emailPlaceholder}
+                    placeholder="name@bytesbrick.com"
                     disabled={loading}
-                    aria-invalid={showCompanyEmailNotice}
-                    aria-describedby={
-                      showCompanyEmailNotice
-                        ? "company-email-notice"
-                        : undefined
-                    }
                     className={inputClass}
                   />
                 </div>
 
-                {showCompanyEmailNotice && (
-                  <div
-                    id="company-email-notice"
-                    role="alert"
-                    className="mt-3 flex gap-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-5 text-amber-800"
-                  >
-                    <AlertCircle
-                      size={18}
-                      className="mt-0.5 shrink-0"
-                    />
-                    <p>
-                      Please use your official company email address
-                      (name@{COMPANY_EMAIL_DOMAIN}) to sign in.
-                      {FIRST_TIME_ACCESS_ENABLED &&
-                        " New employee? Use First-Time Employee Access below."}
-                    </p>
-                  </div>
-                )}
+                {/* Quiet, always-visible hint — never an error state, so a
+                    new employee never feels like they've done something
+                    wrong just by being new. */}
+                <p className="mt-2 flex items-start gap-1.5 text-xs leading-5 text-slate-400">
+                  <UserPlus
+                    size={14}
+                    className="mt-0.5 shrink-0"
+                    aria-hidden="true"
+                  />
+                  New employee without a company email yet? Sign in with
+                  the personal email HR registered for you.
+                </p>
               </div>
 
               {/* PASSWORD */}
@@ -316,24 +281,6 @@ const Login = () => {
                 )}
               </button>
             </form>
-
-            {/* FIRST-TIME ACCESS */}
-            {FIRST_TIME_ACCESS_ENABLED && (
-              <div className="mt-8 w-full border-t border-slate-200 pt-6 text-center">
-                <p className="text-sm text-slate-500">
-                  Don&apos;t have your {COMPANY_NAME} email yet?
-                </p>
-
-                <button
-                  type="button"
-                  onClick={() => navigate("/first-time-access")}
-                  disabled={loading}
-                  className="mt-3 flex h-12 w-full items-center justify-center rounded-lg border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 transition-colors hover:border-[#F28C28] hover:text-[#D87516] focus:outline-none focus:ring-2 focus:ring-[#F28C28]/20 disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  First-Time Employee Access
-                </button>
-              </div>
-            )}
 
             {/* FOOTER */}
             <div className="mt-9 w-full">

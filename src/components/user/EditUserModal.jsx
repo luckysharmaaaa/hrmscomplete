@@ -1,22 +1,34 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useFormik } from "formik";
-import { toast } from "react-toastify";
 import * as Yup from "yup";
+import { toast } from "react-toastify";
 
-import { createUser } from "../../services/userApi";
+import { updateUser } from "../../services/userApi";
+import {
+  getAddressByOwner,
+  createAddress,
+  updateAddress,
+} from "../../services/addressApi";
 import { uploadMedia } from "../../services/mediaApi";
+import { getMediaUsesByObject } from "../../services/mediaUsesApi";
 import { isCompanyEmail, COMPANY_EMAIL_DOMAIN } from "../../config/company";
 
 import UserForm from "./Userform";
 
-// ============================================================
-// VALIDATION SCHEMA
-// ============================================================
-// Defines validation rules for the User form fields.
-//
-// Email rule: provide EITHER an official company email (email) OR a
-// personal email (alternateEmail) for an employee who doesn't have
-// their company email yet — at least one is required.
+// Converts relative image path into complete backend URL
+const FILE_BASE_URL = "http://localhost:5000";
+
+const resolveImageUrl = (path) => {
+  if (!path) return null;
+  if (/^https?:\/\//i.test(path)) return path;
+
+  return `${FILE_BASE_URL}${path.startsWith("/") ? "" : "/"}${path}`;
+};
+
+// ========================= Validation =========================
+// Same rule as Add User: an official company email OR a personal
+// email is required — not both, and not neither.
+
 const validationSchema = Yup.object({
   firstName: Yup.string()
     .min(2, "First Name must be at least 2 characters")
@@ -51,30 +63,43 @@ const validationSchema = Yup.object({
     )
     .notRequired(),
 
-  password: Yup.string()
-    .min(8, "Password must be at least 8 characters")
-    .matches(/[A-Z]/, "Password must contain an uppercase letter")
-    .matches(/[0-9]/, "Password must contain a number")
-    .required("Password is required"),
+  // Password is optional in edit mode
+  password: Yup.string().test(
+    "password-strength",
+    "Password must be at least 8 characters, include one uppercase letter and one number",
+    (value) => {
+      if (!value) return true;
 
-  confirmPassword: Yup.string()
-    .oneOf([Yup.ref("password")], "Passwords do not match")
-    .required("Confirm Password is required"),
+      return (
+        value.length >= 8 &&
+        /[A-Z]/.test(value) &&
+        /[0-9]/.test(value)
+      );
+    },
+   ),
+  confirmPassword: Yup.string().when("password", {
+    is: (val) => val && val.length > 0,
+
+    then: (schema) =>
+      schema
+        .oneOf([Yup.ref("password")], "Passwords do not match")
+        .required("Confirm Password is required"),
+
+    otherwise: (schema) => schema.notRequired(),
+  }),
 
   phone: Yup.string()
     .matches(/^[0-9+\-\s()]{7,15}$/, "Enter a valid phone number")
     .required("Phone is required"),
 });
 
-// ============================================================
-// INITIAL ADDRESS STATE
-// ============================================================
-// Default values for the Address Information module.
-const initialAddressState = {
+// ========================= Empty Address =========================
+
+const emptyAddress = {
   addressType: "home",
-  countryID: 1,
+  countryID: "",
   countryCode: "IN",
-  phoneCode: "+91",
+  phoneCode: "91",
   houseNo: "",
   addressLine1: "",
   addressLine2: "",
@@ -89,385 +114,746 @@ const initialAddressState = {
   isDefault: false,
 };
 
-// ============================================================
-// ADD USER DRAWER COMPONENT
-// ============================================================
-const AddUserDrawer = ({ open, onClose, onSuccess, roles = [] }) => {
-  // ==========================================================
-  // USER STATUS
-  // ==========================================================
-  // Default status of a newly created user is Active (true).
-  const [status, setStatus] = useState(true);
+// Converts API address into UserForm format
+const mapAddressFromApi = (a) => ({
+  addressType: a.addressType ?? "",
+  countryID: a.countryID ?? "",
+  countryCode: a.countryCode ?? "",
+  phoneCode: a.phoneCode ?? "",
+  houseNo: a.houseNumber ?? "",
+  addressLine1: a.addressLine1 ?? "",
+  addressLine2: a.addressLine2 ?? "",
+  landmark: a.landmark ?? "",
+  locality: a.locality ?? "",
+  city: a.city ?? "",
+  state: a.state ?? "",
+  zipCode: a.zipCode ?? "",
+  phone: a.phone ?? "",
+  latitude: a.latitude ?? "",
+  longitude: a.longitude ?? "",
+  isDefault: !!a.isDefault,
+});
 
-  // ==========================================================
-  // SELECTED ROLES
-  // ==========================================================
-  // Stores the IDs of roles selected by the admin.
+// Converts UserForm address into API payload
+const buildAddressPayload = (addressData, ownerID) => ({
+  ownerType: "user",
+  ownerID,
+  addressType: addressData.addressType,
+  houseNumber: addressData.houseNo,
+  addressLine1: addressData.addressLine1,
+  addressLine2: addressData.addressLine2,
+  landmark: addressData.landmark,
+  locality: addressData.locality,
+  city: addressData.city,
+  state: addressData.state,
+  zipCode: addressData.zipCode,
+  countryID: addressData.countryID
+    ? Number(addressData.countryID)
+    : null,
+  countryCode: addressData.countryCode,
+  phoneCode: addressData.phoneCode,
+  phone: addressData.phone,
+  latitude: addressData.latitude
+    ? Number(addressData.latitude)
+    : null,
+  longitude: addressData.longitude
+    ? Number(addressData.longitude)
+    : null,
+  isDefault: addressData.isDefault,
+});
+
+// Prevent empty address from being created
+const isAddressBlank = (a) =>
+  !a.addressLine1 &&
+  !a.city &&
+  !a.state &&
+  !a.zipCode;
+
+// Check whether address was changed
+const addressesEqual = (a, b) =>
+  [
+    "addressType",
+    "houseNo",
+    "addressLine1",
+    "addressLine2",
+    "landmark",
+    "locality",
+    "city",
+    "state",
+    "zipCode",
+    "countryID",
+    "countryCode",
+    "phoneCode",
+    "phone",
+    "latitude",
+    "longitude",
+    "isDefault",
+  ].every(
+    (key) =>
+      String(a[key] ?? "") === String(b[key] ?? ""),
+  );
+
+// ========================= Edit User =========================
+
+const EditUserModal = ({
+  isOpen,
+  onClose,
+  editUser,
+  onSave,
+  roles = [],
+}) => {
+  // ========================= State =========================
+
+  const [visible, setVisible] = useState(false);
+
+  const [status, setStatus] = useState(false);
   const [selectedRoles, setSelectedRoles] = useState([]);
 
-  // ==========================================================
-  // PROFILE IMAGE STATE
-  // ==========================================================
-  // Stores the actual selected image file.
+  // Profile image
   const [profileImageFile, setProfileImageFile] = useState(null);
-
-  // Stores the temporary preview URL of the selected image.
   const [profileImagePreview, setProfileImagePreview] = useState(null);
+  const [existingMediaId, setExistingMediaId] = useState(null);
+  const [imageRemoved, setImageRemoved] = useState(false);
 
-  // ==========================================================
-  // ADDRESS STATE
-  // ==========================================================
-  // Stores all address-related form fields.
-  const [addressData, setAddressData] = useState(initialAddressState);
+  // Separate loading state for Save Image
+  const [isSavingImage, setIsSavingImage] = useState(false);
 
-  // ==========================================================
-  // ROLE CHANGE HANDLER
-  // ==========================================================
-  // Adds/removes a role ID from selectedRoles.
-  const handleRoleChange = (roleId) => {
-    setSelectedRoles((prev) =>
-      prev.includes(roleId)
-        ? prev.filter((item) => item !== roleId)
-        : [...prev, roleId]
-    );
-  };
-  // Saves the selected image file and creates a preview URL.
-  const handleImageChange = (file) => {
-    if (profileImagePreview?.startsWith("blob:")) {
-        URL.revokeObjectURL(profileImagePreview);
+  // Address
+  const [addressData, setAddressData] = useState(emptyAddress);
+  const [existingAddressId, setExistingAddressId] = useState(null);
+
+  // Main Update User loading state
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Original server data
+  const originalRef = useRef(null);
+
+  // Temporary browser image URL
+  const previewUrlRef = useRef(null);
+
+  // Still waiting on a company email (created with only a personal
+  // email). Drives the hint text under the Personal Email field.
+  const pendingCompanyEmail =
+    !editUser?.email && !!editUser?.alternateEmail;
+
+  // ========================= Drawer Animation =========================
+
+  useEffect(() => {
+    if (isOpen) {
+      setTimeout(() => setVisible(true), 10);
+    } else {
+      setVisible(false);
     }
+  }, [isOpen]);
 
-    setProfileImageFile(file);
-    setProfileImagePreview(URL.createObjectURL(file));
-    
-  };
+  // ========================= Load User =========================
 
-  // ==========================================================
-  // IMAGE CHANGE HANDLER
-  // ==========================================================
-  // ==========================================================
-  // REMOVE IMAGE HANDLER
-  // ==========================================================
-  // Removes the selected image and its preview.
-  const handleRemoveImage = () => {
-    setProfileImageFile(null);
-    setProfileImagePreview(null);
-  };
+  useEffect(() => {
+    if (!editUser) return;
 
-  // ==========================================================
-  // ADDRESS CHANGE HANDLER
-  // ==========================================================
-  // Updates addressData whenever an address field changes.
-  const handleAddressChange = (e) => {
-    const { name, value, type, checked } = e.target;
+    const roleIds = editUser.roles
+      ? editUser.roles.map((r) => Number(r.roleId))
+      : [];
 
-    setAddressData((prev) => ({
-      ...prev,
-      [name]: type === "checkbox" ? checked : value,
-    }));
-  };
+    const isActive = Number(editUser.status) === 1;
 
-  // ==========================================================
-  // RESET ALL FORM DATA
-  // ==========================================================
-  // Resets:
-  // - Formik user fields
-  // - Selected roles
-  // - Status
-  // - Profile image
-  // - Address information
-  const resetAll = (resetForm) => {
-    resetForm?.();
+    setStatus(isActive);
+    setSelectedRoles(roleIds);
 
-    setSelectedRoles([]);
-    setStatus(true);
-
+    setImageRemoved(false);
     setProfileImageFile(null);
     setProfileImagePreview(null);
 
-    setAddressData(initialAddressState);
-  };
+    let cancelled = false;
 
-  // ==========================================================
-  // FORMIK CONFIGURATION
-  // ==========================================================
-  const formik = useFormik({
-    // ----------------------------------------------------------
-    // INITIAL USER FORM VALUES
-    // ----------------------------------------------------------
-    initialValues: {
-      firstName: "",
-      lastName: "",
-      email: "",
-      alternateEmail: "",
-      password: "",
-      confirmPassword: "",
-      phone: "",
-    },
+    (async () => {
+      let loadedAddress = emptyAddress;
+      let loadedAddressId = null;
 
-    // ----------------------------------------------------------
-    // YUP VALIDATION
-    // ----------------------------------------------------------
-    validationSchema,
+      let loadedMediaId = null;
+      let loadedMediaUrl = null;
 
-    // ----------------------------------------------------------
-    // FORM SUBMIT
-    // ----------------------------------------------------------
-    onSubmit: async (values, { resetForm }) => {
+      // ========================= Address =========================
+
       try {
-        // ======================================================
-        // STEP 1: VALIDATE ROLE
-        // ======================================================
-        // At least one role must be selected.
-        if (selectedRoles.length === 0) {
-          toast.error("Please select at least one role.");
-          return;
+        const addressRes = await getAddressByOwner(
+          "user",
+          editUser.id,
+        );
+
+        const list = addressRes.data?.data || [];
+
+        const primary =
+          list.find((a) => a.isDefault) || list[0];
+
+        if (primary) {
+          loadedAddress = mapAddressFromApi(primary);
+          loadedAddressId = primary.id;
         }
+      } catch (error) {
+        console.error(
+          "Failed to load address",
+          error,
+        );
+      }
 
-        // ======================================================
-        // STEP 2: VALIDATE REQUIRED ADDRESS FIELDS
-        // ======================================================
-        // These fields are required before creating the user.
-        if (
-          !addressData.addressType ||
-          !addressData.addressLine1 ||
-          !addressData.city ||
-          !addressData.state ||
-          !addressData.zipCode ||
-          !addressData.countryID ||
-          !addressData.countryCode ||
-          !addressData.phoneCode
-        ) {
-          toast.error("Please fill all required address fields.");
-          return;
-        }
+      // ========================= Profile Image =========================
 
-        // ======================================================
-        // STEP 3: CREATE USER PAYLOAD
-        // ======================================================
-        // Creates the complete payload that will be sent to
-        // the createUser API.
-        const payload = {
-          firstName: values.firstName,
-          lastName: values.lastName,
+      try {
+        const usesRes = await getMediaUsesByObject(
+          "user",
+          editUser.id,
+        );
 
-          // Official company email. Left out entirely when the
-          // employee doesn't have one yet — alternateEmail carries
-          // their personal email instead.
-          email: values.email.trim() || null,
-          alternateEmail: values.alternateEmail.trim() || null,
+        const mapping =
+          (usesRes.data?.data || [])[0];
 
-          phone: values.phone,
-          password: values.password,
-
-          // User active/inactive status.
-          status,
-
-          // Selected role IDs.
-          roles: selectedRoles,
-
-          // Address information.
-          address: {
-            addressType: addressData.addressType,
-
-            // Backend expects houseNumber.
-            houseNumber: addressData.houseNo,
-
-            addressLine1: addressData.addressLine1,
-            addressLine2: addressData.addressLine2,
-            landmark: addressData.landmark,
-            locality: addressData.locality,
-
-            city: addressData.city,
-            state: addressData.state,
-            zipCode: addressData.zipCode,
-
-            // Convert country ID from string to number.
-            countryID: Number(addressData.countryID),
-
-            countryCode: addressData.countryCode,
-            phoneCode: addressData.phoneCode,
-            phone: addressData.phone,
-
-            // Convert latitude/longitude to numbers.
-            // Empty values are sent as null.
-            latitude: addressData.latitude
-              ? Number(addressData.latitude)
-              : null,
-
-            longitude: addressData.longitude
-              ? Number(addressData.longitude)
-              : null,
-
-            isDefault: addressData.isDefault,
-          },
-        };
-
-        // ======================================================
-        // STEP 4: CREATE USER
-        // ======================================================
-        const response = await createUser(payload);
-
-        console.log("Create User Response:", response.data);
-
-        // ======================================================
-        // STEP 5: CHECK USER CREATION RESPONSE
-        // ======================================================
-        if (response.data.success) {
-          // Get the newly created user's ID.
-          // This ID is required for profile image mapping.
-          const userId = response.data.data.id;
-
-          console.log("New User ID:", userId);
-
-          // ====================================================
-          // STEP 6: UPLOAD PROFILE IMAGE
-          // ====================================================
-          // Profile image is uploaded only if a file was selected.
-          if (profileImageFile) {
-            try {
-              // Create multipart/form-data object.
-              const formData = new FormData();
-
-              // Actual image file.
-              formData.append("file", profileImageFile);
-
-              // Media title.
-              formData.append("title", profileImageFile.name);
-
-              // Alternative text for the image.
-              formData.append(
-                "altText",
-                `${values.firstName} ${values.lastName}`.trim()
-              );
-
-              // =================================================
-              // MEDIA OBJECT MAPPING
-              // =================================================
-              // These values tell the backend that this media
-              // belongs to the newly created user.
-              formData.append("objectID", String(userId));
-              formData.append("objectType", "user");
-
-              console.log("Uploading profile image...");
-
-              // Debug FormData values.
-              for (const [key, value] of formData.entries()) {
-                console.log(`${key}:`, value);
-              }
-
-              // =================================================
-              // CALL MEDIA UPLOAD API
-              // =================================================
-              // "users" is passed as the module.
-              const mediaResponse = await uploadMedia(
-                formData,
-                "users"
-              );
-
-              console.log("Media Response:", mediaResponse.data);
-
-              // =================================================
-              // CHECK IMAGE UPLOAD RESPONSE
-              // =================================================
-              if (!mediaResponse.data.success) {
-                toast.error(
-                  mediaResponse.data.message ||
-                    "Failed to upload profile image."
-                );
-
-                return;
-              }
-
-              // Get uploaded media ID.
-              const mediaId = mediaResponse.data.data.mediaId;
-
-              console.log("Uploaded Media ID:", mediaId);
-            } catch (imageError) {
-              // =================================================
-              // IMAGE UPLOAD ERROR
-              // =================================================
-              console.error("Image Upload Error:", imageError);
-
-              toast.error(
-                imageError.response?.data?.message ||
-                  "Failed to upload profile image."
-              );
-
-              return;
-            }
-          }
-
-          // ====================================================
-          // STEP 7: SUCCESS
-          // ====================================================
-          toast.success(response.data.message);
-
-          // Reset the complete form.
-          resetAll(resetForm);
-
-          // Refresh parent/user list if provided.
-          onSuccess?.();
-
-          // Close the drawer.
-          onClose();
-        } else {
-          // ====================================================
-          // USER CREATION FAILED
-          // ====================================================
-          toast.error(
-            response.data.message || "Failed to create user."
+        if (mapping?.fileURL) {
+          loadedMediaId = mapping.mediaID;
+          loadedMediaUrl = resolveImageUrl(
+            mapping.fileURL,
           );
         }
       } catch (error) {
-        // ======================================================
-        // GENERAL API ERROR
-        // ======================================================
-        console.error(error);
+        console.error(
+          "Failed to load profile image",
+          error,
+        );
+      }
+
+      if (cancelled) return;
+
+      // Put server data into state
+      setAddressData(loadedAddress);
+      setExistingAddressId(loadedAddressId);
+
+      setExistingMediaId(loadedMediaId);
+      setProfileImagePreview(loadedMediaUrl);
+
+      // Store original data
+      originalRef.current = {
+        firstName: editUser.firstName || "",
+        lastName: editUser.lastName || "",
+        email: editUser.email || "",
+        alternateEmail: editUser.alternateEmail || "",
+        phone: editUser.phone || "",
+
+        status: isActive,
+
+        roles: [...roleIds].sort(
+          (a, b) => a - b,
+        ),
+
+        address: loadedAddress,
+
+        mediaId: loadedMediaId,
+      };
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [editUser]);
+
+  // ========================= Modal Close =========================
+
+  useEffect(() => {
+    if (!isOpen) {
+      setProfileImageFile(null);
+      setImageRemoved(false);
+    }
+  }, [isOpen]);
+
+  // ========================= Role Change =========================
+
+  const handleRoleChange = (roleId) => {
+    setSelectedRoles((prev) =>
+      prev.includes(roleId)
+        ? prev.filter((id) => id !== roleId)
+        : [...prev, roleId],
+    );
+  };
+
+  // ========================= Image Change =========================
+
+  const handleImageChange = (file) => {
+    // Remove previous temporary URL
+    if (previewUrlRef.current) {
+      URL.revokeObjectURL(
+        previewUrlRef.current,
+      );
+    }
+
+    // Create local preview
+    const preview = URL.createObjectURL(file);
+
+    previewUrlRef.current = preview;
+
+    setProfileImageFile(file);
+    setProfileImagePreview(preview);
+
+    // New image means it is not removed
+    setImageRemoved(false);
+  };
+
+  // Clean temporary preview URL
+  useEffect(() => {
+    return () => {
+      if (previewUrlRef.current) {
+        URL.revokeObjectURL(
+          previewUrlRef.current,
+        );
+      }
+    };
+  }, []);
+
+  // ========================= Remove Image =========================
+
+  const handleRemoveImage = () => {
+    setProfileImageFile(null);
+    setProfileImagePreview(null);
+
+    // Existing image should be removed when Save Image is clicked
+    if (existingMediaId) {
+      setImageRemoved(true);
+    }
+  };
+
+  // ========================= SAVE PROFILE IMAGE =========================
+  //
+  // This is completely separate from the main Update User button.
+  //
+  // Choose Image -> preview only
+  // Save Image -> upload + save image immediately
+
+  const handleSaveProfileImage = async () => {
+    if (!editUser) return;
+
+    // Nothing changed
+    if (!profileImageFile && !imageRemoved) {
+      toast.info("No profile image changes to save.");
+      return;
+    }
+
+    setIsSavingImage(true);
+
+    try {
+      // ========================= New Image =========================
+
+      if (profileImageFile) {
+        const formData = new FormData();
+
+        formData.append(
+          "file",
+          profileImageFile,
+        );
+
+        formData.append(
+          "title",
+          profileImageFile.name,
+        );
+
+        formData.append(
+          "altText",
+          `${formik.values.firstName} ${formik.values.lastName}`.trim(),
+        );
+
+        // Upload image to media table
+        const mediaResponse = await uploadMedia(
+          formData,
+          "users",
+        );
+
+        if (!mediaResponse.data.success) {
+          toast.error(
+            mediaResponse.data.message ||
+              "Failed to upload profile image.",
+          );
+
+          return;
+        }
+
+        const newMediaId =
+          mediaResponse.data.data.mediaId;
+
+        // Link uploaded media to this user
+        const userResponse = await updateUser(
+          editUser.id,
+          {
+            mediaId: newMediaId,
+          },
+        );
+
+        if (!userResponse.data.success) {
+          toast.error(
+            userResponse.data.message ||
+              "Failed to save profile image.",
+          );
+
+          return;
+        }
+
+        // Update local state after successful save
+        setExistingMediaId(newMediaId);
+        setImageRemoved(false);
+        setProfileImageFile(null);
+
+        // Update original value
+        if (originalRef.current) {
+          originalRef.current.mediaId =
+            newMediaId;
+        }
+
+        toast.success(
+          "Profile image updated successfully.",
+        );
+      }
+
+      // ========================= Remove Image =========================
+
+      else if (imageRemoved) {
+        const response = await updateUser(
+          editUser.id,
+          {
+            mediaId: null,
+          },
+        );
+
+        if (!response.data.success) {
+          toast.error(
+            response.data.message ||
+              "Failed to remove profile image.",
+          );
+
+          return;
+        }
+
+        // Clear local image state
+        setExistingMediaId(null);
+        setProfileImageFile(null);
+        setProfileImagePreview(null);
+        setImageRemoved(false);
+
+        // Update original value
+        if (originalRef.current) {
+          originalRef.current.mediaId = null;
+        }
+
+        toast.success(
+          "Profile image removed successfully.",
+        );
+      }
+
+      // Refresh parent/table data if needed
+      onSave?.();
+
+    } catch (error) {
+      console.error(
+        "Profile Image Error:",
+        error,
+      );
+
+      toast.error(
+        error.response?.data?.message ||
+          "Failed to update profile image.",
+      );
+    } finally {
+      setIsSavingImage(false);
+    }
+  };
+
+  // ========================= Address Change =========================
+
+  const handleAddressChange = (e) => {
+    const {
+      name,
+      value,
+      type,
+      checked,
+    } = e.target;
+
+    setAddressData((prev) => ({
+      ...prev,
+      [name]:
+        type === "checkbox"
+          ? checked
+          : value,
+    }));
+  };
+
+  // ========================= Formik =========================
+
+  const formik = useFormik({
+    enableReinitialize: true,
+
+    initialValues: {
+      firstName: editUser?.firstName || "",
+      lastName: editUser?.lastName || "",
+      email: editUser?.email || "",
+      alternateEmail: editUser?.alternateEmail || "",
+      phone: editUser?.phone || "",
+      password: "",
+      confirmPassword: "",
+    },
+
+    validationSchema,
+
+    // ========================= MAIN UPDATE =========================
+
+    onSubmit: async (values) => {
+      if (
+        !editUser ||
+        !originalRef.current
+      ) {
+        return;
+      }
+
+      // At least one role required
+      if (selectedRoles.length === 0) {
+        toast.warning(
+          "Please select at least one role.",
+        );
+
+        return;
+      }
+
+      setIsSubmitting(true);
+
+      try {
+        const original =
+          originalRef.current;
+
+        // Only changed fields go here
+        const payload = {};
+
+        // ========================= Basic Fields =========================
+
+        if (
+          values.firstName.trim() !==
+          original.firstName
+        ) {
+          payload.firstName =
+            values.firstName.trim();
+        }
+
+        if (
+          values.lastName.trim() !==
+          original.lastName
+        ) {
+          payload.lastName =
+            values.lastName.trim();
+        }
+
+        // Only send email when it actually has a value AND changed —
+        // never send an accidental blank that would clear it.
+        const trimmedEmail = values.email.trim();
+
+        if (
+          trimmedEmail &&
+          trimmedEmail !== original.email
+        ) {
+          payload.email = trimmedEmail;
+        }
+
+        // Personal email CAN be intentionally cleared (e.g. once the
+        // official email has been assigned), so blank is allowed here.
+        const trimmedAlternateEmail =
+          values.alternateEmail.trim();
+
+        if (
+          trimmedAlternateEmail !==
+          original.alternateEmail
+        ) {
+          payload.alternateEmail =
+            trimmedAlternateEmail || null;
+        }
+
+        if (
+          values.phone.trim() !==
+          original.phone
+        ) {
+          payload.phone =
+            values.phone.trim();
+        }
+
+        // ========================= Password =========================
+
+        if (
+          values.password.trim() !== ""
+        ) {
+          payload.password =
+            values.password;
+        }
+
+        // ========================= Status =========================
+
+        if (
+          status !== original.status
+        ) {
+          payload.status =
+            status ? "1" : "0";
+        }
+
+        // ========================= Roles =========================
+
+        const sortedSelected =
+          [...selectedRoles].sort(
+            (a, b) => a - b,
+          );
+
+        const rolesChanged =
+          sortedSelected.length !==
+            original.roles.length ||
+          sortedSelected.some(
+            (id, i) =>
+              id !== original.roles[i],
+          );
+
+        if (rolesChanged) {
+          payload.roles =
+            selectedRoles;
+        }
+
+        // IMPORTANT:
+        // Profile image is NOT handled here anymore.
+        // It has its own "Save Image" button.
+
+        // ========================= Update User =========================
+
+        if (
+          Object.keys(payload).length > 0
+        ) {
+          const response =
+            await updateUser(
+              editUser.id,
+              payload,
+            );
+
+          if (
+            !response.data.success
+          ) {
+            toast.error(
+              response.data.message ||
+                "Failed to update user.",
+            );
+
+            return;
+          }
+        }
+
+        // ========================= Address =========================
+
+        const addressChanged =
+          !addressesEqual(
+            addressData,
+            original.address,
+          );
+
+        if (
+          addressChanged &&
+          !isAddressBlank(addressData)
+        ) {
+          const addressPayload =
+            buildAddressPayload(
+              addressData,
+              editUser.id,
+            );
+
+          if (existingAddressId) {
+            await updateAddress(
+              existingAddressId,
+              addressPayload,
+            );
+          } else {
+            await createAddress(
+              addressPayload,
+            );
+          }
+        }
+
+        // ========================= Success =========================
+
+        toast.success(
+          "User updated successfully.",
+        );
+
+        onSave?.();
+        onClose();
+
+      } catch (error) {
+        console.error(
+          "Update Error:",
+          error,
+        );
 
         toast.error(
-          error.response?.data?.message || "Failed to create user."
+          error.response?.data?.message ||
+            "Failed to update user.",
         );
+      } finally {
+        setIsSubmitting(false);
       }
     },
   });
 
-  // ==========================================================
-  // CLOSE DRAWER HANDLER
-  // ==========================================================
-  // Resets the form before closing the drawer.
-  const handleClose = () => {
-    resetAll(formik.resetForm);
-    onClose();
-  };
+  // Don't render when drawer is closed
+  if (!isOpen && !visible) {
+    return null;
+  }
 
-  // ============================================================
-  // RENDER USER FORM
-  // ============================================================
-  // UserForm contains the actual UI.
-  // AddUserDrawer handles the state and API/business logic.
+  // ========================= UI =========================
+
   return (
     <UserForm
-      open={open}
-      mode="add"
+      open={visible}
+      mode="edit"
       formik={formik}
-      isPasswordOptional={false}
+      isPasswordOptional
+      pendingCompanyEmail={pendingCompanyEmail}
       roles={roles}
       selectedRoles={selectedRoles}
       onRoleChange={handleRoleChange}
-      profileImagePreview={profileImagePreview}
-      onImageChange={handleImageChange}
-      onRemoveImage={handleRemoveImage}
+
+      // Profile image
+      profileImagePreview={
+        profileImagePreview
+      }
+      onImageChange={
+        handleImageChange
+      }
+      onRemoveImage={
+        handleRemoveImage
+      }
+
+      // Separate image save
+      onSaveProfileImage={
+        handleSaveProfileImage
+      }
+      isSavingImage={
+        isSavingImage
+      }
+
+      // Address
       addressData={addressData}
-      onAddressChange={handleAddressChange}
+      onAddressChange={
+        handleAddressChange
+      }
+
+      // Status
       status={status}
-      onStatusToggle={() => setStatus((s) => !s)}
-      onClose={handleClose}
-      isSubmitting={formik.isSubmitting}
-      submitLabel="Add User"
-      submittingLabel="Adding..."
+      onStatusToggle={() =>
+        setStatus((s) => !s)
+      }
+
+      // Modal
+      onClose={onClose}
+
+      // Main Update User button
+      isSubmitting={isSubmitting}
+      submitLabel="Update User"
+      submittingLabel="Updating..."
     />
   );
 };
 
-export default AddUserDrawer;
+export default EditUserModal;

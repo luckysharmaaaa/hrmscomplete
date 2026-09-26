@@ -83,17 +83,17 @@ function StatusToggle({ isActive, onClick, disabled }) {
       title="Toggle status"
       aria-pressed={isActive}
       aria-label={isActive ? "Active — click to deactivate" : "Inactive — click to activate"}
-      className="flex items-center gap-1.5 transition disabled:opacity-50 disabled:cursor-not-allowed rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-300"
+      className="flex items-center gap-1.5 transition disabled:opacity-50 disabled:cursor-not-allowed rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-500/40"
     >
       {isActive ? (
         <>
-          <ToggleRight size={22} className="text-green-500" />
-          <span className="text-xs text-green-600 font-medium">Active</span>
+          <ToggleRight size={22} className="text-success-500" />
+          <span className="text-xs text-success-600 font-medium">Active</span>
         </>
       ) : (
         <>
-          <ToggleLeft size={22} className="text-gray-300" />
-          <span className="text-xs text-gray-400 font-medium">Inactive</span>
+          <ToggleLeft size={22} className="text-text-disabled" />
+          <span className="text-xs text-text-disabled font-medium">Inactive</span>
         </>
       )}
     </button>
@@ -103,14 +103,14 @@ function StatusToggle({ isActive, onClick, disabled }) {
 // One of the 3 summary boxes at the top (Total / Active / Inactive)
 function StatCard({ label, value, colorClasses, icon: Icon = Layers }) {
   return (
-    <div className="bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow px-5 py-4 flex items-center gap-4">
+    <div className="bg-surface rounded-xl border border-border-subtle shadow-sm hover:shadow-md transition-shadow duration-fast ease-standard px-5 py-4 flex items-center gap-4">
       <div className={`p-2.5 rounded-lg ${colorClasses}`}>
         <Icon size={18} />
       </div>
 
       <div>
-        <p className="text-2xl font-bold text-gray-800 tabular-nums">{value}</p>
-        <p className="text-xs text-gray-400">{label}</p>
+        <p className="text-2xl font-bold text-text-primary tabular-nums">{value}</p>
+        <p className="text-xs text-text-secondary">{label}</p>
       </div>
     </div>
   );
@@ -137,7 +137,7 @@ function ModuleRow({
 
   return (
     <>
-      <tr className="hover:bg-blue-50/50 transition group">
+      <tr className="hover:bg-primary-50 transition-colors duration-fast ease-standard group">
         {/* Module name + expand arrow + indentation */}
         <td className="px-5 py-3">
           <div
@@ -147,13 +147,13 @@ function ModuleRow({
             {hasChildren ? (
               <button
                 onClick={() => setIsExpanded((prev) => !prev)}
-                className="text-gray-400 hover:text-blue-500 transition shrink-0 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-300"
+                className="text-text-disabled hover:text-primary-700 transition-colors duration-fast ease-standard shrink-0 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-200"
                 aria-label={isExpanded ? `Collapse ${node.moduleName}` : `Expand ${node.moduleName}`}
                 aria-expanded={isExpanded}
               >
                 <ChevronRight
                   size={14}
-                  className={`transition-transform ${isExpanded ? "rotate-90" : ""}`}
+                  className={`transition-transform duration-fast ease-standard ${isExpanded ? "rotate-90" : ""}`}
                 />
               </button>
             ) : (
@@ -161,25 +161,25 @@ function ModuleRow({
             )}
 
             {level === 0 ? (
-              <FolderOpen size={15} className="text-blue-500 shrink-0" />
+              <FolderOpen size={15} className="text-primary-700 shrink-0" />
             ) : (
-              <FileText size={14} className="text-sky-300 shrink-0" />
+              <FileText size={14} className="text-primary-300 shrink-0" />
             )}
 
             <span
               className={
                 level === 0
-                  ? "text-sm font-semibold text-gray-800"
+                  ? "text-sm font-semibold text-text-primary"
                   : level === 1
-                    ? "text-sm font-medium text-gray-600"
-                    : "text-sm text-gray-500"
+                    ? "text-sm font-medium text-text-secondary"
+                    : "text-sm text-text-secondary"
               }
             >
               {node.moduleName}
             </span>
 
             {hasChildren && (
-              <span className="text-[10px] text-blue-500 bg-blue-50 border border-blue-100 rounded-full px-1.5 py-0.5 tabular-nums font-semibold">
+              <span className="text-[10px] text-primary-700 bg-primary-50 border border-primary-100 rounded-full px-1.5 py-0.5 tabular-nums font-semibold">
                 {node.children.length}
               </span>
             )}
@@ -187,24 +187,24 @@ function ModuleRow({
         </td>
 
         {/* Parent name */}
-        <td className="px-5 py-3 text-sm text-gray-400">
+        <td className="px-5 py-3 text-sm text-text-secondary">
           {node.parentId ? findModuleName(allModules, node.parentId) : "—"}
         </td>
 
         {/* Route path */}
         <td className="px-5 py-3">
           {node.path ? (
-            <code className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded font-mono">
+            <code className="text-xs bg-background text-text-secondary px-2 py-0.5 rounded font-mono">
               {node.path}
             </code>
           ) : (
-            <span className="text-gray-300 text-xs">—</span>
+            <span className="text-text-disabled text-xs">—</span>
           )}
         </td>
 
         {/* Icon name */}
-        <td className="px-5 py-3 text-sm text-gray-400 font-mono">
-          {node.icon || <span className="text-gray-300">—</span>}
+        <td className="px-5 py-3 text-sm text-text-secondary font-mono">
+          {node.icon || <span className="text-text-disabled">—</span>}
         </td>
 
         {/* Status toggle */}
@@ -218,10 +218,10 @@ function ModuleRow({
 
         {/* Edit / Delete buttons — visible on row hover or keyboard focus */}
         <td className="px-5 py-3">
-          <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition">
+          <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity duration-fast ease-standard">
             <button
               onClick={() => onEdit(node)}
-              className="p-1.5 rounded-lg hover:bg-blue-50 hover:text-blue-500 text-gray-400 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-300"
+              className="p-1.5 rounded-lg hover:bg-primary-50 hover:text-primary-700 text-text-disabled transition-colors duration-fast ease-standard focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-200"
               title="Edit"
               aria-label={`Edit ${node.moduleName}`}
             >
@@ -229,7 +229,7 @@ function ModuleRow({
             </button>
             <button
               onClick={() => onDelete(node)}
-              className="p-1.5 rounded-lg hover:bg-red-50 hover:text-red-500 text-gray-400 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-300"
+              className="p-1.5 rounded-lg hover:bg-danger-50 hover:text-danger-500 text-text-disabled transition-colors duration-fast ease-standard focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-danger-500/30"
               title="Delete"
               aria-label={`Delete ${node.moduleName}`}
             >
@@ -268,7 +268,7 @@ function SkeletonRows() {
         <tr key={i}>
           <td className="px-5 py-3" colSpan={6}>
             <div
-              className="h-4 bg-gray-100 rounded animate-pulse"
+              className="h-4 bg-border-subtle rounded animate-pulse"
               style={{ width: `${70 - i * 8}%`, marginLeft: i > 2 ? 20 : 0 }}
             />
           </td>
@@ -299,7 +299,7 @@ function ModalShell({ onClose, children, labelledBy, maxWidth = "max-w-md" }) {
         role="dialog"
         aria-modal="true"
         aria-labelledby={labelledBy}
-        className={`relative bg-white rounded-2xl shadow-2xl w-full ${maxWidth} mx-4 z-10`}
+        className={`relative bg-surface rounded-lg shadow-lg w-full ${maxWidth} mx-4 z-10`}
       >
         {children}
       </div>
@@ -369,18 +369,18 @@ function ModuleFormModal({ isOpen, onClose, editData, allModules, onSave }) {
   return (
     <ModalShell onClose={onClose} labelledBy="module-form-title" maxWidth="max-w-md">
       {/* Header */}
-      <div className="flex items-center justify-between p-5 border-b border-gray-100 bg-white">
+      <div className="flex items-center justify-between p-5 border-b border-border-subtle bg-surface">
         <div className="flex items-center gap-3.5">
-          <div className="p-2.5 bg-orange-50 text-orange-500 rounded-xl shrink-0 shadow-sm border border-orange-100/30">
+          <div className="p-2.5 bg-accent-500/10 text-accent-500 rounded-xl shrink-0 shadow-sm border border-accent-500/20">
             <Layers size={22} />
           </div>
 
           <div>
-            <h2 id="module-form-title" className="text-2xl font-bold text-[#0F265C] tracking-tight leading-tight">
+            <h2 id="module-form-title" className="text-2xl font-bold text-primary-700 tracking-tight leading-tight">
               {editData ? "Edit Module" : "Add Module"}
             </h2>
 
-            <p className="text-xs text-gray-400 font-medium mt-1">
+            <p className="text-xs text-text-secondary font-medium mt-1">
               {editData
                 ? "Update configuration parameters for this module"
                 : "Register a new feature module in the system"}
@@ -389,7 +389,7 @@ function ModuleFormModal({ isOpen, onClose, editData, allModules, onSave }) {
         </div>
         <button
           onClick={onClose}
-          className="text-gray-400 hover:text-gray-600 transition p-1 rounded-lg hover:bg-gray-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-300"
+          className="text-text-disabled hover:text-text-primary transition-colors duration-fast ease-standard p-1 rounded-lg hover:bg-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-500/40"
           aria-label="Close dialog"
         >
           <X size={18} />
@@ -401,7 +401,7 @@ function ModuleFormModal({ isOpen, onClose, editData, allModules, onSave }) {
         {formError && (
           <div
             role="alert"
-            className="flex items-start gap-2 bg-red-50 border border-red-100 text-red-600 text-xs rounded-lg px-3.5 py-2.5"
+            className="flex items-start gap-2 bg-danger-50 border border-danger-500/20 text-danger-600 text-xs rounded-lg px-3.5 py-2.5"
           >
             <AlertTriangle size={14} className="shrink-0 mt-0.5" />
             <span>{formError}</span>
@@ -409,8 +409,8 @@ function ModuleFormModal({ isOpen, onClose, editData, allModules, onSave }) {
         )}
 
         <div>
-          <label htmlFor="moduleName" className="block text-xs font-semibold text-gray-500 mb-1.5 uppercase tracking-wide">
-            Module Name <span className="text-red-400">*</span>
+          <label htmlFor="moduleName" className="block text-xs font-semibold text-text-secondary mb-1.5 uppercase tracking-wide">
+            Module Name <span className="text-danger-500">*</span>
           </label>
           <input
             id="moduleName"
@@ -419,12 +419,12 @@ function ModuleFormModal({ isOpen, onClose, editData, allModules, onSave }) {
             value={form.moduleName}
             onChange={(e) => setForm({ ...form, moduleName: e.target.value })}
             placeholder="e.g. Leave Management"
-            className="w-full border border-gray-200 rounded-lg px-3.5 py-2.5 text-sm text-gray-700 outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100 transition"
+            className="w-full border border-border-subtle rounded-lg px-3.5 py-2.5 text-sm text-text-primary outline-none focus:border-accent-500 focus:ring-2 focus:ring-accent-500/10 transition-colors duration-fast ease-standard"
           />
         </div>
 
         <div>
-          <label htmlFor="parentId" className="block text-xs font-semibold text-gray-500 mb-1.5 uppercase tracking-wide">
+          <label htmlFor="parentId" className="block text-xs font-semibold text-text-secondary mb-1.5 uppercase tracking-wide">
             Parent Module
           </label>
           <select
@@ -433,7 +433,7 @@ function ModuleFormModal({ isOpen, onClose, editData, allModules, onSave }) {
             onChange={(e) =>
               setForm({ ...form, parentId: e.target.value || null })
             }
-            className="w-full border border-gray-200 rounded-lg px-3.5 py-2.5 text-sm text-gray-700 outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100 transition bg-white"
+            className="w-full border border-border-subtle rounded-lg px-3.5 py-2.5 text-sm text-text-primary outline-none focus:border-accent-500 focus:ring-2 focus:ring-accent-500/10 transition-colors duration-fast ease-standard bg-surface"
           >
             <option value="">— None (Top Level) —</option>
             {parentOptions.map((m) => (
@@ -445,7 +445,7 @@ function ModuleFormModal({ isOpen, onClose, editData, allModules, onSave }) {
         </div>
 
         <div>
-          <label htmlFor="path" className="block text-xs font-semibold text-gray-500 mb-1.5 uppercase tracking-wide">
+          <label htmlFor="path" className="block text-xs font-semibold text-text-secondary mb-1.5 uppercase tracking-wide">
             Route Path
           </label>
           <input
@@ -453,12 +453,12 @@ function ModuleFormModal({ isOpen, onClose, editData, allModules, onSave }) {
             value={form.path ?? ""}
             onChange={(e) => setForm({ ...form, path: e.target.value })}
             placeholder="e.g. /apply-leave"
-            className="w-full border border-gray-200 rounded-lg px-3.5 py-2.5 text-sm text-gray-700 font-mono outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100 transition"
+            className="w-full border border-border-subtle rounded-lg px-3.5 py-2.5 text-sm text-text-primary font-mono outline-none focus:border-accent-500 focus:ring-2 focus:ring-accent-500/10 transition-colors duration-fast ease-standard"
           />
         </div>
 
         <div>
-          <label htmlFor="icon" className="block text-xs font-semibold text-gray-500 mb-1.5 uppercase tracking-wide">
+          <label htmlFor="icon" className="block text-xs font-semibold text-text-secondary mb-1.5 uppercase tracking-wide">
             Icon Name
           </label>
           <input
@@ -466,23 +466,23 @@ function ModuleFormModal({ isOpen, onClose, editData, allModules, onSave }) {
             value={form.icon ?? ""}
             onChange={(e) => setForm({ ...form, icon: e.target.value })}
             placeholder="e.g. LayoutDashboard"
-            className="w-full border border-gray-200 rounded-lg px-3.5 py-2.5 text-sm text-gray-700 font-mono outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100 transition"
+            className="w-full border border-border-subtle rounded-lg px-3.5 py-2.5 text-sm text-text-primary font-mono outline-none focus:border-accent-500 focus:ring-2 focus:ring-accent-500/10 transition-colors duration-fast ease-standard"
           />
-          <p className="text-[11px] text-gray-400 mt-1">
+          <p className="text-[11px] text-text-secondary mt-1">
             Use Lucide icon component names (e.g. FileText, Users)
           </p>
         </div>
 
-        <div className="flex items-center justify-between bg-gray-50 rounded-xl px-4 py-3">
+        <div className="flex items-center justify-between bg-background rounded-xl px-4 py-3">
           <div>
-            <p className="text-sm font-medium text-gray-700">Active Status</p>
-            <p className="text-xs text-gray-400">Module will appear in navigation when active</p>
+            <p className="text-sm font-medium text-text-primary">Active Status</p>
+            <p className="text-xs text-text-secondary">Module will appear in navigation when active</p>
           </div>
           <button type="button" onClick={toggleFormStatus} aria-pressed={form.status === "1"} aria-label="Toggle active status">
             {form.status === "1" ? (
-              <ToggleRight size={28} className="text-green-500" />
+              <ToggleRight size={28} className="text-success-500" />
             ) : (
-              <ToggleLeft size={28} className="text-gray-300" />
+              <ToggleLeft size={28} className="text-text-disabled" />
             )}
           </button>
         </div>
@@ -492,14 +492,14 @@ function ModuleFormModal({ isOpen, onClose, editData, allModules, onSave }) {
             type="button"
             onClick={onClose}
             disabled={isSaving}
-            className="px-6 py-2.5 border border-gray-300 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-100 bg-white transition disabled:opacity-50"
+            className="px-6 py-2.5 border border-border-strong text-text-primary rounded-lg text-sm font-medium hover:bg-background bg-surface transition-colors duration-fast ease-standard disabled:opacity-50"
           >
             Cancel
           </button>
           <button
             type="submit"
             disabled={!canSubmit}
-            className="flex-1 px-6 py-2.5 bg-orange-500 hover:bg-orange-600 text-white rounded-lg text-sm font-semibold transition shadow-sm disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            className="flex-1 px-6 py-2.5 bg-accent-500 hover:bg-accent-600 text-white rounded-lg text-sm font-semibold transition-colors duration-fast ease-standard shadow-sm disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
             {isSaving && <Loader2 size={15} className="animate-spin" />}
             {isSaving ? "Saving…" : editData ? "Update Module" : "Add Module"}
@@ -532,20 +532,20 @@ function DeleteConfirmModal({ module, onClose, onConfirm, childCount }) {
     <ModalShell onClose={onClose} labelledBy="delete-module-title" maxWidth="max-w-sm">
       <div className="p-6">
         <div className="flex flex-col items-center text-center gap-3">
-          <div className="p-3 bg-red-50 rounded-full">
-            <AlertTriangle size={24} className="text-red-500" />
+          <div className="p-3 bg-danger-50 rounded-full">
+            <AlertTriangle size={24} className="text-danger-500" />
           </div>
 
-          <h3 id="delete-module-title" className="text-base font-semibold text-gray-800">
+          <h3 id="delete-module-title" className="text-base font-semibold text-text-primary">
             Delete Module?
           </h3>
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-text-secondary">
             Are you sure you want to delete{" "}
-            <span className="font-semibold text-gray-700">"{module.moduleName}"</span>? This action cannot be undone.
+            <span className="font-semibold text-text-primary">"{module.moduleName}"</span>? This action cannot be undone.
           </p>
 
           {childCount > 0 && (
-            <p className="text-xs text-amber-700 bg-amber-50 border border-amber-100 rounded-lg px-3 py-2 text-left">
+            <p className="text-xs text-warning-600 bg-warning-50 border border-warning-500/20 rounded-lg px-3 py-2 text-left">
               This module has {childCount} sub-module{childCount !== 1 ? "s" : ""}. They won't be
               deleted, but will move up to the top level of the menu.
             </p>
@@ -556,14 +556,14 @@ function DeleteConfirmModal({ module, onClose, onConfirm, childCount }) {
           <button
             onClick={onClose}
             disabled={isDeleting}
-            className="flex-1 border border-gray-200 text-gray-600 py-2.5 rounded-lg text-sm font-medium hover:bg-gray-50 transition disabled:opacity-50"
+            className="flex-1 border border-border-subtle text-text-secondary py-2.5 rounded-lg text-sm font-medium hover:bg-background transition-colors duration-fast ease-standard disabled:opacity-50"
           >
             Cancel
           </button>
           <button
             onClick={handleConfirm}
             disabled={isDeleting}
-            className="flex-1 bg-red-500 text-white py-2.5 rounded-lg text-sm font-semibold hover:bg-red-600 transition disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            className="flex-1 bg-danger-500 text-white py-2.5 rounded-lg text-sm font-semibold hover:bg-danger-600 transition-colors duration-fast ease-standard disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
             {isDeleting && <Loader2 size={14} className="animate-spin" />}
             {isDeleting ? "Deleting…" : "Yes, Delete"}
@@ -686,27 +686,27 @@ export default function Modules() {
   // --- render ---
   return (
     <div className="space-y-6">
-      {/* Header banner */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#0F265C] via-[#173a82] to-[#2563eb] px-6 py-7 shadow-lg shadow-blue-900/10">
-        {/* Decorative circles, echoing the PunchCard header treatment */}
+      {/* Header banner — brand navy gradient, shared style with every other page banner */}
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-brand px-6 py-7 shadow-lg">
+        {/* Decorative circles */}
         <div className="absolute top-0 right-0 w-40 h-40 bg-white/5 rounded-full -translate-y-1/3 translate-x-1/4" />
-        <div className="absolute bottom-0 left-10 w-24 h-24 bg-sky-400/10 rounded-full translate-y-1/2" />
+        <div className="absolute bottom-0 left-10 w-24 h-24 bg-white/5 rounded-full translate-y-1/2" />
 
         <div className="relative flex items-center justify-between flex-wrap gap-4">
           <div className="flex items-center gap-3.5">
             <div className="p-3 bg-white/10 border border-white/10 rounded-xl backdrop-blur-sm shrink-0">
-              <Layers size={22} className="text-sky-300" />
+              <Layers size={22} className="text-white" />
             </div>
             <div>
               <h1 className="text-2xl font-bold text-white tracking-tight">Modules</h1>
-              <p className="text-sm text-white/60 mt-0.5">
+              <p className="text-sm text-white/70 mt-0.5">
                 Manage navigation modules and their hierarchy
               </p>
             </div>
           </div>
           <button
             onClick={openAddForm}
-            className="flex items-center gap-2 px-4 py-2.5 bg-orange-500 text-white text-sm font-semibold rounded-lg hover:bg-orange-600 transition shadow-sm shadow-orange-900/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-300"
+            className="flex items-center gap-2 px-4 py-2.5 bg-accent-500 text-white text-sm font-semibold rounded-lg hover:bg-accent-600 transition-colors duration-fast ease-standard shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
           >
             <Plus size={16} />
             Add Module
@@ -716,30 +716,30 @@ export default function Modules() {
 
       {/* Stat cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <StatCard label="Total Modules" value={modules.length} colorClasses="bg-gradient-to-br from-blue-50 to-sky-50 text-blue-600" icon={Layers} />
-        <StatCard label="Active" value={activeCount} colorClasses="bg-gradient-to-br from-emerald-50 to-green-50 text-emerald-600" icon={ToggleRight} />
-        <StatCard label="Inactive" value={inactiveCount} colorClasses="bg-gradient-to-br from-rose-50 to-red-50 text-rose-500" icon={ToggleLeft} />
+        <StatCard label="Total Modules" value={modules.length} colorClasses="bg-primary-50 text-primary-700" icon={Layers} />
+        <StatCard label="Active" value={activeCount} colorClasses="bg-success-50 text-success-600" icon={ToggleRight} />
+        <StatCard label="Inactive" value={inactiveCount} colorClasses="bg-danger-50 text-danger-500" icon={ToggleLeft} />
       </div>
 
       {/* Table card */}
-      <div className="bg-white rounded-xl shadow-md shadow-gray-200/60 border border-gray-100">
+      <div className="bg-surface rounded-xl shadow-md border border-border-subtle">
         {/* Toolbar: title + search box */}
-        <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between gap-4 flex-wrap">
-          <h2 className="text-sm font-semibold text-gray-700 shrink-0">
+        <div className="px-5 py-4 border-b border-border-subtle flex items-center justify-between gap-4 flex-wrap">
+          <h2 className="text-sm font-semibold text-text-primary shrink-0">
             Module Tree
           </h2>
 
-          <div className="flex items-center gap-2 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-500 w-full sm:w-64 focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-100 transition">
-            <Search size={14} className="shrink-0 text-gray-400" />
+          <div className="flex items-center gap-2 border border-border-subtle rounded-lg px-3 py-2 text-sm text-text-secondary w-full sm:w-64 focus-within:border-primary-400 focus-within:ring-2 focus-within:ring-primary-100 transition-colors duration-fast ease-standard">
+            <Search size={14} className="shrink-0 text-text-disabled" />
             <input
               value={searchText}
               onChange={(e) => setSearchText(e.target.value)}
               placeholder="Search modules..."
               aria-label="Search modules"
-              className="outline-none text-sm flex-1 placeholder-gray-400 bg-transparent"
+              className="outline-none text-sm flex-1 placeholder-text-disabled bg-transparent"
             />
             {searchText && (
-              <button onClick={() => setSearchText("")} className="text-gray-400 hover:text-gray-600" aria-label="Clear search">
+              <button onClick={() => setSearchText("")} className="text-text-disabled hover:text-text-primary" aria-label="Clear search">
                 <X size={13} />
               </button>
             )}
@@ -750,7 +750,7 @@ export default function Modules() {
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="text-left text-[11px] text-blue-900/50 uppercase tracking-wider border-b border-blue-100 bg-blue-50/40">
+              <tr className="text-left text-[11px] text-primary-700/60 uppercase tracking-wider border-b border-primary-100 bg-primary-50/60">
                 <th className="px-5 py-3 font-semibold">Module Name</th>
                 <th className="px-5 py-3 font-semibold">Parent</th>
                 <th className="px-5 py-3 font-semibold">Path</th>
@@ -759,18 +759,18 @@ export default function Modules() {
                 <th className="px-5 py-3 font-semibold">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-50">
+            <tbody className="divide-y divide-border-subtle">
               {isLoading ? (
                 <SkeletonRows />
               ) : loadError ? (
                 <tr>
                   <td colSpan={6} className="py-12">
                     <div className="flex flex-col items-center gap-2 text-center">
-                      <AlertTriangle size={22} className="text-red-400" />
-                      <p className="text-sm text-gray-600">{loadError}</p>
+                      <AlertTriangle size={22} className="text-danger-500" />
+                      <p className="text-sm text-text-secondary">{loadError}</p>
                       <button
                         onClick={() => fetchModules()}
-                        className="mt-1 inline-flex items-center gap-1.5 text-xs font-semibold text-orange-500 hover:text-orange-600"
+                        className="mt-1 inline-flex items-center gap-1.5 text-xs font-semibold text-accent-500 hover:text-accent-600"
                       >
                         <RefreshCw size={12} />
                         Try again
@@ -782,25 +782,25 @@ export default function Modules() {
                 <tr>
                   <td colSpan={6} className="py-12">
                     <div className="flex flex-col items-center gap-2 text-center">
-                      <Inbox size={22} className="text-gray-300" />
+                      <Inbox size={22} className="text-border-strong" />
                       {searchText ? (
                         <>
-                          <p className="text-sm text-gray-500">
+                          <p className="text-sm text-text-secondary">
                             No modules match "{searchText}".
                           </p>
                           <button
                             onClick={() => setSearchText("")}
-                            className="text-xs font-semibold text-orange-500 hover:text-orange-600"
+                            className="text-xs font-semibold text-accent-500 hover:text-accent-600"
                           >
                             Clear search
                           </button>
                         </>
                       ) : (
                         <>
-                          <p className="text-sm text-gray-500">No modules yet.</p>
+                          <p className="text-sm text-text-secondary">No modules yet.</p>
                           <button
                             onClick={openAddForm}
-                            className="text-xs font-semibold text-orange-500 hover:text-orange-600"
+                            className="text-xs font-semibold text-accent-500 hover:text-accent-600"
                           >
                             Add your first module
                           </button>
@@ -828,7 +828,7 @@ export default function Modules() {
         </div>
 
         {/* Footer count */}
-        <div className="px-5 py-3 border-t border-gray-50 text-xs text-gray-400">
+        <div className="px-5 py-3 border-t border-border-subtle text-xs text-text-secondary">
           {searchText
             ? `Showing ${visibleModules.length} of ${modules.length} module${modules.length !== 1 ? "s" : ""}`
             : `Showing ${modules.length} module${modules.length !== 1 ? "s" : ""}`}
@@ -855,7 +855,7 @@ export default function Modules() {
         <div
           role="status"
           className={`fixed bottom-5 right-5 z-[60] px-4 py-3 rounded-lg shadow-lg text-sm font-medium text-white ${
-            toast.type === "error" ? "bg-red-500" : "bg-gray-900"
+            toast.type === "error" ? "bg-danger-500" : "bg-primary-800"
           }`}
         >
           {toast.message}
