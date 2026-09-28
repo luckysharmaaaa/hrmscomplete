@@ -44,6 +44,8 @@ import AttendanceRegularizationAdmin from "./pages/AttendanceRegularizationAdmin
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import FirstTimeAccess from "./pages/Firsttimeaccess";
+import MyWfh from "./pages/Mywfh";
+
 
 // ─────────────────────────────────────────────────────────────────────────
 // MUI Theme — full palette + shape sync so every MUI component (Chip,
@@ -211,6 +213,8 @@ function LayoutContent() {
               path="/wfh-management"
               element={guard("wfh-management", <WfhManagement />)}
             />
+
+            <Route path="/my-wfh" element={<MyWfh />} />
 
             {/* Employee */}
             <Route

@@ -1,142 +1,163 @@
-import React, { useState } from "react";
-import {
-  ChevronRight,
-  FileText,
-  FileSpreadsheet,
-  ChevronDown,
-  Plus,
-} from "lucide-react";
+import React, { useState, useEffect, useCallback } from "react";
+import { ChevronRight, FileText, FileSpreadsheet, ChevronDown, Plus } from "lucide-react";
+import { toast } from "react-toastify";
 
-import { WFH_DATA } from "../components/wfhManagement/wfhData";
+import { toYMD } from "../components/wfhManagement/wfhData";
 import WfhStatCards from "../components/wfhManagement/WfhStatCards";
 import WfhTable from "../components/wfhManagement/WfhTable";
 import WfhModal from "../components/wfhManagement/WfhModal";
+import WfhReviewModal from "../components/wfhManagement/WfhReviewModal";
 import DeleteModal from "../components/leaveAdmin/DeleteModal";
+import {
+  getWfhRequests,
+  getWfhSummary,
+  getWfhMeta,
+  createWfhRequest,
+  updateWfhRequest,
+  reviewWfhRequest,
+  deleteWfhRequest,
+  apiErrorMessage,
+} from "../services/wfhApi"; // ← adjust to where you keep attendanceAdminApi.js
+
+function useDebounced(value, delay = 400) {
+  const [v, setV] = useState(value);
+  useEffect(() => {
+    const t = setTimeout(() => setV(value), delay);
+    return () => clearTimeout(t);
+  }, [value, delay]);
+  return v;
+}
+
+const defaultRange = () => {
+  const y = new Date().getFullYear();
+  return [{ startDate: new Date(y - 1, 0, 1), endDate: new Date(y + 1, 11, 31), key: "selection" }];
+};
 
 export default function WfhManagement() {
-  const [data, setData] = useState(WFH_DATA);
+  // server data
+  const [rows, setRows] = useState([]);
+  const [total, setTotal] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+  const [summary, setSummary] = useState(null);
+  const [meta, setMeta] = useState({ employees: [], shifts: [], designations: [] });
+  const [loading, setLoading] = useState(true);
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  // filters
   const [search, setSearch] = useState("");
-  const [designation, setDesignation] = useState("All Designations");
-  const [shift, setShift] = useState("All Shifts");
+  const [designation, setDesignation] = useState("");
+  const [shift, setShift] = useState("");
   const [status, setStatus] = useState("All Status");
-  const [sortBy, setSortBy] = useState("Recently Added");
+  const [sortBy, setSortBy] = useState("recent");
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [currentPage, setCurrentPage] = useState(1);
+  const [dateRange, setDateRange] = useState(defaultRange);
+
+  // modals
   const [modalOpen, setModalOpen] = useState(false);
   const [editItem, setEditItem] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
-  const [dateRange, setDateRange] = useState([
-    {
-      startDate: new Date(2025, 0, 1),
-      endDate: new Date(2026, 11, 31),
-      key: "selection",
-    },
-  ]);
+  const [review, setReview] = useState({ open: false, item: null, action: "APPROVED" });
 
-  // ── Filter ──────────────────────────────────────────────────
-  const filtered = data
-    .filter((r) => {
-      const q = search.toLowerCase();
-      const matchSearch =
-        r.name.toLowerCase().includes(q) ||
-        r.empId.toLowerCase().includes(q) ||
-        r.designation.toLowerCase().includes(q) ||
-        r.reason.toLowerCase().includes(q) ||
-        r.shift.toLowerCase().includes(q);
+  const debouncedSearch = useDebounced(search);
+  // search changes should jump back to page 1 (after the debounce)
+  useEffect(() => setCurrentPage(1), [debouncedSearch]);
 
-      const matchDesignation =
-        designation === "All Designations" || r.designation === designation;
+  const reload = useCallback(() => setRefreshKey((k) => k + 1), []);
 
-      const matchShift = shift === "All Shifts" || r.shift === shift;
+  const range = dateRange?.[0];
+  const startDate = range?.startDate ? toYMD(range.startDate) : undefined;
+  const endDate = range?.endDate ? toYMD(range.endDate) : undefined;
 
-      const matchStatus = status === "All Status" || r.status === status;
+  // dropdown data — once
+  useEffect(() => {
+    getWfhMeta()
+      .then(setMeta)
+      .catch((err) => toast.error(apiErrorMessage(err, "Could not load employees and shifts.")));
+  }, []);
 
-      let matchDate = true;
-      if (dateRange && dateRange[0]) {
-        const { startDate, endDate } = dateRange[0];
-        if (startDate && endDate) {
-          const rowDate = new Date(r.date);
-          const filterStart = new Date(startDate);
-          filterStart.setHours(0, 0, 0, 0);
-          const filterEnd = new Date(endDate);
-          filterEnd.setHours(23, 59, 59, 999);
-          matchDate = rowDate >= filterStart && rowDate <= filterEnd;
-        }
-      }
-
-      return (
-        matchSearch &&
-        matchDesignation &&
-        matchShift &&
-        matchStatus &&
-        matchDate
-      );
+  // list
+  useEffect(() => {
+    let cancelled = false; // ignore stale responses when filters change quickly
+    setLoading(true);
+    getWfhRequests({
+      page: currentPage,
+      limit: rowsPerPage,
+      search: debouncedSearch || undefined,
+      startDate,
+      endDate,
+      designation: designation || undefined,
+      shiftId: shift || undefined,
+      status: status === "All Status" ? undefined : status,
+      sort: sortBy,
     })
-    .sort((a, b) => {
-      if (sortBy === "Ascending") return a.name.localeCompare(b.name);
-      if (sortBy === "Descending") return b.name.localeCompare(a.name);
-      return 0; // Recently Added / default order
-    });
+      .then((res) => {
+        if (cancelled) return;
+        setRows(res.items);
+        setTotal(res.pagination.total);
+        setTotalPages(res.pagination.totalPages);
+        // e.g. last row on the last page was deleted
+        if (currentPage > res.pagination.totalPages) setCurrentPage(res.pagination.totalPages);
+      })
+      .catch((err) => !cancelled && toast.error(apiErrorMessage(err, "Could not load WFH requests.")))
+      .finally(() => !cancelled && setLoading(false));
+    return () => {
+      cancelled = true;
+    };
+  }, [currentPage, rowsPerPage, debouncedSearch, startDate, endDate, designation, shift, status, sortBy, refreshKey]);
 
-  // ── Pagination ───────────────────────────────────────────────
-  const totalPages = Math.max(1, Math.ceil(filtered.length / rowsPerPage));
-  const paginated = filtered.slice(
-    (currentPage - 1) * rowsPerPage,
-    currentPage * rowsPerPage,
-  );
+  // stat cards follow the date range
+  useEffect(() => {
+    let cancelled = false;
+    getWfhSummary({ startDate, endDate })
+      .then((s) => !cancelled && setSummary(s))
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [startDate, endDate, refreshKey]);
 
-  // ── Handlers ─────────────────────────────────────────────────
-  const handleSubmit = (form) => {
-    if (editItem) {
-      setData((prev) =>
-        prev.map((r) =>
-          r.id === editItem.id
-            ? {
-                ...r,
-                name: form.name,
-                designation: form.designation,
-                shift: form.shift,
-                date: form.startDate,
-                displayDate: new Date(form.startDate).toLocaleDateString(
-                  "en-GB",
-                  { day: "2-digit", month: "short", year: "numeric" },
-                ),
-                reason: form.reviewer,
-              }
-            : r,
-        ),
-      );
-    } else {
-      const newId = Math.max(...data.map((r) => r.id)) + 1;
-      const newRecord = {
-        id: newId,
-        empId: `Emp-${String(newId).padStart(3, "0")}`,
-        name: form.name,
-        avatar: form.name
-          .split(" ")
-          .map((w) => w[0])
-          .join("")
-          .slice(0, 2)
-          .toUpperCase(),
-        color: "bg-orange-500",
-        designation: form.designation,
-        shift: form.shift,
-        reason: form.reviewer,
-        date: form.startDate,
-        displayDate: new Date(form.startDate).toLocaleDateString("en-GB", {
-          day: "2-digit",
-          month: "short",
-          year: "numeric",
-        }),
-        status: "Pending",
-      };
-      setData((prev) => [newRecord, ...prev]);
+  // ── Handlers ────────────────────────────────────────────────
+  // Modal shows the error inline, so these throw a plain Error(message) on failure.
+  const handleSubmit = async (payload) => {
+    try {
+      if (editItem) {
+        await updateWfhRequest(editItem.id, payload);
+        toast.success("Request updated");
+      } else {
+        await createWfhRequest(payload);
+        toast.success("Request added");
+        setCurrentPage(1);
+        setSortBy("recent");
+      }
+      setEditItem(null);
+      reload();
+    } catch (err) {
+      throw new Error(apiErrorMessage(err));
     }
-    setEditItem(null);
   };
 
-  const handleDelete = (id) => {
-    setData((prev) => prev.filter((r) => r.id !== id));
+  const handleReview = async (id, action, comment) => {
+    try {
+      await reviewWfhRequest(id, action, comment);
+      toast.success(action === "APPROVED" ? "Request approved" : "Request rejected");
+      setReview({ open: false, item: null, action });
+      reload();
+    } catch (err) {
+      toast.error(apiErrorMessage(err));
+    }
+  };
+
+  const handleDelete = async (arg) => {
+    const id = typeof arg === "object" && arg !== null ? arg.id : arg ?? deleteTarget?.id;
+    try {
+      await deleteWfhRequest(id);
+      toast.success("Request deleted");
+      setDeleteTarget(null);
+      reload();
+    } catch (err) {
+      toast.error(apiErrorMessage(err));
+    }
   };
 
   return (
@@ -148,14 +169,12 @@ export default function WfhManagement() {
           <nav className="flex items-center gap-1.5 mt-1 text-xs text-gray-400">
             <span>Attendance</span>
             <ChevronRight size={12} />
-            <span className="text-orange-500 font-medium">
-              Work From Home Management
-            </span>
+            <span className="text-orange-500 font-medium">Work From Home Management</span>
           </nav>
         </div>
 
         <div className="flex items-center gap-2">
-          {/* Export Dropdown */}
+          {/* Export — still UI-only, wire up when the export endpoint exists */}
           <div className="dropdown dropdown-end">
             <label
               tabIndex={0}
@@ -177,18 +196,15 @@ export default function WfhManagement() {
               </li>
               <li>
                 <a className="flex items-center gap-3 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-lg">
-                  <FileSpreadsheet
-                    size={16}
-                    className="text-green-600 shrink-0"
-                  />
+                  <FileSpreadsheet size={16} className="text-green-600 shrink-0" />
                   <span className="font-medium">Export as Excel</span>
                 </a>
               </li>
             </ul>
           </div>
 
-          {/* Add New Request */}
           <button
+            type="button"
             onClick={() => {
               setEditItem(null);
               setModalOpen(true);
@@ -201,13 +217,23 @@ export default function WfhManagement() {
         </div>
       </div>
 
-      {/* ── Stat Cards ── */}
-      <WfhStatCards data={data} />
+      {/* ── Stat Cards (click to filter) ── */}
+      <WfhStatCards
+        summary={summary}
+        loading={loading}
+        activeStatus={status}
+        onSelect={(s) => {
+          setStatus(s);
+          setCurrentPage(1);
+        }}
+      />
 
-      {/* ── WFH Table ── */}
+      {/* ── Table ── */}
       <WfhTable
-        paginated={paginated}
-        filtered={filtered}
+        rows={rows}
+        loading={loading}
+        total={total}
+        meta={meta}
         search={search}
         setSearch={setSearch}
         designation={designation}
@@ -230,6 +256,7 @@ export default function WfhManagement() {
           setModalOpen(true);
         }}
         onDelete={(row) => setDeleteTarget(row)}
+        onReview={(row, action) => setReview({ open: true, item: row, action })}
       />
 
       {/* ── Modals ── */}
@@ -241,6 +268,15 @@ export default function WfhManagement() {
         }}
         editData={editItem}
         onSubmit={handleSubmit}
+        meta={meta}
+      />
+
+      <WfhReviewModal
+        open={review.open}
+        action={review.action}
+        item={review.item}
+        onClose={() => setReview((r) => ({ ...r, open: false }))}
+        onConfirm={handleReview}
       />
 
       <DeleteModal

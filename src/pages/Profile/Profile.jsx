@@ -1,7 +1,8 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { ChevronRight, Lock, RefreshCw, User } from "lucide-react";
+import { Lock, RefreshCw, User, UserCircle } from "lucide-react";
 
+import PageHeader from "../../components/ui/PageHeader";
 import ProfileForm from "./ProfileForm";
 import ChangePassword from "./ChangePassword";
 import ProfileSkeleton from "./ProfileSkeleton";
@@ -83,28 +84,18 @@ const Profile = () => {
 
   return (
     <div className="w-full space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold text-[#041D5F]">
-          Account Settings
-        </h1>
-
-        <p className="mt-1 text-sm text-slate-500">
-          Manage your personal information and password.
-        </p>
-
-        <div className="mt-2 flex items-center gap-1.5 text-xs text-gray-400">
-          <span>Pages</span>
-          <ChevronRight size={12} aria-hidden="true" />
-          <span className="font-medium text-orange-500">Account Settings</span>
-        </div>
-      </div>
+      <PageHeader
+        icon={UserCircle}
+        title="Account Settings"
+        subtitle="Manage your personal information and password"
+        breadcrumbs={[{ label: "Pages" }, { label: "Account Settings" }]}
+      />
 
       {/* Tabs */}
       <div
         role="tablist"
         aria-label="Account settings"
-        className="flex gap-1 border-b border-slate-200"
+        className="flex gap-1 border-b border-border-subtle"
       >
         {TABS.map((tab, index) => {
           const Icon = tab.icon;
@@ -121,10 +112,10 @@ const Profile = () => {
               tabIndex={selected ? 0 : -1}
               onClick={() => selectTab(tab.id)}
               onKeyDown={(event) => handleTabKeyDown(event, index)}
-              className={`-mb-px inline-flex items-center gap-2 border-b-2 px-4 py-3 text-sm font-semibold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/40 ${
+              className={`-mb-px inline-flex h-11 items-center gap-2 border-b-2 px-4 text-sm font-semibold transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-600/30 ${
                 selected
-                  ? "border-orange-500 text-[#041D5F]"
-                  : "border-transparent text-slate-500 hover:text-slate-800"
+                  ? "border-accent-500 text-primary-700"
+                  : "border-transparent text-text-secondary hover:text-primary-700"
               }`}
             >
               <Icon size={16} aria-hidden="true" />
@@ -140,15 +131,15 @@ const Profile = () => {
       ) : !profile ? (
         <div
           role="alert"
-          className="flex flex-col items-center rounded-2xl border border-slate-200 bg-white px-6 py-14 text-center"
+          className="hr-card flex flex-col items-center px-6 py-14 text-center"
         >
-          <h2 className="text-lg font-semibold text-[#041D5F]">
+          <h2 className="text-lg font-semibold text-primary-700">
             {loadFailed
               ? "We couldn't load your profile"
               : "Your profile isn't available"}
           </h2>
 
-          <p className="mt-1 max-w-sm text-sm text-slate-500">
+          <p className="mt-1 max-w-sm text-sm text-text-secondary">
             Check your connection and try again. If the problem continues,
             contact your administrator.
           </p>
@@ -156,7 +147,7 @@ const Profile = () => {
           <button
             type="button"
             onClick={() => loadProfile(true)}
-            className="mt-6 inline-flex h-10 items-center gap-2 rounded-lg bg-orange-500 px-5 text-sm font-semibold text-white transition hover:bg-orange-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/40"
+            className="hr-btn hr-btn-primary mt-6"
           >
             <RefreshCw size={16} aria-hidden="true" />
             Try again

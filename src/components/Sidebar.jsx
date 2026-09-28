@@ -25,6 +25,7 @@ import {
   ChevronDown,
   ChevronLeft,
   ChevronRight,
+  Laptop
 } from "lucide-react";
 
 // Save your uploaded logo as: src/assets/technovatic-logo.png
@@ -46,17 +47,15 @@ function Sidebar() {
   const justifyCls = collapsed ? "lg:justify-center" : "";
 
   const topItem = (path) =>
-    `group flex items-center gap-3 h-11 px-3.5 rounded-md text-sm font-medium transition-colors duration-fast ease-standard ${justifyCls} ${
-      isActive(path)
-        ? "bg-primary-50 text-primary-700 border-l-[3px] border-accent-500"
-        : "text-text-secondary border-l-[3px] border-transparent hover:bg-primary-50 hover:text-primary-700"
+    `group flex items-center gap-3 h-11 px-3.5 rounded-md text-sm font-medium transition-colors duration-fast ease-standard ${justifyCls} ${isActive(path)
+      ? "bg-primary-50 text-primary-700 border-l-[3px] border-accent-500"
+      : "text-text-secondary border-l-[3px] border-transparent hover:bg-primary-50 hover:text-primary-700"
     }`;
 
   const childItem = (path) =>
-    `flex items-center gap-2.5 h-10 pl-[46px] pr-3.5 rounded-md text-[13.5px] transition-colors duration-fast ease-standard ${
-      isActive(path)
-        ? "bg-primary-50 text-primary-700 font-medium"
-        : "text-text-secondary hover:bg-primary-50 hover:text-primary-700"
+    `flex items-center gap-2.5 h-10 pl-[46px] pr-3.5 rounded-md text-[13.5px] transition-colors duration-fast ease-standard ${isActive(path)
+      ? "bg-primary-50 text-primary-700 font-medium"
+      : "text-text-secondary hover:bg-primary-50 hover:text-primary-700"
     }`;
 
   const groupHeader =
@@ -82,6 +81,7 @@ function Sidebar() {
   const canHoliday = can("holiday-calendar");
   const canWfh = can("wfh-management");
   const canRegularization = can("attendance-regularization");
+  const canMyWfh = canAttendanceEmployee;
   const showAttendanceGroup =
     canLeaveAdmin ||
     canLeaveEmployee ||
@@ -106,9 +106,8 @@ function Sidebar() {
       <div
         onClick={close}
         aria-hidden={!open}
-        className={`fixed inset-0 z-40 bg-black/40 lg:hidden transition-opacity duration-base ease-standard ${
-          open ? "opacity-100" : "opacity-0 pointer-events-none"
-        }`}
+        className={`fixed inset-0 z-40 bg-black/40 lg:hidden transition-opacity duration-base ease-standard ${open ? "opacity-100" : "opacity-0 pointer-events-none"
+          }`}
       />
 
       {/* Expanded: 288px (w-72) · Collapsed: 80px (w-20) — kept in sync with Navbar.jsx and App.jsx margins */}
@@ -254,6 +253,15 @@ function Sidebar() {
                         </Link>
                       </li>
                     )}
+
+                    {canMyWfh && (
+                      <li>
+                        <Link to="/my-wfh" className={childItem("/my-wfh")}>
+                          <Laptop size={14} className="shrink-0" />
+                          My WFH
+                        </Link>
+                      </li>
+                    )}
                     {canRegularization && (
                       <li>
                         <Link to="/attendance-regularization" className={childItem("/attendance-regularization")}>
@@ -348,6 +356,7 @@ function Sidebar() {
                 </Link>
               </li>
             )}
+
 
             {canModules && (
               <li>

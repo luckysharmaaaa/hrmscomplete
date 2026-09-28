@@ -1,162 +1,14 @@
-// ── WFH Management Static Data ─────────────────────────────────
-
-export const WFH_DATA = [
-  {
-    id: 1,
-    empId: "Emp-001",
-    name: "Anthony Lewis",
-    avatar: "AL",
-    color: "bg-blue-500",
-    designation: "Accountant",
-    shift: "Regular",
-    reason: "Mild health issue",
-    date: "2025-06-14",
-    displayDate: "14 Jun 2025",
-    status: "Approved",
-  },
-  {
-    id: 2,
-    empId: "Emp-002",
-    name: "Brian Villalobos",
-    avatar: "BV",
-    color: "bg-teal-500",
-    designation: "App Developer",
-    shift: "Regular",
-    reason: "Internet issue",
-    date: "2025-05-25",
-    displayDate: "25 May 2025",
-    status: "Pending",
-  },
-  {
-    id: 3,
-    empId: "Emp-003",
-    name: "Harvey Smith",
-    avatar: "HS",
-    color: "bg-gray-500",
-    designation: "Technician",
-    shift: "Night",
-    reason: "Bad weather",
-    date: "2025-05-10",
-    displayDate: "10 May 2025",
-    status: "Rejected",
-  },
-  {
-    id: 4,
-    empId: "Emp-004",
-    name: "Stephan Peralt",
-    avatar: "SP",
-    color: "bg-purple-500",
-    designation: "Web Developer",
-    shift: "Night",
-    reason: "Power outage",
-    date: "2025-04-28",
-    displayDate: "28 Apr 2025",
-    status: "Pending",
-  },
-  {
-    id: 5,
-    empId: "Emp-005",
-    name: "Doglas Martini",
-    avatar: "DM",
-    color: "bg-pink-500",
-    designation: "Sales Executive Officer",
-    shift: "Night",
-    reason: "Traffic disruption",
-    date: "2025-04-15",
-    displayDate: "15 Apr 2025",
-    status: "Approved",
-  },
-  {
-    id: 6,
-    empId: "Emp-006",
-    name: "Linda Ray",
-    avatar: "LR",
-    color: "bg-indigo-400",
-    designation: "Designer",
-    shift: "Regular",
-    reason: "Home maintenance",
-    date: "2025-03-20",
-    displayDate: "20 Mar 2025",
-    status: "Rejected",
-  },
-  {
-    id: 7,
-    empId: "Emp-007",
-    name: "Elliot Murray",
-    avatar: "EM",
-    color: "bg-amber-500",
-    designation: "Account Manager",
-    shift: "Regular",
-    reason: "Extended travel",
-    date: "2025-03-10",
-    displayDate: "10 Mar 2025",
-    status: "Approved",
-  },
-  {
-    id: 8,
-    empId: "Emp-008",
-    name: "Rebecca Smith",
-    avatar: "RS",
-    color: "bg-rose-400",
-    designation: "SEO Analyst",
-    shift: "Night",
-    reason: "Mild health issue",
-    date: "2025-02-17",
-    displayDate: "17 Feb 2025",
-    status: "Completed",
-  },
-  {
-    id: 9,
-    empId: "Emp-009",
-    name: "Connie Waters",
-    avatar: "CW",
-    color: "bg-cyan-500",
-    designation: "Admin",
-    shift: "Regular",
-    reason: "Internet issue",
-    date: "2025-02-02",
-    displayDate: "02 Feb 2025",
-    status: "Pending",
-  },
-  {
-    id: 10,
-    empId: "Emp-010",
-    name: "Lori Broaddus",
-    avatar: "LB",
-    color: "bg-yellow-500",
-    designation: "Business Analyst",
-    shift: "Night",
-    reason: "Power outage",
-    date: "2025-01-24",
-    displayDate: "24 Jan 2025",
-    status: "Approved",
-  },
-];
-
-export const DESIGNATIONS = [
-  "All Designations",
-  "Accountant",
-  "App Developer",
-  "Technician",
-  "Web Developer",
-  "Sales Executive Officer",
-  "Designer",
-  "Account Manager",
-  "SEO Analyst",
-  "Admin",
-  "Business Analyst",
-];
-
-export const SHIFTS = ["All Shifts", "Regular", "Night"];
+// ── WFH constants & helpers (no dummy data — everything comes from the API) ──
 
 export const STATUSES = ["All Status", "Approved", "Pending", "Rejected", "Completed"];
 
+// label → value sent to the API
 export const SORT_OPTIONS = [
-  "Recently Added",
-  "Ascending",
-  "Descending",
-  "Last Month",
-  "Last 7 Days",
+  { label: "Recently Added", value: "recent" },
+  { label: "Ascending", value: "asc" },
+  { label: "Descending", value: "desc" },
+  { label: "Last Month", value: "lastMonth" },
+  { label: "Last 7 Days", value: "last7" },
 ];
 
 export const ROWS_OPTIONS = [10, 25, 50, 100];
@@ -167,3 +19,45 @@ export const STATUS_STYLES = {
   Rejected: "bg-red-50 text-red-600 border border-red-200",
   Completed: "bg-blue-50 text-blue-600 border border-blue-200",
 };
+
+const AVATAR_COLORS = [
+  "bg-blue-500", "bg-teal-500", "bg-purple-500", "bg-pink-500", "bg-indigo-400",
+  "bg-amber-500", "bg-rose-400", "bg-cyan-500", "bg-orange-500", "bg-emerald-500",
+];
+
+export const avatarColor = (id) => AVATAR_COLORS[Math.abs(Number(id) || 0) % AVATAR_COLORS.length];
+
+export const initials = (name = "") =>
+  name.split(" ").filter(Boolean).map((w) => w[0]).join("").slice(0, 2).toUpperCase() || "?";
+
+// Local-time YYYY-MM-DD. Do NOT use toISOString(): in IST it shifts local midnight to the previous day.
+export const toYMD = (d) => {
+  const dt = new Date(d);
+  const m = String(dt.getMonth() + 1).padStart(2, "0");
+  const day = String(dt.getDate()).padStart(2, "0");
+  return `${dt.getFullYear()}-${m}-${day}`;
+};
+
+const parseYMD = (s) => {
+  const [y, m, d] = s.split("-").map(Number);
+  return new Date(y, m - 1, d);
+};
+
+const fmt = (d, withYear = true) =>
+  d.toLocaleDateString("en-GB", {
+    day: "2-digit",
+    month: "short",
+    ...(withYear ? { year: "numeric" } : {}),
+  });
+
+export const formatRange = (start, end) => {
+  if (!start) return "—";
+  const s = parseYMD(start);
+  if (!end || end === start) return fmt(s);
+  const e = parseYMD(end);
+  const sameYear = s.getFullYear() === e.getFullYear();
+  return `${fmt(s, !sameYear)} – ${fmt(e)}`;
+};
+
+export const daysBetween = (start, end) =>
+  Math.round((parseYMD(end) - parseYMD(start)) / 86400000) + 1;

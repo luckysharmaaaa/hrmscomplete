@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useLayoutEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
-import { FiCalendar } from "react-icons/fi";
+import { CalendarDays } from "lucide-react";
 import { DateRangePicker } from "react-date-range";
 import "react-date-range/dist/styles.css";
 import "react-date-range/dist/theme/default.css";
@@ -21,6 +21,7 @@ const fallbackRange = () => [
 ];
 
 const VIEWPORT_MARGIN = 8;
+const BRAND_BLUE = "#041D5F";
 
 // ── DateRangePickerButton ─────────────────────────────────────────────────────
 // Props:
@@ -83,21 +84,17 @@ const DateRangePickerButton = ({
   const panelRef = useRef(null); // the portaled dropdown
 
   // ── Position the panel relative to the trigger button ──────────────────
-  // Computed in viewport coordinates (position: fixed), so ancestor scroll
-  // containers and overflow-hidden cards never affect or clip it.
   const positionPanel = useCallback(() => {
     if (!buttonRef.current) return;
     const rect = buttonRef.current.getBoundingClientRect();
     setCoords({ top: rect.bottom + 8, left: rect.left });
   }, []);
 
-  // Initial position when opening
   useLayoutEffect(() => {
     if (datePickerOpen) positionPanel();
   }, [datePickerOpen, positionPanel]);
 
-  // After the panel itself has rendered and we know its real width, clamp
-  // it back inside the viewport instead of letting it run off-screen.
+  // Clamp the panel back inside the viewport once its real size is known
   useLayoutEffect(() => {
     if (!datePickerOpen || !panelRef.current) return;
     const panelRect = panelRef.current.getBoundingClientRect();
@@ -108,7 +105,6 @@ const DateRangePickerButton = ({
       let { top, left } = prev;
       if (overflowRight > 0) left = Math.max(VIEWPORT_MARGIN, left - overflowRight);
       if (overflowBottom > 0) {
-        // Flip above the button if there isn't room below
         const rect = buttonRef.current?.getBoundingClientRect();
         if (rect) top = Math.max(VIEWPORT_MARGIN, rect.top - panelRect.height - 8);
       }
@@ -136,8 +132,7 @@ const DateRangePickerButton = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [value]);
 
-  // Close on outside click — checks BOTH the trigger button and the
-  // portaled panel, since they're no longer DOM siblings once portaled.
+  // Close on outside click — checks BOTH the trigger and the portaled panel
   useEffect(() => {
     const handleClickOutside = (e) => {
       const insideTrigger = triggerWrapRef.current?.contains(e.target);
@@ -154,8 +149,7 @@ const DateRangePickerButton = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [value]);
 
-  // Quick presets commit + close immediately; "Custom Range" just switches
-  // the sidebar highlight and waits for calendar input + Apply.
+  // Quick presets commit + close immediately; "Custom Range" waits for Apply.
   const applyPreset = (preset) => {
     setActivePreset(preset.label);
     if (!preset.start) return;
@@ -184,34 +178,34 @@ const DateRangePickerButton = ({
           setActivePreset(detectPreset(safeValue));
           setDatePickerOpen((o) => !o);
         }}
-        className="flex items-center gap-2 border border-gray-200 rounded-lg px-3 py-1.5 text-sm text-gray-600 h-10 bg-white cursor-pointer hover:border-gray-300 transition-colors whitespace-nowrap"
+        className="hr-btn hr-btn-outline !font-medium"
+        aria-haspopup="dialog"
+        aria-expanded={datePickerOpen}
       >
-        <FiCalendar size={13} className="text-gray-400" />
+        <CalendarDays size={16} className="text-primary-700" />
         <span>{displayLabel}</span>
       </button>
 
-      {/* Dropdown Panel — portaled to <body> so it can never be clipped by
-          an ancestor's overflow-hidden/overflow-x-auto (e.g. a rounded
-          card), and positioned via fixed coords computed above. */}
+      {/* Dropdown panel — portaled to <body> so an ancestor's overflow can never clip it */}
       {datePickerOpen &&
         createPortal(
           <div
             ref={panelRef}
             style={{ position: "fixed", top: coords.top, left: coords.left, zIndex: 9999 }}
-            className="bg-white rounded-xl shadow-2xl border border-gray-200 overflow-hidden w-fit"
+            className="w-fit overflow-hidden rounded-lg border border-border-subtle bg-surface shadow-lg"
           >
             <div className="flex">
-              {/* Presets Sidebar */}
-              <div className="w-36 border-r border-gray-100 py-2 flex flex-col">
+              {/* Presets sidebar */}
+              <div className="flex w-36 flex-col border-r border-border-subtle bg-background py-2">
                 {presets.map((p) => (
                   <button
                     key={p.label}
                     type="button"
                     onClick={() => applyPreset(p)}
-                    className={`text-left px-4 py-2 text-sm transition-colors ${
+                    className={`px-4 py-2 text-left text-sm transition-colors ${
                       activePreset === p.label
-                        ? "bg-orange-500 text-white font-medium"
-                        : "text-gray-600 hover:bg-gray-50"
+                        ? "bg-primary-700 font-medium text-white"
+                        : "text-text-secondary hover:bg-primary-50 hover:text-primary-700"
                     }`}
                   >
                     {p.label}
@@ -231,8 +225,8 @@ const DateRangePickerButton = ({
                   months={1}
                   direction="horizontal"
                   showMonthAndYearPickers
-                  rangeColors={["#f97316"]}
-                  color="#f97316"
+                  rangeColors={[BRAND_BLUE]}
+                  color={BRAND_BLUE}
                   showDateDisplay={false}
                   staticRanges={[]}
                   inputRanges={[]}
@@ -241,14 +235,14 @@ const DateRangePickerButton = ({
             </div>
 
             {/* Footer */}
-            <div className="flex items-center justify-between px-4 py-3 border-t border-gray-100 bg-gray-50">
-              <span className="text-sm text-gray-500 font-medium">
+            <div className="flex items-center justify-between gap-4 border-t border-border-subtle bg-background px-4 py-3">
+              <span className="text-sm font-medium text-text-secondary">
                 {formatDate(tempRange[0].startDate)} - {formatDate(tempRange[0].endDate)}
               </span>
               <div className="flex gap-2">
                 <button
                   type="button"
-                  className="btn btn-sm btn-ghost border border-gray-200 text-gray-600 hover:bg-gray-100"
+                  className="hr-btn hr-btn-outline hr-btn-sm"
                   onClick={() => {
                     setTempRange(safeValue);
                     setActivePreset(detectPreset(safeValue));
@@ -259,7 +253,7 @@ const DateRangePickerButton = ({
                 </button>
                 <button
                   type="button"
-                  className="btn btn-sm bg-orange-500 hover:bg-orange-600 border-none text-white"
+                  className="hr-btn hr-btn-primary hr-btn-sm"
                   onClick={() => {
                     onChange(tempRange);
                     setDatePickerOpen(false);

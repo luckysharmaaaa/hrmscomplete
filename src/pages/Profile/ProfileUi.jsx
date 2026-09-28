@@ -1,28 +1,22 @@
 import React from "react";
 import { AlertCircle } from "lucide-react";
 
-// One source of truth for input styling on the Profile page.
+// One source of truth for input styling on the Profile page
+// (same 40px control as every other form in the app).
 export const inputClass = (hasError = false) =>
-  [
-    "block h-11 w-full rounded-lg border bg-white px-3.5 text-sm text-slate-900 outline-none transition",
-    "placeholder:text-slate-400 hover:border-slate-400",
-    "focus:ring-2 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-500",
-    hasError
-      ? "border-red-400 focus:border-red-500 focus:ring-red-500/15"
-      : "border-slate-300 focus:border-orange-500 focus:ring-orange-500/15",
-  ].join(" ");
+  `hr-input ${hasError ? "is-error" : ""}`;
 
 /**
  * A settings block: title + description on the left, fields on the right.
  * Stacks on small screens.
  */
 export const SettingsSection = ({ title, description, children }) => (
-  <section className="rounded-2xl border border-slate-200 bg-white">
+  <section className="hr-card">
     <div className="grid gap-6 p-6 lg:grid-cols-[240px_minmax(0,1fr)] lg:gap-12 lg:p-8">
       <div>
-        <h3 className="text-base font-semibold text-[#041D5F]">{title}</h3>
+        <h3 className="text-base font-semibold text-primary-700">{title}</h3>
         {description && (
-          <p className="mt-1 text-sm leading-6 text-slate-500">
+          <p className="mt-1 text-sm leading-6 text-text-secondary">
             {description}
           </p>
         )}
@@ -47,13 +41,10 @@ export const Field = ({
   children,
 }) => (
   <div className={className}>
-    <label
-      htmlFor={id}
-      className="mb-1.5 block text-sm font-medium text-slate-700"
-    >
+    <label htmlFor={id} className="hr-label">
       {label}
       {required && (
-        <span className="ml-0.5 text-red-500" aria-hidden="true">
+        <span className="ml-0.5 text-danger-500" aria-hidden="true">
           *
         </span>
       )}
@@ -65,13 +56,13 @@ export const Field = ({
       <p
         id={`${id}-error`}
         role="alert"
-        className="mt-1.5 flex items-start gap-1.5 text-xs leading-5 text-red-600"
+        className="mt-1.5 flex items-start gap-1.5 text-xs leading-5 text-danger-600"
       >
         <AlertCircle size={14} className="mt-0.5 shrink-0" />
         <span>{error}</span>
       </p>
     ) : hint ? (
-      <p id={`${id}-hint`} className="mt-1.5 text-xs leading-5 text-slate-500">
+      <p id={`${id}-hint`} className="mt-1.5 text-xs leading-5 text-text-secondary">
         {hint}
       </p>
     ) : null}

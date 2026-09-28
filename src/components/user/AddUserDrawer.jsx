@@ -12,11 +12,8 @@ import UserForm from "./Userform";
 // ============================================================
 // VALIDATION SCHEMA
 // ============================================================
-// Defines validation rules for the User form fields.
-//
-// Email rule: provide EITHER an official company email (email) OR a
-// personal email (alternateEmail) for an employee who doesn't have
-// their company email yet — at least one is required.
+// Email rule: ONLY an official company email (@bytesbrick.com)
+// is allowed, and it is required.
 const validationSchema = Yup.object({
   firstName: Yup.string()
     .min(2, "First Name must be at least 2 characters")
@@ -27,29 +24,14 @@ const validationSchema = Yup.object({
     .required("Last Name is required"),
 
   email: Yup.string()
+    .trim()
     .email("Enter a valid email address")
+    .required("Official email is required")
     .test(
       "is-company-domain",
-      `Official email must be a @${COMPANY_EMAIL_DOMAIN} address`,
-      (value) => !value || isCompanyEmail(value),
-    )
-    .when("alternateEmail", {
-      is: (value) => !value,
-      then: (schema) =>
-        schema.required(
-          "Provide an official company email, or a personal email below",
-        ),
-      otherwise: (schema) => schema.notRequired(),
-    }),
-
-  alternateEmail: Yup.string()
-    .email("Enter a valid email address")
-    .test(
-      "not-company-domain",
-      `Personal email must not be a @${COMPANY_EMAIL_DOMAIN} address — use the official email field for that`,
-      (value) => !value || !isCompanyEmail(value),
-    )
-    .notRequired(),
+      `Only @${COMPANY_EMAIL_DOMAIN} email addresses are allowed`,
+      (value) => isCompanyEmail(value),
+    ),
 
   password: Yup.string()
     .min(8, "Password must be at least 8 characters")
@@ -69,7 +51,6 @@ const validationSchema = Yup.object({
 // ============================================================
 // INITIAL ADDRESS STATE
 // ============================================================
-// Default values for the Address Information module.
 const initialAddressState = {
   addressType: "home",
   countryID: 1,
@@ -93,37 +74,22 @@ const initialAddressState = {
 // ADD USER DRAWER COMPONENT
 // ============================================================
 const AddUserDrawer = ({ open, onClose, onSuccess, roles = [] }) => {
-  // ==========================================================
-  // USER STATUS
-  // ==========================================================
   // Default status of a newly created user is Active (true).
   const [status, setStatus] = useState(true);
 
-  // ==========================================================
-  // SELECTED ROLES
-  // ==========================================================
-  // Stores the IDs of roles selected by the admin.
+  // IDs of roles selected by the admin.
   const [selectedRoles, setSelectedRoles] = useState([]);
 
-  // ==========================================================
-  // PROFILE IMAGE STATE
-  // ==========================================================
-  // Stores the actual selected image file.
+  // Profile image
   const [profileImageFile, setProfileImageFile] = useState(null);
-
-  // Stores the temporary preview URL of the selected image.
   const [profileImagePreview, setProfileImagePreview] = useState(null);
 
-  // ==========================================================
-  // ADDRESS STATE
-  // ==========================================================
-  // Stores all address-related form fields.
+  // Address
   const [addressData, setAddressData] = useState(initialAddressState);
 
   // ==========================================================
   // ROLE CHANGE HANDLER
   // ==========================================================
-  // Adds/removes a role ID from selectedRoles.
   const handleRoleChange = (roleId) => {
     setSelectedRoles((prev) =>
       prev.includes(roleId)
@@ -135,7 +101,6 @@ const AddUserDrawer = ({ open, onClose, onSuccess, roles = [] }) => {
   // ==========================================================
   // IMAGE CHANGE HANDLER
   // ==========================================================
-  // Saves the selected image file and creates a preview URL.
   const handleImageChange = (file) => {
     if (profileImagePreview?.startsWith("blob:")) {
       URL.revokeObjectURL(profileImagePreview);
@@ -148,10 +113,6 @@ const AddUserDrawer = ({ open, onClose, onSuccess, roles = [] }) => {
   // ==========================================================
   // REMOVE IMAGE HANDLER
   // ==========================================================
-  // Removes the selected image and its preview.
-  // (Previously this didn't revoke the blob: URL created in
-  // handleImageChange, so every "remove and re-pick a photo" cycle
-  // leaked an object URL for the life of the tab.)
   const handleRemoveImage = () => {
     if (profileImagePreview?.startsWith("blob:")) {
       URL.revokeObjectURL(profileImagePreview);
@@ -164,7 +125,6 @@ const AddUserDrawer = ({ open, onClose, onSuccess, roles = [] }) => {
   // ==========================================================
   // ADDRESS CHANGE HANDLER
   // ==========================================================
-  // Updates addressData whenever an address field changes.
   const handleAddressChange = (e) => {
     const { name, value, type, checked } = e.target;
 
@@ -177,12 +137,6 @@ const AddUserDrawer = ({ open, onClose, onSuccess, roles = [] }) => {
   // ==========================================================
   // RESET ALL FORM DATA
   // ==========================================================
-  // Resets:
-  // - Formik user fields
-  // - Selected roles
-  // - Status
-  // - Profile image
-  // - Address information
   const resetAll = (resetForm) => {
     resetForm?.();
 
@@ -202,42 +156,26 @@ const AddUserDrawer = ({ open, onClose, onSuccess, roles = [] }) => {
   // FORMIK CONFIGURATION
   // ==========================================================
   const formik = useFormik({
-    // ----------------------------------------------------------
-    // INITIAL USER FORM VALUES
-    // ----------------------------------------------------------
     initialValues: {
       firstName: "",
       lastName: "",
       email: "",
-      alternateEmail: "",
       password: "",
       confirmPassword: "",
       phone: "",
     },
 
-    // ----------------------------------------------------------
-    // YUP VALIDATION
-    // ----------------------------------------------------------
     validationSchema,
 
-    // ----------------------------------------------------------
-    // FORM SUBMIT
-    // ----------------------------------------------------------
     onSubmit: async (values, { resetForm }) => {
       try {
-        // ======================================================
         // STEP 1: VALIDATE ROLE
-        // ======================================================
-        // At least one role must be selected.
         if (selectedRoles.length === 0) {
           toast.error("Please select at least one role.");
           return;
         }
 
-        // ======================================================
         // STEP 2: VALIDATE REQUIRED ADDRESS FIELDS
-        // ======================================================
-        // These fields are required before creating the user.
         if (
           !addressData.addressType ||
           !addressData.addressLine1 ||
@@ -252,20 +190,13 @@ const AddUserDrawer = ({ open, onClose, onSuccess, roles = [] }) => {
           return;
         }
 
-        // ======================================================
         // STEP 3: CREATE USER PAYLOAD
-        // ======================================================
-        // Creates the complete payload that will be sent to
-        // the createUser API.
         const payload = {
           firstName: values.firstName,
           lastName: values.lastName,
 
-          // Official company email. Left out entirely when the
-          // employee doesn't have one yet — alternateEmail carries
-          // their personal email instead.
-          email: values.email.trim() || null,
-          alternateEmail: values.alternateEmail.trim() || null,
+          // Official company email only (@bytesbrick.com)
+          email: values.email.trim().toLowerCase(),
 
           phone: values.phone,
           password: values.password,
@@ -292,15 +223,12 @@ const AddUserDrawer = ({ open, onClose, onSuccess, roles = [] }) => {
             state: addressData.state,
             zipCode: addressData.zipCode,
 
-            // Convert country ID from string to number.
             countryID: Number(addressData.countryID),
 
             countryCode: addressData.countryCode,
             phoneCode: addressData.phoneCode,
             phone: addressData.phone,
 
-            // Convert latitude/longitude to numbers.
-            // Empty values are sent as null.
             latitude: addressData.latitude
               ? Number(addressData.latitude)
               : null,
@@ -313,62 +241,32 @@ const AddUserDrawer = ({ open, onClose, onSuccess, roles = [] }) => {
           },
         };
 
-        // ======================================================
         // STEP 4: CREATE USER
-        // ======================================================
         const response = await createUser(payload);
 
-        // ======================================================
         // STEP 5: CHECK USER CREATION RESPONSE
-        // ======================================================
         if (response.data.success) {
-          // Get the newly created user's ID.
-          // This ID is required for profile image mapping.
           const userId = response.data.data.id;
 
-          // ====================================================
           // STEP 6: UPLOAD PROFILE IMAGE
-          // ====================================================
-          // Profile image is uploaded only if a file was selected.
-          //
-          // NOTE: by this point the user has already been created
-          // successfully. If the image upload fails, we still treat
-          // this as a successful "add user" — we warn about the photo
-          // specifically and close the drawer, instead of leaving it
-          // open as if nothing had happened. (Previously a failed
-          // image upload left the drawer open with the same form
-          // values still in it, which read as "user creation failed"
-          // and invited the admin to hit submit again — creating a
-          // second, duplicate user.)
+          // The user already exists at this point. If the image upload
+          // fails we warn, but still finish the success path so the admin
+          // doesn't re-submit and create a duplicate user.
           if (profileImageFile) {
             try {
-              // Create multipart/form-data object.
               const formData = new FormData();
 
-              // Actual image file.
               formData.append("file", profileImageFile);
-
-              // Media title.
               formData.append("title", profileImageFile.name);
-
-              // Alternative text for the image.
               formData.append(
                 "altText",
                 `${values.firstName} ${values.lastName}`.trim()
               );
 
-              // =================================================
-              // MEDIA OBJECT MAPPING
-              // =================================================
-              // These values tell the backend that this media
-              // belongs to the newly created user.
+              // Tells the backend this media belongs to the new user.
               formData.append("objectID", String(userId));
               formData.append("objectType", "user");
 
-              // =================================================
-              // CALL MEDIA UPLOAD API
-              // =================================================
-              // "users" is passed as the module.
               const mediaResponse = await uploadMedia(formData, "users");
 
               if (!mediaResponse.data.success) {
@@ -379,46 +277,30 @@ const AddUserDrawer = ({ open, onClose, onSuccess, roles = [] }) => {
                 );
               }
             } catch (imageError) {
-              // =================================================
-              // IMAGE UPLOAD ERROR
-              // =================================================
               console.error("Image Upload Error:", imageError);
 
               toast.warn(
                 "User created, but the profile photo didn't upload. You can add it from the user's profile."
               );
-              // Deliberately no `return` here — the user record exists,
-              // so we still finish the success path below.
             }
           }
 
-          // ====================================================
           // STEP 7: SUCCESS
-          // ====================================================
           if (!profileImageFile) {
             toast.success(response.data.message);
           }
 
-          // Reset the complete form.
           resetAll(resetForm);
 
-          // Refresh parent/user list if provided.
           onSuccess?.();
 
-          // Close the drawer.
           onClose();
         } else {
-          // ====================================================
-          // USER CREATION FAILED
-          // ====================================================
           toast.error(
             response.data.message || "Failed to create user."
           );
         }
       } catch (error) {
-        // ======================================================
-        // GENERAL API ERROR
-        // ======================================================
         console.error(error);
 
         toast.error(
@@ -431,17 +313,11 @@ const AddUserDrawer = ({ open, onClose, onSuccess, roles = [] }) => {
   // ==========================================================
   // CLOSE DRAWER HANDLER
   // ==========================================================
-  // Resets the form before closing the drawer.
   const handleClose = () => {
     resetAll(formik.resetForm);
     onClose();
   };
 
-  // ============================================================
-  // RENDER USER FORM
-  // ============================================================
-  // UserForm contains the actual UI.
-  // AddUserDrawer handles the state and API/business logic.
   return (
     <UserForm
       open={open}

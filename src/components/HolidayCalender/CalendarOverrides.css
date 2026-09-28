@@ -67,10 +67,21 @@
 /* ── Day Cell ── */
 .calendar-wrapper .fc-daygrid-day {
   height: auto;
+  cursor: pointer; /* click a day to add a holiday */
 }
 
 .calendar-wrapper .fc-daygrid-day:hover {
   background-color: #f9fafb;
+}
+
+/* Uniform cell height */
+.calendar-wrapper .fc-daygrid-day-frame {
+  min-height: 110px;
+}
+
+/* Weekend tint */
+.calendar-wrapper .fc-weekend-cell:not(.fc-day-today) {
+  background-color: #fafafa;
 }
 
 /* Prevent internal scrollbar without breaking layout */
@@ -138,4 +149,36 @@
   font-size: 0.85rem;
   font-weight: 600;
   color: #6b7280;
+}
+
+/* ── Keyboard focus ── */
+.calendar-wrapper .fc-event:focus-visible,
+.calendar-wrapper .fc-button:focus-visible {
+  outline: 2px solid #f97316;
+  outline-offset: 2px;
+}
+
+/* ── Tablet & mobile ── */
+@media (max-width: 768px) {
+  .calendar-wrapper .fc .fc-toolbar {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  .calendar-wrapper .fc .fc-toolbar-title { font-size: 1.25rem; }
+  .calendar-wrapper .fc .fc-button { padding: 6px 12px; font-size: 0.8rem; }
+  .calendar-wrapper .fc th { padding: 10px 0; font-size: 0.65rem; letter-spacing: 0.04em; }
+  .calendar-wrapper .fc-daygrid-day-frame { min-height: 64px; }
+  .calendar-wrapper .fc-daygrid-day-number { font-size: 0.9rem; padding: 6px 8px !important; }
+  .calendar-wrapper .fc-day-today .fc-daygrid-day-number {
+    width: 28px;
+    height: 28px;
+    margin: 4px 6px;
+    font-size: 0.85rem;
+  }
+  .calendar-wrapper .fc-event { font-size: 0.65rem; padding: 1px 4px; margin: 1px 2px !important; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .calendar-wrapper .fc-event:hover { transform: none; transition: none; }
 }

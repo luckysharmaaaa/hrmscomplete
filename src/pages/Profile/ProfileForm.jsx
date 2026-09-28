@@ -4,6 +4,7 @@ import { Loader2, Lock } from "lucide-react";
 import { toast } from "react-toastify";
 
 import ProfileImage from "./ProfileImage";
+import StatusBadge from "../../components/ui/StatusBadge";
 import { Field, SettingsSection, TextField, inputClass } from "./ProfileUi";
 import { profileSchema } from "./profileValidation";
 import { updateMyProfile } from "../../services/profileApi";
@@ -189,12 +190,12 @@ const ProfileForm = ({ profileData, onSaved, onImageChanged }) => {
                 value={user?.email || ""}
                 readOnly
                 aria-describedby="email-hint"
-                className={`${inputClass(false)} bg-slate-50 pr-10 text-slate-600`}
+                className={`${inputClass(false)} bg-background pr-10 text-text-secondary`}
               />
               <Lock
                 size={16}
                 aria-hidden="true"
-                className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400"
+                className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-text-disabled"
               />
             </div>
           </Field>
@@ -219,11 +220,9 @@ const ProfileForm = ({ profileData, onSaved, onImageChanged }) => {
       >
         <div className="grid gap-5 sm:grid-cols-2">
           <fieldset className="sm:col-span-2">
-            <legend className="mb-1.5 text-sm font-medium text-slate-700">
-              Address type
-            </legend>
+            <legend className="hr-label">Address type</legend>
 
-            <div className="inline-flex rounded-lg border border-slate-300 bg-slate-50 p-1">
+            <div className="inline-flex rounded-lg border border-border-strong bg-background p-1">
               {ADDRESS_TYPES.map((type) => (
                 <label key={type} className="relative">
                   <input
@@ -234,7 +233,7 @@ const ProfileForm = ({ profileData, onSaved, onImageChanged }) => {
                     onChange={handleChange}
                     className="peer sr-only"
                   />
-                  <span className="block cursor-pointer rounded-md px-4 py-1.5 text-sm font-medium capitalize text-slate-600 transition peer-checked:bg-white peer-checked:text-[#041D5F] peer-checked:shadow-sm peer-focus-visible:ring-2 peer-focus-visible:ring-orange-500/40">
+                  <span className="block cursor-pointer rounded-md px-4 py-1.5 text-sm font-medium capitalize text-text-secondary transition peer-checked:bg-primary-700 peer-checked:text-white peer-checked:shadow-sm peer-focus-visible:ring-2 peer-focus-visible:ring-primary-600/40">
                     {type}
                   </span>
                 </label>
@@ -303,7 +302,7 @@ const ProfileForm = ({ profileData, onSaved, onImageChanged }) => {
 
           <label
             htmlFor="isDefault"
-            className="flex cursor-pointer items-center gap-2.5 text-sm text-slate-700 sm:col-span-2"
+            className="flex cursor-pointer items-center gap-2.5 text-sm text-text-primary sm:col-span-2"
           >
             <input
               type="checkbox"
@@ -311,7 +310,7 @@ const ProfileForm = ({ profileData, onSaved, onImageChanged }) => {
               name="isDefault"
               checked={values.isDefault}
               onChange={handleChange}
-              className="h-4 w-4 rounded border-slate-300 accent-orange-500"
+              className="h-4 w-4 rounded border-border-strong accent-primary-700"
             />
             Use as my default address
           </label>
@@ -358,8 +357,8 @@ const ProfileForm = ({ profileData, onSaved, onImageChanged }) => {
       >
         <dl className="grid gap-5 sm:grid-cols-2">
           <div>
-            <dt className="mb-1.5 text-sm font-medium text-slate-700">Role</dt>
-            <dd className="text-sm text-slate-900">
+            <dt className="hr-label">Role</dt>
+            <dd className="text-sm text-text-primary">
               {roles.length > 0
                 ? roles.map((role) => role.roleName).join(", ")
                 : "Not assigned"}
@@ -367,25 +366,11 @@ const ProfileForm = ({ profileData, onSaved, onImageChanged }) => {
           </div>
 
           <div>
-            <dt className="mb-1.5 text-sm font-medium text-slate-700">
-              Status
-            </dt>
+            <dt className="hr-label">Status</dt>
             <dd>
-              <span
-                className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ${
-                  isActive
-                    ? "bg-green-50 text-green-700"
-                    : "bg-slate-100 text-slate-600"
-                }`}
-              >
-                <span
-                  aria-hidden="true"
-                  className={`h-1.5 w-1.5 rounded-full ${
-                    isActive ? "bg-green-600" : "bg-slate-400"
-                  }`}
-                />
+              <StatusBadge tone={isActive ? "success" : "neutral"}>
                 {isActive ? "Active" : "Inactive"}
-              </span>
+              </StatusBadge>
             </dd>
           </div>
         </dl>
@@ -396,12 +381,12 @@ const ProfileForm = ({ profileData, onSaved, onImageChanged }) => {
         <div
           role="region"
           aria-label="Unsaved changes"
-          className="sticky bottom-4 z-10 flex flex-col gap-3 rounded-xl border border-slate-200 bg-white/95 px-5 py-3 shadow-lg backdrop-blur sm:flex-row sm:items-center sm:justify-between"
+          className="hr-card sticky bottom-4 z-10 flex flex-col gap-3 bg-surface/95 px-5 py-3 shadow-lg backdrop-blur sm:flex-row sm:items-center sm:justify-between"
         >
-          <p className="flex items-center gap-2 text-sm text-slate-700">
+          <p className="flex items-center gap-2 text-sm text-text-primary">
             <span
               aria-hidden="true"
-              className="h-2 w-2 rounded-full bg-orange-500"
+              className="h-2 w-2 rounded-full bg-accent-500"
             />
             You have unsaved changes
           </p>
@@ -411,7 +396,7 @@ const ProfileForm = ({ profileData, onSaved, onImageChanged }) => {
               type="button"
               onClick={() => resetForm()}
               disabled={isSubmitting}
-              className="h-10 rounded-lg border border-slate-300 bg-white px-4 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-300 disabled:opacity-60"
+              className="hr-btn hr-btn-outline"
             >
               Discard
             </button>
@@ -419,7 +404,7 @@ const ProfileForm = ({ profileData, onSaved, onImageChanged }) => {
             <button
               type="submit"
               disabled={isSubmitting}
-              className="inline-flex h-10 min-w-[128px] items-center justify-center gap-2 rounded-lg bg-orange-500 px-5 text-sm font-semibold text-white transition hover:bg-orange-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/40 disabled:cursor-not-allowed disabled:opacity-70"
+              className="hr-btn hr-btn-primary min-w-[140px]"
             >
               {isSubmitting && <Loader2 size={16} className="animate-spin" />}
               {isSubmitting ? "Saving..." : "Save changes"}

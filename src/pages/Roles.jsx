@@ -1,16 +1,18 @@
 import React, { useEffect, useState } from "react";
 import api from "../services/api";
-import { FiChevronRight } from "react-icons/fi";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import {
+  ChevronDown,
+  Download,
+  FileSpreadsheet,
+  FileText,
+  Loader2,
+  Plus,
+  ShieldCheck,
+} from "lucide-react";
 
-import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
-import AddIcon from "@mui/icons-material/Add";
-import DescriptionOutlinedIcon from "@mui/icons-material/DescriptionOutlined";
-import PictureAsPdfOutlinedIcon from "@mui/icons-material/PictureAsPdfOutlined";
-import TableChartOutlinedIcon from "@mui/icons-material/TableChartOutlined";
-import ShieldOutlinedIcon from "@mui/icons-material/ShieldOutlined";
-
+import PageHeader from "../components/ui/PageHeader";
 import RolesTable from "../components/RolesTable";
 import AddRoles from "../components/AddRoles";
 
@@ -318,131 +320,84 @@ const Roles = () => {
     window.print();
   };
 
+  // Closes the daisyUI focus-dropdown after an item is clicked
+  const closeDropdown = () => document.activeElement?.blur?.();
+
   // ============================================================
   // RENDER
   // ============================================================
 
   return (
-    <div className="space-y-5">
-      {/* ========================================================
-          HEADER
-      ======================================================== */}
-
-      <div className="relative overflow-hidden rounded-2xl bg-linear-to-br from-[#0F265C] via-[#173a82] to-[#2563eb] px-6 py-7 shadow-lg shadow-blue-900/10">
-        <div className="absolute right-0 top-0 h-40 w-40 translate-x-1/4 -translate-y-1/3 rounded-full bg-white/5" />
-
-        <div className="absolute bottom-0 left-10 h-24 w-24 translate-y-1/2 rounded-full bg-sky-400/10" />
-
-        <div className="relative flex flex-wrap items-center justify-between gap-4">
-          <div className="flex items-center gap-3.5">
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-white/10 bg-white/10 backdrop-blur-sm">
-              <ShieldOutlinedIcon
-                fontSize="small"
-                sx={{ color: "#7dd3fc" }}
-              />
-            </div>
-
-            <div>
-              <h1 className="text-2xl font-bold tracking-tight text-white">
-                Roles
-              </h1>
-
-              <div className="mt-1.5 flex items-center gap-1.5 text-xs text-white/50">
-                <span>User Management</span>
-
-                <FiChevronRight
-                  size={12}
-                  className="shrink-0"
-                />
-
-                <span className="font-medium text-sky-300">
-                  Roles & Permissions
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* ====================================================
-              ACTIONS
-          ==================================================== */}
-
-          <div className="flex items-center gap-3">
+    <div className="space-y-6">
+      <PageHeader
+        icon={ShieldCheck}
+        title="Roles"
+        subtitle="Create roles and control what each role can access"
+        breadcrumbs={[
+          { label: "User Management" },
+          { label: "Roles & Permissions" },
+        ]}
+        actions={
+          <>
             {/* Export */}
-
             <div className="dropdown dropdown-end">
-              <label
-                tabIndex={0}
-                className="flex h-10 cursor-pointer items-center gap-2 rounded-lg border border-white/15 bg-white/10 px-4 text-sm font-semibold text-white backdrop-blur-sm transition hover:bg-white/20"
-              >
-                <DescriptionOutlinedIcon fontSize="small" />
-
+              <div tabIndex={0} role="button" className="hr-btn hr-btn-glass">
+                <Download size={16} />
                 Export
-
-                <KeyboardArrowDownIcon fontSize="small" />
-              </label>
+                <ChevronDown size={16} />
+              </div>
 
               <ul
                 tabIndex={0}
-                className="dropdown-content menu z-50 mt-2 w-56 rounded-xl border border-gray-100 bg-white p-1.5 shadow-xl"
+                className="dropdown-content z-50 mt-2 w-56 rounded-lg border border-border-subtle bg-surface p-1.5 shadow-lg"
               >
                 <li>
                   <button
                     type="button"
-                    onClick={exportPDF}
-                    className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                    onClick={() => {
+                      exportPDF();
+                      closeDropdown();
+                    }}
+                    className="flex h-10 w-full items-center gap-2.5 rounded-md px-3 text-sm text-text-primary transition-colors hover:bg-primary-50 hover:text-primary-700"
                   >
-                    <PictureAsPdfOutlinedIcon
-                      fontSize="small"
-                      sx={{ color: "#ef4444" }}
-                    />
-
-                    <span className="font-medium">
-                      Print / Save as PDF
-                    </span>
+                    <FileText size={16} className="text-danger-500" />
+                    Print / Save as PDF
                   </button>
                 </li>
 
                 <li>
                   <button
                     type="button"
-                    onClick={exportCSV}
-                    className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                    onClick={() => {
+                      exportCSV();
+                      closeDropdown();
+                    }}
+                    className="flex h-10 w-full items-center gap-2.5 rounded-md px-3 text-sm text-text-primary transition-colors hover:bg-primary-50 hover:text-primary-700"
                   >
-                    <TableChartOutlinedIcon
-                      fontSize="small"
-                      sx={{ color: "#16a34a" }}
-                    />
-
-                    <span className="font-medium">
-                      Export as CSV
-                    </span>
+                    <FileSpreadsheet size={16} className="text-success-600" />
+                    Export as CSV
                   </button>
                 </li>
               </ul>
             </div>
 
             {/* Add Role */}
-
             <button
               type="button"
               onClick={handleOpenDrawer}
-              className="flex h-10 items-center gap-2 rounded-lg bg-orange-500 px-4 text-sm font-semibold text-white shadow-sm shadow-orange-900/20 transition hover:bg-orange-600"
+              className="hr-btn hr-btn-primary"
             >
-              <AddIcon fontSize="small" />
-
+              <Plus size={16} />
               Add Role
             </button>
-          </div>
-        </div>
-      </div>
+          </>
+        }
+      />
 
-      {/* ========================================================
-          TABLE
-      ======================================================== */}
-
+      {/* Table */}
       {loading ? (
         <div className="flex justify-center py-24">
-          <span className="loading loading-spinner loading-lg text-blue-500" />
+          <Loader2 size={32} className="animate-spin text-primary-700" />
         </div>
       ) : (
         <RolesTable
@@ -453,10 +408,7 @@ const Roles = () => {
         />
       )}
 
-      {/* ========================================================
-          ADD / EDIT DRAWER
-      ======================================================== */}
-
+      {/* Add / Edit drawer */}
       <AddRoles
         open={openDrawer}
         onClose={handleCloseDrawer}

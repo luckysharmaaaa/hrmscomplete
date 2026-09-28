@@ -2,7 +2,8 @@
 @import "tailwindcss";
 @plugin "daisyui";
 
-@theme {
+/* `static` = always emit every variable, so var(--color-*) works in plain CSS below */
+@theme static {
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
 
   /* ── Primary (Brand Blue) ── */
@@ -16,7 +17,7 @@
   --color-primary-800: #031646;
   --color-primary-900: #020F33;
 
-  /* ── Accent (Orange) — unchanged, matches Tailwind's own scale ── */
+  /* ── Accent (Orange) ── */
   --color-accent-400: #FB923C;
   --color-accent-500: #F97316;
   --color-accent-600: #EA580C;
@@ -47,39 +48,28 @@
   --color-text-secondary: #6B7280;
   --color-text-disabled: #9CA3AF;
 
-  /* Back-compat aliases so existing hardcoded classes still map cleanly */
+  /* Back-compat aliases */
   --color-brand-blue: #041D5F;
   --color-brand-blue-light: #0F265C;
   --color-brand-orange: #F97316;
   --color-brand-orange-dark: #EA580C;
 
-  /* ── Elevation ──
-     Usage convention: cards/table rows = shadow-sm, dropdowns/popovers/
-     modals = shadow-md, floating panels (toasts, tooltips) = shadow-lg.
-     Keep this convention everywhere — mixed shadow weights across similar
-     components is the #1 thing that makes a dashboard look unpolished. */
+  /* ── Elevation ── */
   --shadow-sm: 0 1px 2px 0 rgb(4 29 95 / 0.04), 0 1px 3px 0 rgb(4 29 95 / 0.06);
   --shadow-md: 0 4px 6px -1px rgb(4 29 95 / 0.08), 0 2px 4px -2px rgb(4 29 95 / 0.06);
   --shadow-lg: 0 10px 15px -3px rgb(4 29 95 / 0.10), 0 4px 6px -4px rgb(4 29 95 / 0.05);
 
-  /* ── Radius ──
-     One scale, applied everywhere: sm = inputs/badges/small buttons,
-     md = cards/buttons/dropdowns (also mirrored in MUI's theme.shape),
-     lg = modals/large panels/hero sections. */
+  /* ── Radius ── */
   --radius-sm: 6px;
   --radius-md: 10px;
   --radius-lg: 16px;
 
-  /* ── Brand gradients — for sidebar, hero banners, primary CTAs.
-     Use sparingly: one gradient surface per screen keeps it looking
-     intentional rather than decorative. ── */
+  /* ── Gradients ── */
   --gradient-brand: linear-gradient(135deg, var(--color-primary-700) 0%, var(--color-primary-400) 100%);
   --gradient-accent: linear-gradient(135deg, var(--color-accent-500) 0%, var(--color-accent-600) 100%);
   --gradient-sidebar: linear-gradient(180deg, var(--color-primary-800) 0%, var(--color-primary-700) 100%);
 
-  /* ── Motion ── one easing curve, two durations, used everywhere:
-     duration-fast = hover/focus states, duration-base = layout shifts
-     (sidebar collapse, drawer open, page transitions). */
+  /* ── Motion ── */
   --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
   --duration-fast: 150ms;
   --duration-base: 250ms;
@@ -102,22 +92,150 @@ body {
   background-color: white;
 }
 
-/* ── Utility classes for the gradients above, since Tailwind v4 doesn't
-   auto-generate bg-gradient utilities from --gradient-* theme vars. ── */
-.bg-gradient-brand {
-  background-image: var(--gradient-brand);
+/* Plain utilities (Tailwind doesn't generate these from the theme vars) */
+.bg-gradient-brand { background-image: var(--gradient-brand); }
+.bg-gradient-accent { background-image: var(--gradient-accent); }
+.bg-gradient-sidebar { background-image: var(--gradient-sidebar); }
+.bg-gradient-banner {
+  background-image: linear-gradient(115deg, var(--color-primary-900) 0%, var(--color-primary-700) 55%, var(--color-primary-400) 135%);
 }
+.ease-standard { transition-timing-function: var(--ease-standard); }
+.duration-fast { transition-duration: var(--duration-fast); }
+.duration-base { transition-duration: var(--duration-base); }
 
-.bg-gradient-accent {
-  background-image: var(--gradient-accent);
-}
+/* ════════════════════════════════════════════════════════════════════
+   HRMS design-system classes — every page/drawer/table uses these so
+   heights, radii, focus rings and colours are identical everywhere.
+   Kept inside @layer components so Tailwind utilities can still override.
+   ════════════════════════════════════════════════════════════════════ */
+@layer components {
+  /* Card */
+  .hr-card {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-sm);
+  }
 
-.bg-gradient-sidebar {
-  background-image: var(--gradient-sidebar);
-}
+  /* Form controls — 40px tall everywhere */
+  .hr-label {
+    display: block;
+    margin-bottom: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--color-text-primary);
+  }
 
-/* ── Custom ease utility (Tailwind's `ease-standard` isn't a built-in
-   token name, so define it explicitly for use as a class). ── */
-.ease-standard {
-  transition-timing-function: var(--ease-standard);
+  .hr-input,
+  .hr-select {
+    width: 100%;
+    height: 40px;
+    padding: 0 12px;
+    font-size: 14px;
+    color: var(--color-text-primary);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border-strong);
+    border-radius: 8px;
+    outline: none;
+    transition: border-color 150ms var(--ease-standard), box-shadow 150ms var(--ease-standard);
+  }
+  .hr-input::placeholder { color: var(--color-text-disabled); }
+  .hr-input:focus,
+  .hr-select:focus {
+    border-color: var(--color-primary-600);
+    box-shadow: 0 0 0 3px rgb(4 29 95 / 0.12);
+  }
+  .hr-input:disabled,
+  .hr-select:disabled {
+    background: var(--color-background);
+    color: var(--color-text-disabled);
+    cursor: not-allowed;
+  }
+  .hr-input.is-error { border-color: var(--color-danger-500); }
+  .hr-input.is-error:focus { box-shadow: 0 0 0 3px rgb(239 68 68 / 0.15); }
+
+  /* Buttons — 40px (32px for -sm) */
+  .hr-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    height: 40px;
+    padding: 0 16px;
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1;
+    white-space: nowrap;
+    cursor: pointer;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    transition: background-color 150ms var(--ease-standard), border-color 150ms var(--ease-standard),
+      box-shadow 150ms var(--ease-standard), filter 150ms var(--ease-standard);
+  }
+  .hr-btn:focus-visible { outline: 2px solid var(--color-primary-600); outline-offset: 2px; }
+  .hr-btn:disabled { opacity: 0.55; cursor: not-allowed; }
+  .hr-btn-sm { height: 32px; padding: 0 12px; font-size: 13px; }
+
+  /* Main CTA (Add / Save / Apply) — brand orange */
+  .hr-btn-primary { color: #fff; background-image: var(--gradient-accent); box-shadow: var(--shadow-sm); }
+  .hr-btn-primary:hover:not(:disabled) { filter: brightness(0.94); box-shadow: var(--shadow-md); }
+
+  /* Secondary emphasis — brand blue */
+  .hr-btn-blue { color: #fff; background: var(--color-primary-700); }
+  .hr-btn-blue:hover:not(:disabled) { background: var(--color-primary-600); }
+
+  /* Glass button — for actions sitting on the gradient page banner */
+  .hr-btn-glass { color: #fff; background: rgb(255 255 255 / 0.10); border-color: rgb(255 255 255 / 0.22); backdrop-filter: blur(4px); }
+  .hr-btn-glass:hover:not(:disabled) { background: rgb(255 255 255 / 0.20); }
+  .hr-btn-glass:focus-visible { outline-color: #fff; }
+
+  /* Neutral (Cancel / Refresh / Export) */
+  .hr-btn-outline { color: var(--color-text-primary); background: var(--color-surface); border-color: var(--color-border-strong); }
+  .hr-btn-outline:hover:not(:disabled) { background: var(--color-primary-50); border-color: var(--color-primary-200); color: var(--color-primary-700); }
+
+  .hr-btn-danger { color: #fff; background: var(--color-danger-500); }
+  .hr-btn-danger:hover:not(:disabled) { background: var(--color-danger-600); }
+
+  /* Square icon button (table actions, drawer close) */
+  .hr-icon-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    color: var(--color-text-secondary);
+    border-radius: 8px;
+    transition: background-color 150ms var(--ease-standard), color 150ms var(--ease-standard);
+  }
+  .hr-icon-btn:hover:not(:disabled) { background: var(--color-primary-50); color: var(--color-primary-700); }
+  .hr-icon-btn.danger:hover:not(:disabled) { background: var(--color-danger-50); color: var(--color-danger-600); }
+  .hr-icon-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .hr-icon-btn:focus-visible { outline: 2px solid var(--color-primary-600); outline-offset: 1px; }
+
+  /* Tables — fixed 44px header, 56px rows, vertically centred */
+  .hr-table { width: 100%; border-collapse: separate; border-spacing: 0; }
+  .hr-th {
+    height: 44px;
+    padding: 0 16px;
+    text-align: left;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    color: var(--color-primary-700);
+    background: var(--color-primary-50);
+    border-bottom: 1px solid var(--color-border-subtle);
+  }
+  .hr-td {
+    height: 56px;
+    padding: 0 16px;
+    font-size: 14px;
+    vertical-align: middle;
+    color: var(--color-text-primary);
+    border-bottom: 1px solid var(--color-border-subtle);
+  }
+  .hr-table tbody tr { transition: background-color 150ms var(--ease-standard); }
+  .hr-table tbody tr:hover { background: rgb(4 29 95 / 0.03); }
+  .hr-table tbody tr:last-child .hr-td { border-bottom: 0; }
 }

@@ -1,100 +1,33 @@
 import React, { useState, useEffect } from "react";
 import {
-  FiSearch,
-  FiEdit2,
-  FiTrash2,
-  FiShield,
-  FiChevronUp,
-  FiChevronDown,
-  FiAlertTriangle,
-} from "react-icons/fi";
-import { useNavigate } from "react-router-dom";
+  ChevronLeft,
+  ChevronRight,
+  Pencil,
+  Search,
+  ShieldCheck,
+  Trash2,
+} from "lucide-react";
 
-const SortIcon = () => (
-  <span className="inline-flex flex-col ml-1 opacity-40 leading-none">
-    <FiChevronUp size={10} />
-    <FiChevronDown size={10} />
-  </span>
-);
+import ConfirmModal from "./ui/ConfirmModal";
+import StatusBadge from "./ui/StatusBadge";
 
-// Confirmation modal — replaces the old window.confirm()/alert() pair so
-// deletes match the rest of the app's visual language.
-function DeleteConfirmModal({ role, onClose, onConfirm }) {
-  const [isDeleting, setIsDeleting] = useState(false);
+// 1 … 4 5 6 … 20  (keeps the pagination bar short for large lists)
+const getPageItems = (total, current) => {
+  if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
 
-  useEffect(() => {
-    setIsDeleting(false);
-  }, [role]);
+  const items = [1];
+  const start = Math.max(2, current - 1);
+  const end = Math.min(total - 1, current + 1);
 
-  useEffect(() => {
-    function handleKeyDown(e) {
-      if (e.key === "Escape" && !isDeleting) onClose();
-    }
-    document.addEventListener("keydown", handleKeyDown);
-    return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [onClose, isDeleting]);
+  if (start > 2) items.push("start-ellipsis");
+  for (let p = start; p <= end; p += 1) items.push(p);
+  if (end < total - 1) items.push("end-ellipsis");
 
-  if (!role) return null;
-
-  const handleConfirm = async () => {
-    setIsDeleting(true);
-    try {
-      await onConfirm(role.id);
-      onClose();
-    } catch {
-      // onDeleteRole already toasts the error — just let the user try again
-      setIsDeleting(false);
-    }
-  };
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" onClick={isDeleting ? undefined : onClose} />
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="delete-role-title"
-        className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm mx-4 z-10 p-6"
-      >
-        <div className="flex flex-col items-center text-center gap-3">
-          <div className="p-3 bg-red-50 rounded-full">
-            <FiAlertTriangle size={22} className="text-red-500" />
-          </div>
-          <h3 id="delete-role-title" className="text-base font-semibold text-gray-800">
-            Delete Role?
-          </h3>
-          <p className="text-sm text-gray-500">
-            Are you sure you want to delete{" "}
-            <span className="font-semibold text-gray-700">"{role.roleName}"</span>? Any
-            users assigned this role will lose the permissions tied to it. This can't be
-            undone.
-          </p>
-        </div>
-
-        <div className="flex gap-3 mt-6">
-          <button
-            onClick={onClose}
-            disabled={isDeleting}
-            className="flex-1 border border-gray-200 text-gray-600 py-2.5 rounded-lg text-sm font-medium hover:bg-gray-50 transition disabled:opacity-50"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={handleConfirm}
-            disabled={isDeleting}
-            className="flex-1 bg-red-500 text-white py-2.5 rounded-lg text-sm font-semibold hover:bg-red-600 transition disabled:opacity-60 disabled:cursor-not-allowed"
-          >
-            {isDeleting ? "Deleting…" : "Yes, Delete"}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
+  items.push(total);
+  return items;
+};
 
 const RolesTable = ({ roles, setRoles, onEditRole, onDeleteRole }) => {
-  const navigate = useNavigate();
-
   // ===========================
   // Filters
   // ===========================
@@ -104,6 +37,7 @@ const RolesTable = ({ roles, setRoles, onEditRole, onDeleteRole }) => {
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [currentPage, setCurrentPage] = useState(1);
   const [roleToDelete, setRoleToDelete] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     setCurrentPage(1);
@@ -112,22 +46,25 @@ const RolesTable = ({ roles, setRoles, onEditRole, onDeleteRole }) => {
   // ===========================
   // Delete Role
   // The API call + toast + refetch all live in Roles.jsx (single source
-  // of truth). This component only confirms and hands off the id — it
-  // used to also call axios.delete itself, which meant every click fired
-  // two delete requests against the backend.
+  // of truth). This component only confirms and hands off the id.
   // ===========================
 
-  const handleConfirmDelete = async (id) => {
-    await onDeleteRole(id);
+  const handleConfirmDelete = async () => {
+    if (!roleToDelete || isDeleting) return;
+
+    setIsDeleting(true);
+    try {
+      await onDeleteRole(roleToDelete.id);
+      setRoleToDelete(null);
+    } catch {
+      // onDeleteRole already toasts the error — just let the user try again
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   // ===========================
   // Search + Filter
-  // NOTE: a createdAt date-range filter used to run here too, defaulting
-  // to "this calendar year" — but the date-range picker that would let
-  // someone see or change that range was commented out. Roles outside
-  // the current year were silently disappearing from the table with no
-  // visible cause. Removed until the picker is wired back up.
   // ===========================
 
   const filteredRoles = roles.filter((item) => {
@@ -161,14 +98,26 @@ const RolesTable = ({ roles, setRoles, onEditRole, onDeleteRole }) => {
   const endEntry = Math.min(safePage * rowsPerPage, totalEntries);
 
   return (
-    <div className="bg-white rounded-xl shadow-md shadow-gray-200/60 border border-gray-100">
-      {/* Toolbar */}
-      <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-4 border-b border-gray-100">
-        <div className="flex items-center gap-2 flex-wrap">
-          <div className="relative">
-            <FiSearch
-              className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400"
-              size={14}
+    <div className="hr-card overflow-hidden">
+      {/* Card header */}
+      <div className="flex flex-col gap-4 border-b border-border-subtle px-5 py-4 lg:flex-row lg:items-center lg:justify-between">
+        <div>
+          <div className="flex items-center gap-2">
+            <h2 className="text-base font-semibold text-primary-700">Roles List</h2>
+            <span className="rounded-full bg-primary-50 px-2 py-0.5 text-xs font-semibold text-primary-700">
+              {roles.length}
+            </span>
+          </div>
+          <p className="mt-1 text-xs text-text-secondary">
+            Manage roles, their codes and access status.
+          </p>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2.5">
+          <div className="relative w-full sm:w-64">
+            <Search
+              size={16}
+              className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-text-disabled"
             />
             <input
               type="text"
@@ -176,7 +125,7 @@ const RolesTable = ({ roles, setRoles, onEditRole, onDeleteRole }) => {
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search roles..."
               aria-label="Search roles"
-              className="input input-sm input-bordered pl-8 w-56 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-100"
+              className="hr-input pl-9"
             />
           </div>
 
@@ -184,123 +133,126 @@ const RolesTable = ({ roles, setRoles, onEditRole, onDeleteRole }) => {
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
             aria-label="Filter by status"
-            className="select select-sm select-bordered focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-100"
+            className="hr-select !w-36"
           >
             <option value="">All Status</option>
             <option value="Active">Active</option>
             <option value="Inactive">Inactive</option>
           </select>
         </div>
+      </div>
 
-        <div className="flex items-center gap-2 text-sm text-gray-500">
-          <span className="whitespace-nowrap">Rows per page:</span>
-          <select
-            value={rowsPerPage}
-            onChange={(e) => setRowsPerPage(Number(e.target.value))}
-            className="select select-sm select-bordered focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-100"
+      {/* Rows per page */}
+      <div className="flex items-center gap-2 border-b border-border-subtle px-5 py-3 text-sm text-text-secondary">
+        <span className="whitespace-nowrap">Rows per page</span>
+        <select
+          value={rowsPerPage}
+          onChange={(e) => {
+            setRowsPerPage(Number(e.target.value));
+            setCurrentPage(1);
+          }}
+          aria-label="Rows per page"
+          className="hr-select !h-9 !w-20"
+        >
+          {[10, 25, 50, 100].map((n) => (
+            <option key={n} value={n}>
+              {n}
+            </option>
+          ))}
+        </select>
+
+        {(search || statusFilter) && (
+          <button
+            type="button"
+            onClick={() => {
+              setSearch("");
+              setStatusFilter("");
+            }}
+            className="ml-1 text-sm font-medium text-primary-700 transition hover:underline"
           >
-            {[10, 25, 50, 100].map((n) => (
-              <option key={n} value={n}>
-                {n}
-              </option>
-            ))}
-          </select>
-        </div>
+            Clear filters
+          </button>
+        )}
       </div>
 
       {/* Table */}
       <div className="overflow-x-auto">
-        <table className="table table-md w-full text-sm">
+        <table className="hr-table min-w-[820px]">
           <thead>
-            <tr className="text-left text-[11px] text-blue-900/50 uppercase tracking-wider border-b border-blue-100 bg-blue-50/40">
-              <th className="bg-transparent px-5 py-3 font-semibold">
-                <span className="inline-flex items-center gap-1">
-                  Role Name <SortIcon />
-                </span>
-              </th>
-
-              <th className="bg-transparent px-5 py-3 font-semibold">
-                <span className="inline-flex items-center gap-1">
-                  Role Code <SortIcon />
-                </span>
-              </th>
-
-              <th className="bg-transparent px-5 py-3 font-semibold">
-                <span className="inline-flex items-center gap-1">
-                  Description <SortIcon />
-                </span>
-              </th>
-
-              <th className="bg-transparent px-5 py-3 font-semibold">
-                <span className="inline-flex items-center gap-1">
-                  Created Date <SortIcon />
-                </span>
-              </th>
-
-              <th className="bg-transparent px-5 py-3 font-semibold">
-                <span className="inline-flex items-center gap-1">
-                  Status <SortIcon />
-                </span>
-              </th>
-
-              <th className="bg-transparent px-5 py-3 font-semibold text-center">Actions</th>
+            <tr>
+              <th className="hr-th">Role Name</th>
+              <th className="hr-th">Role Code</th>
+              <th className="hr-th">Description</th>
+              <th className="hr-th">Created Date</th>
+              <th className="hr-th">Status</th>
+              <th className="hr-th text-center">Actions</th>
             </tr>
           </thead>
 
-          <tbody className="divide-y divide-gray-50">
+          <tbody>
             {paginatedRoles.length === 0 ? (
               <tr>
-                <td colSpan={6} className="text-center py-12 text-gray-400 text-sm">
-                  {search || statusFilter ? "No roles match your filters." : "No roles yet."}
+                <td colSpan={6} className="py-16 text-center">
+                  <div className="mx-auto max-w-sm">
+                    <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-primary-50 text-primary-700">
+                      <ShieldCheck size={22} />
+                    </div>
+                    <p className="text-sm font-semibold text-text-primary">
+                      {search || statusFilter ? "No roles match your filters" : "No roles yet"}
+                    </p>
+                    <p className="mt-1 text-xs text-text-secondary">
+                      {search || statusFilter
+                        ? "Try changing your search or filter."
+                        : "Use the Add Role button to create the first one."}
+                    </p>
+                  </div>
                 </td>
               </tr>
             ) : (
               paginatedRoles.map((item) => (
-                <tr key={item.id} className="hover:bg-blue-50/50 transition">
-                  <td className="px-5 py-3 font-medium text-gray-800">{item.roleName}</td>
+                <tr key={item.id}>
+                  <td className="hr-td font-semibold text-text-primary">{item.roleName}</td>
 
-                  <td className="px-5 py-3">
-                    <code className="text-xs bg-blue-50 text-blue-600 border border-blue-100 px-2 py-0.5 rounded font-mono">
+                  <td className="hr-td">
+                    <code className="rounded-md border border-primary-100 bg-primary-50 px-2 py-0.5 font-mono text-xs text-primary-700">
                       {item.roleCode}
                     </code>
                   </td>
 
-                  <td className="px-5 py-3 text-gray-500">{item.description || "—"}</td>
-
-                  <td className="px-5 py-3 text-gray-500">{item.createdAt}</td>
-
-                  <td className="px-5 py-3">
-                    <span
-                      className={`inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-semibold border ${
-                        item.status === "Active"
-                          ? "bg-emerald-50 text-emerald-600 border-emerald-100"
-                          : "bg-red-50 text-red-500 border-red-100"
-                      }`}
-                    >
-                      {item.status}
-                    </span>
+                  <td className="hr-td text-text-secondary">
+                    <div className="max-w-[360px] truncate" title={item.description || undefined}>
+                      {item.description || "—"}
+                    </div>
                   </td>
 
-                  <td className="px-5 py-3">
-                    <div className="flex justify-center gap-1">
-                      
+                  <td className="hr-td whitespace-nowrap text-text-secondary">{item.createdAt}</td>
 
+                  <td className="hr-td">
+                    <StatusBadge tone={item.status === "Active" ? "success" : "danger"}>
+                      {item.status}
+                    </StatusBadge>
+                  </td>
+
+                  <td className="hr-td">
+                    <div className="flex items-center justify-center gap-1">
                       <button
+                        type="button"
                         onClick={() => onEditRole(item)}
                         title="Edit"
                         aria-label={`Edit ${item.roleName}`}
-                        className="p-1.5 rounded-lg hover:bg-blue-50 hover:text-blue-500 text-gray-400 transition"
+                        className="hr-icon-btn"
                       >
-                        <FiEdit2 size={15} />
+                        <Pencil size={16} />
                       </button>
 
                       <button
+                        type="button"
                         onClick={() => setRoleToDelete(item)}
                         title="Delete"
                         aria-label={`Delete ${item.roleName}`}
-                        className="p-1.5 rounded-lg hover:bg-red-50 hover:text-red-500 text-gray-400 transition"
+                        className="hr-icon-btn danger"
                       >
-                        <FiTrash2 size={15} />
+                        <Trash2 size={16} />
                       </button>
                     </div>
                   </td>
@@ -311,57 +263,72 @@ const RolesTable = ({ roles, setRoles, onEditRole, onDeleteRole }) => {
         </table>
       </div>
 
-      {/* Footer */}
-      <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-3 border-t border-gray-100">
-        <p className="text-xs text-gray-400">
-          Showing {startEntry} - {endEntry} of {totalEntries} entries
+      {/* Pagination */}
+      <div className="flex flex-col gap-3 border-t border-border-subtle px-5 py-3 sm:flex-row sm:items-center sm:justify-between">
+        <p className="text-sm text-text-secondary">
+          Showing <span className="font-semibold text-text-primary">{startEntry}</span>–
+          <span className="font-semibold text-text-primary">{endEntry}</span> of{" "}
+          <span className="font-semibold text-text-primary">{totalEntries}</span> entries
         </p>
 
-        <div className="join">
+        <div className="flex items-center gap-1">
           <button
-            className="join-item btn btn-sm btn-ghost border border-gray-200"
+            type="button"
+            className="hr-icon-btn border border-border-subtle"
             disabled={safePage === 1}
             onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
             aria-label="Previous page"
           >
-            ❮
+            <ChevronLeft size={16} />
           </button>
 
-          {Array.from({ length: totalPages }, (_, index) => index + 1).map(
-            (page) => (
+          {getPageItems(totalPages, safePage).map((item) =>
+            typeof item === "string" ? (
+              <span key={item} className="px-1 text-sm text-text-disabled">
+                …
+              </span>
+            ) : (
               <button
-                key={page}
-                onClick={() => setCurrentPage(page)}
-                aria-current={page === safePage ? "page" : undefined}
-                className={`join-item btn btn-sm ${
-                  page === safePage
-                    ? "bg-blue-600 border-blue-600 text-white hover:bg-blue-700"
-                    : "btn-ghost border border-gray-200"
+                type="button"
+                key={item}
+                onClick={() => setCurrentPage(item)}
+                aria-current={item === safePage ? "page" : undefined}
+                className={`flex h-8 min-w-8 items-center justify-center rounded-md px-2 text-sm font-medium transition-colors ${
+                  item === safePage
+                    ? "bg-primary-700 text-white shadow-sm"
+                    : "text-text-secondary hover:bg-primary-50 hover:text-primary-700"
                 }`}
               >
-                {page}
+                {item}
               </button>
             )
           )}
 
           <button
-            className="join-item btn btn-sm btn-ghost border border-gray-200"
+            type="button"
+            className="hr-icon-btn border border-border-subtle"
             disabled={safePage === totalPages}
-            onClick={() =>
-              setCurrentPage((prev) => Math.min(prev + 1, totalPages))
-            }
+            onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
             aria-label="Next page"
           >
-            ❯
+            <ChevronRight size={16} />
           </button>
         </div>
       </div>
 
-      <DeleteConfirmModal
-        role={roleToDelete}
-        onClose={() => setRoleToDelete(null)}
+      {/* Delete confirmation */}
+      <ConfirmModal
+        open={Boolean(roleToDelete)}
+        title="Delete Role?"
+        loading={isDeleting}
+        confirmLabel="Yes, Delete"
+        onClose={() => !isDeleting && setRoleToDelete(null)}
         onConfirm={handleConfirmDelete}
-      />
+      >
+        Are you sure you want to delete{" "}
+        <span className="font-semibold text-text-primary">"{roleToDelete?.roleName}"</span>? Any
+        users assigned this role will lose the permissions tied to it. This can't be undone.
+      </ConfirmModal>
     </div>
   );
 };

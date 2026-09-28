@@ -30,8 +30,8 @@ export default function RequirePermission({
 
   if (!permissionsLoaded) {
     return (
-      <div className="flex min-h-[40vh] items-center justify-center text-gray-400">
-        <Loader2 size={20} className="animate-spin" />
+      <div className="flex min-h-[40vh] items-center justify-center text-primary-700">
+        <Loader2 size={24} className="animate-spin" />
       </div>
     );
   }

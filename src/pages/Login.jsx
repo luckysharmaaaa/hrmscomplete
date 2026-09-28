@@ -5,25 +5,23 @@ import {
   Loader2,
   Lock,
   Mail,
-  UserPlus,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 
-import login from "../assets/images/logo.png";
-import loginBg from "../assets/images/Login_bg.png";
+import AuthLayout from "../components/auth/AuthLayout";
 import { loginUser } from "../services/loginAPI";
 import { useAuth } from "../context/AuthContext";
-import { COMPANY_NAME } from "../config/company";
+import {
+  COMPANY_NAME,
+  COMPANY_EMAIL_DOMAIN,
+  isCompanyEmail,
+} from "../config/company";
 
-const inputClass =
-  "h-12 w-full rounded-lg border border-slate-200 bg-white pl-11 pr-4 text-sm text-slate-800 outline-none transition-all duration-200 placeholder:text-slate-400 hover:border-slate-300 focus:border-[#F28C28] focus:ring-2 focus:ring-[#F28C28]/10 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-400";
+// Only company-domain accounts can sign in.
+const DOMAIN_MESSAGE = `Please sign in with your company email (name@${COMPANY_EMAIL_DOMAIN}).`;
 
-// Reassuring, MNC-style copy — a failed login never says "wrong domain" or
-// "invalid email"; it quietly points a new employee toward the right path
-// without making them feel like something is broken.
-const LOGIN_FAILED_MESSAGE =
-  "We couldn't sign you in with that email and password. If you're new and don't have your company email yet, use the personal email HR registered for you.";
+const LOGIN_FAILED_MESSAGE = "Invalid email or password.";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -60,7 +58,7 @@ const Login = () => {
       return;
     }
 
-    const email = formData.email.trim();
+    const email = formData.email.trim().toLowerCase();
     const password = formData.password;
 
     // ----------------------------------------------------------
@@ -68,6 +66,15 @@ const Login = () => {
     // ----------------------------------------------------------
     if (!email) {
       toast.error("Please enter your email address", {
+        toastId: "login-validation",
+      });
+      return;
+    }
+
+    // Company domain only — blocked here for quick feedback.
+    // (The backend enforces this too, so it can't be bypassed.)
+    if (!isCompanyEmail(email)) {
+      toast.error(DOMAIN_MESSAGE, {
         toastId: "login-validation",
       });
       return;
@@ -104,9 +111,6 @@ const Login = () => {
         replace: true,
       });
     } catch (error) {
-      // 401/400 covers both "wrong password" and "email not recognized"
-      // (company domain rejected, or personal email not yet registered)
-      // — the reassuring message fits both without sounding alarming.
       const status = error?.response?.status;
 
       const message =
@@ -123,176 +127,111 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen w-full bg-white">
-      <div className="grid min-h-screen grid-cols-1 lg:grid-cols-2">
+    <AuthLayout
+      title="Welcome back"
+      subtitle={`Sign in to your ${COMPANY_NAME} account.`}
+      footer="Having trouble signing in? Contact your HR administrator."
+    >
+      <form onSubmit={handleSubmit} className="space-y-5" noValidate>
+        {/* EMAIL */}
+        <div>
+          <label htmlFor="email" className="hr-label">
+            Work email
+          </label>
 
-        {/* LEFT SIDE — existing image only */}
-        <div className="relative hidden min-h-screen lg:block">
-          <img
-            src={loginBg}
-            alt="SmartHR"
-            className="absolute inset-0 h-full w-full object-cover"
-          />
-        </div>
+          <div className="relative">
+            <Mail
+              size={18}
+              strokeWidth={1.8}
+              className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-text-disabled"
+            />
 
-        {/* RIGHT SIDE */}
-        <div className="flex min-h-screen items-center justify-center bg-white px-5 py-10 sm:px-8 lg:px-10 xl:px-16">
-          <div className="flex w-full max-w-[410px] flex-col items-center">
-
-            {/* LOGO */}
-            <div className="mb-9 flex w-full justify-center">
-              <img
-                src={login}
-                alt="Technovatic Solutions"
-                className="h-auto max-h-14 w-auto max-w-[160px] object-contain"
-              />
-            </div>
-
-            {/* HEADING */}
-            <div className="mb-8 w-full text-center">
-              <h1 className="text-[30px] font-semibold leading-tight tracking-tight text-[#17233C] sm:text-[32px]">
-                Welcome back
-              </h1>
-
-              <p className="mt-2 text-sm leading-6 text-slate-500">
-                Sign in to your {COMPANY_NAME} account.
-              </p>
-            </div>
-
-            {/* FORM */}
-            <form
-              onSubmit={handleSubmit}
-              className="w-full space-y-5"
-              noValidate
-            >
-              {/* EMAIL */}
-              <div className="w-full">
-                <label
-                  htmlFor="email"
-                  className="mb-2 block text-sm font-medium text-slate-700"
-                >
-                  Work email
-                </label>
-
-                <div className="relative">
-                  <Mail
-                    size={18}
-                    strokeWidth={1.8}
-                    className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
-                  />
-
-                  <input
-                    id="email"
-                    name="email"
-                    type="email"
-                    value={formData.email}
-                    onChange={handleChange}
-                    autoComplete="email"
-                    placeholder="name@bytesbrick.com"
-                    disabled={loading}
-                    className={inputClass}
-                  />
-                </div>
-
-                {/* Quiet, always-visible hint — never an error state, so a
-                    new employee never feels like they've done something
-                    wrong just by being new. */}
-                <p className="mt-2 flex items-start gap-1.5 text-xs leading-5 text-slate-400">
-                  <UserPlus
-                    size={14}
-                    className="mt-0.5 shrink-0"
-                    aria-hidden="true"
-                  />
-                  New employee without a company email yet? Sign in with
-                  the personal email HR registered for you.
-                </p>
-              </div>
-
-              {/* PASSWORD */}
-              <div className="w-full">
-                <div className="mb-2 flex items-center justify-between gap-4">
-                  <label
-                    htmlFor="password"
-                    className="block text-sm font-medium text-slate-700"
-                  >
-                    Password
-                  </label>
-
-                  <button
-                    type="button"
-                    onClick={() => navigate("/forgot-password")}
-                    disabled={loading}
-                    className="shrink-0 text-sm font-medium text-[#F28C28] transition-colors hover:text-[#D87516] focus:outline-none focus:ring-2 focus:ring-[#F28C28]/20 disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    Forgot password?
-                  </button>
-                </div>
-
-                <div className="relative">
-                  <Lock
-                    size={18}
-                    strokeWidth={1.8}
-                    className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
-                  />
-
-                  <input
-                    id="password"
-                    name="password"
-                    type={showPassword ? "text" : "password"}
-                    value={formData.password}
-                    onChange={handleChange}
-                    autoComplete="current-password"
-                    placeholder="Enter your password"
-                    disabled={loading}
-                    className={`${inputClass} pr-12`}
-                  />
-
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword((prev) => !prev)}
-                    disabled={loading}
-                    aria-label={
-                      showPassword ? "Hide password" : "Show password"
-                    }
-                    className="absolute right-3 top-1/2 flex -translate-y-1/2 items-center justify-center rounded-md p-1 text-slate-400 transition-colors hover:text-slate-600 focus:outline-none focus:ring-2 focus:ring-slate-200 disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    {showPassword ? (
-                      <EyeOff size={18} strokeWidth={1.8} />
-                    ) : (
-                      <Eye size={18} strokeWidth={1.8} />
-                    )}
-                  </button>
-                </div>
-              </div>
-
-              {/* SIGN IN */}
-              <button
-                type="submit"
-                disabled={loading}
-                className="mt-2 flex h-12 w-full items-center justify-center gap-2 rounded-lg bg-[#F28C28] px-4 text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:bg-[#E17E1C] hover:shadow focus:outline-none focus:ring-2 focus:ring-[#F28C28]/30 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-70 disabled:hover:shadow-sm"
-              >
-                {loading ? (
-                  <>
-                    <Loader2 size={18} className="animate-spin" />
-                    <span>Signing in...</span>
-                  </>
-                ) : (
-                  "Sign in"
-                )}
-              </button>
-            </form>
-
-            {/* FOOTER */}
-            <div className="mt-9 w-full">
-              <p className="text-center text-xs leading-5 text-slate-400">
-                © {new Date().getFullYear()} SmartHR.{" "}
-                All rights reserved.
-              </p>
-            </div>
+            <input
+              id="email"
+              name="email"
+              type="email"
+              value={formData.email}
+              onChange={handleChange}
+              autoComplete="email"
+              placeholder={`name@${COMPANY_EMAIL_DOMAIN}`}
+              disabled={loading}
+              className="hr-input h-12! pl-11"
+            />
           </div>
         </div>
-      </div>
-    </div>
+
+        {/* PASSWORD */}
+        <div>
+          <div className="mb-1.5 flex items-center justify-between gap-4">
+            <label
+              htmlFor="password"
+              className="text-[13px] font-medium text-text-primary"
+            >
+              Password
+            </label>
+
+            <button
+              type="button"
+              onClick={() => navigate("/forgot-password")}
+              disabled={loading}
+              className="shrink-0 text-[13px] font-medium text-primary-700 transition-colors hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-600/30 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              Forgot password?
+            </button>
+          </div>
+
+          <div className="relative">
+            <Lock
+              size={18}
+              strokeWidth={1.8}
+              className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-text-disabled"
+            />
+
+            <input
+              id="password"
+              name="password"
+              type={showPassword ? "text" : "password"}
+              value={formData.password}
+              onChange={handleChange}
+              autoComplete="current-password"
+              placeholder="Enter your password"
+              disabled={loading}
+              className="hr-input h-12! pl-11 pr-12"
+            />
+
+            <button
+              type="button"
+              onClick={() => setShowPassword((prev) => !prev)}
+              disabled={loading}
+              aria-label={showPassword ? "Hide password" : "Show password"}
+              className="absolute right-2 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-md text-text-secondary transition-colors hover:bg-primary-50 hover:text-primary-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-600/30 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {showPassword ? (
+                <EyeOff size={18} strokeWidth={1.8} />
+              ) : (
+                <Eye size={18} strokeWidth={1.8} />
+              )}
+            </button>
+          </div>
+        </div>
+
+        {/* SIGN IN */}
+        <button
+          type="submit"
+          disabled={loading}
+          className="hr-btn hr-btn-primary mt-2 h-12! w-full"
+        >
+          {loading ? (
+            <>
+              <Loader2 size={18} className="animate-spin" />
+              <span>Signing in...</span>
+            </>
+          ) : (
+            "Sign in"
+          )}
+        </button>
+      </form>
+    </AuthLayout>
   );
 };
 

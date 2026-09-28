@@ -1,7 +1,8 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Camera, Loader2, Trash2 } from "lucide-react";
+import { Camera, Loader2, Trash2, ImageOff } from "lucide-react";
 import { toast } from "react-toastify";
 
+import ConfirmModal from "../../components/ui/ConfirmModal";
 import {
   uploadProfileImage,
   removeProfileImage,
@@ -14,7 +15,6 @@ const MAX_SIZE_BYTES = 2 * 1024 * 1024; // 2MB
 
 const ProfileImage = ({ user, roles = [], profileImage, onChange }) => {
   const fileInputRef = useRef(null);
-  const cancelButtonRef = useRef(null);
 
   const [previewUrl, setPreviewUrl] = useState(null);
   const [uploading, setUploading] = useState(false);
@@ -35,23 +35,6 @@ const ProfileImage = ({ user, roles = [], profileImage, onChange }) => {
   useEffect(() => {
     setImageFailed(false);
   }, [storedImageUrl]);
-
-  // Dialog: focus Cancel on open, close on Escape.
-  useEffect(() => {
-    if (!confirmRemove) return undefined;
-
-    cancelButtonRef.current?.focus();
-
-    const handleKeyDown = (event) => {
-      if (event.key === "Escape" && !removing) {
-        setConfirmRemove(false);
-      }
-    };
-
-    document.addEventListener("keydown", handleKeyDown);
-
-    return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [confirmRemove, removing]);
 
   const validateFile = (file) => {
     if (!ALLOWED_TYPES.includes(file.type)) {
@@ -126,11 +109,11 @@ const ProfileImage = ({ user, roles = [], profileImage, onChange }) => {
   return (
     <section
       aria-label="Profile photo"
-      className="flex flex-col gap-6 rounded-2xl border border-slate-200 bg-white p-6 sm:flex-row sm:items-center lg:p-8"
+      className="hr-card flex flex-col gap-6 p-6 sm:flex-row sm:items-center lg:p-8"
     >
       {/* Avatar */}
       <div className="relative h-24 w-24 shrink-0">
-        <div className="flex h-24 w-24 items-center justify-center overflow-hidden rounded-full border border-slate-200 shadow-sm">
+        <div className="flex h-24 w-24 items-center justify-center overflow-hidden rounded-full border-2 border-primary-100 shadow-sm">
           {currentImageUrl ? (
             <img
               src={currentImageUrl}
@@ -150,7 +133,7 @@ const ProfileImage = ({ user, roles = [], profileImage, onChange }) => {
         </div>
 
         {uploading && (
-          <div className="absolute inset-0 flex items-center justify-center rounded-full bg-black/40">
+          <div className="absolute inset-0 flex items-center justify-center rounded-full bg-primary-900/50">
             <Loader2 className="animate-spin text-white" size={22} />
           </div>
         )}
@@ -160,7 +143,7 @@ const ProfileImage = ({ user, roles = [], profileImage, onChange }) => {
           onClick={() => fileInputRef.current?.click()}
           disabled={uploading}
           aria-label="Change profile photo"
-          className="absolute -bottom-1 -right-1 flex h-9 w-9 items-center justify-center rounded-full border-2 border-white bg-orange-500 text-white shadow-sm transition hover:bg-orange-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/40 disabled:cursor-not-allowed disabled:opacity-60"
+          className="absolute -bottom-1 -right-1 flex h-9 w-9 items-center justify-center rounded-full border-2 border-white bg-primary-700 text-white shadow-sm transition hover:bg-primary-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-600/40 disabled:cursor-not-allowed disabled:opacity-60"
         >
           <Camera size={16} />
         </button>
@@ -168,12 +151,12 @@ const ProfileImage = ({ user, roles = [], profileImage, onChange }) => {
 
       {/* Identity */}
       <div className="min-w-0 flex-1">
-        <h2 className="truncate text-xl font-semibold text-[#041D5F]">
+        <h2 className="truncate text-xl font-semibold text-primary-700">
           {fullName || "Your profile"}
         </h2>
 
         {user?.email && (
-          <p className="mt-0.5 truncate text-sm text-slate-500">
+          <p className="mt-0.5 truncate text-sm text-text-secondary">
             {user.email}
           </p>
         )}
@@ -183,7 +166,7 @@ const ProfileImage = ({ user, roles = [], profileImage, onChange }) => {
             {roles.map((role) => (
               <li
                 key={role.id ?? role.roleName}
-                className="rounded-full bg-blue-50 px-2.5 py-1 text-xs font-medium text-[#041D5F]"
+                className="inline-flex h-6 items-center rounded-full border border-primary-100 bg-primary-50 px-2.5 text-xs font-semibold text-primary-700"
               >
                 {role.roleName}
               </li>
@@ -196,7 +179,7 @@ const ProfileImage = ({ user, roles = [], profileImage, onChange }) => {
             type="button"
             onClick={() => fileInputRef.current?.click()}
             disabled={uploading}
-            className="inline-flex h-10 items-center gap-2 rounded-lg bg-orange-500 px-4 text-sm font-semibold text-white transition hover:bg-orange-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/40 disabled:cursor-not-allowed disabled:opacity-60"
+            className="hr-btn hr-btn-primary"
           >
             <Camera size={16} />
             {uploading ? "Uploading..." : "Upload photo"}
@@ -207,14 +190,14 @@ const ProfileImage = ({ user, roles = [], profileImage, onChange }) => {
               type="button"
               onClick={() => setConfirmRemove(true)}
               disabled={uploading}
-              className="inline-flex h-10 items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-300 disabled:cursor-not-allowed disabled:opacity-60"
+              className="hr-btn hr-btn-outline"
             >
               <Trash2 size={16} />
               Remove
             </button>
           )}
 
-          <p className="text-xs text-slate-500">
+          <p className="text-xs text-text-secondary">
             JPG, PNG or WebP, up to 2 MB
           </p>
         </div>
@@ -229,55 +212,19 @@ const ProfileImage = ({ user, roles = [], profileImage, onChange }) => {
       </div>
 
       {/* Remove confirmation */}
-      {confirmRemove && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4"
-          onClick={() => !removing && setConfirmRemove(false)}
-        >
-          <div
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="remove-photo-title"
-            aria-describedby="remove-photo-desc"
-            onClick={(e) => e.stopPropagation()}
-            className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl"
-          >
-            <h4
-              id="remove-photo-title"
-              className="text-lg font-semibold text-[#041D5F]"
-            >
-              Remove profile photo?
-            </h4>
-
-            <p id="remove-photo-desc" className="mt-2 text-sm text-slate-500">
-              Your initials will be shown instead. You can upload a new photo
-              at any time.
-            </p>
-
-            <div className="mt-6 flex justify-end gap-3">
-              <button
-                ref={cancelButtonRef}
-                type="button"
-                onClick={() => setConfirmRemove(false)}
-                disabled={removing}
-                className="h-10 rounded-lg border border-slate-300 px-4 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-300 disabled:opacity-60"
-              >
-                Cancel
-              </button>
-
-              <button
-                type="button"
-                onClick={handleRemove}
-                disabled={removing}
-                className="inline-flex h-10 items-center gap-2 rounded-lg bg-red-600 px-4 text-sm font-semibold text-white transition hover:bg-red-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500/40 disabled:opacity-60"
-              >
-                {removing && <Loader2 size={16} className="animate-spin" />}
-                {removing ? "Removing..." : "Remove photo"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ConfirmModal
+        open={confirmRemove}
+        title="Remove profile photo?"
+        icon={ImageOff}
+        confirmLabel="Remove photo"
+        loadingLabel="Removing..."
+        loading={removing}
+        onClose={() => !removing && setConfirmRemove(false)}
+        onConfirm={handleRemove}
+      >
+        Your initials will be shown instead. You can upload a new photo at any
+        time.
+      </ConfirmModal>
     </section>
   );
 };

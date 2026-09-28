@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
+import { ChevronDown, ChevronRight, Loader2 } from "lucide-react";
 import api from "../services/api";
-import { FiChevronDown, FiChevronRight } from "react-icons/fi";
 
 const permissionColumns = [
   "view",
@@ -41,20 +41,7 @@ const PermissionCheckbox = ({
       disabled={disabled}
       onChange={onChange}
       aria-label={ariaLabel}
-      className="
-        checkbox checkbox-sm
-        border-gray-300
-        checked:border-orange-500
-        checked:bg-orange-500
-        checked:text-white
-        focus:ring-2
-        focus:ring-orange-100
-        focus:ring-offset-0
-        disabled:opacity-40
-        disabled:cursor-not-allowed
-        cursor-pointer
-        transition-all
-      "
+      className="h-4 w-4 cursor-pointer rounded accent-primary-700 transition disabled:cursor-not-allowed disabled:opacity-40"
     />
   );
 };
@@ -359,10 +346,10 @@ const RolePermissionTable = ({
 
       return (
         <React.Fragment key={module.id}>
-          <tr className="border-b border-gray-100 hover:bg-orange-50/30 transition-colors">
-            <td className="px-4 py-3">
+          <tr>
+            <td className="hr-td !h-12">
               <div
-                className="flex items-center min-w-0"
+                className="flex min-w-0 items-center"
                 style={{ paddingLeft: `${level * 22}px` }}
               >
                 {module.children?.length > 0 ? (
@@ -374,16 +361,12 @@ const RolePermissionTable = ({
                         ? `Collapse ${module.moduleName}`
                         : `Expand ${module.moduleName}`
                     }
-                    className="
-                      mr-1.5 p-1 rounded-md text-gray-400
-                      hover:text-orange-500 hover:bg-orange-50
-                      transition shrink-0
-                    "
+                    className="mr-1.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-text-secondary transition hover:bg-primary-50 hover:text-primary-700"
                   >
                     {expanded[module.id] ? (
-                      <FiChevronDown size={16} />
+                      <ChevronDown size={16} />
                     ) : (
-                      <FiChevronRight size={16} />
+                      <ChevronRight size={16} />
                     )}
                   </button>
                 ) : (
@@ -398,14 +381,11 @@ const RolePermissionTable = ({
                 />
 
                 <span
-                  className={`
-                    ml-3 truncate
-                    ${
-                      level === 0
-                        ? "font-semibold text-gray-800"
-                        : "font-medium text-gray-600"
-                    }
-                  `}
+                  className={`ml-3 truncate text-sm ${
+                    level === 0
+                      ? "font-semibold text-text-primary"
+                      : "font-medium text-text-secondary"
+                  }`}
                 >
                   {module.moduleName}
                 </span>
@@ -413,7 +393,7 @@ const RolePermissionTable = ({
             </td>
 
             {/* ALL - FIRST */}
-            <td className="text-center px-3 py-3 border-l border-gray-100">
+            <td className="hr-td !h-12 border-l border-border-subtle text-center">
               <PermissionCheckbox
                 checked={allPermissionsSelected}
                 indeterminate={
@@ -427,10 +407,7 @@ const RolePermissionTable = ({
 
             {/* INDIVIDUAL PERMISSIONS */}
             {permissionColumns.map((action) => (
-              <td
-                key={action}
-                className="text-center px-3 py-3"
-              >
+              <td key={action} className="hr-td !h-12 text-center">
                 <PermissionCheckbox
                   checked={hasPermission(module.id, action)}
                   disabled={!isModuleSelected(module.id)}
@@ -451,52 +428,32 @@ const RolePermissionTable = ({
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64 bg-white">
+      <div className="flex h-64 items-center justify-center rounded-md border border-border-subtle bg-surface">
         <div className="flex flex-col items-center gap-3">
-          <span className="loading loading-spinner loading-md text-orange-500" />
-          <p className="text-sm text-gray-400">
-            Loading permissions...
-          </p>
+          <Loader2 size={26} className="animate-spin text-primary-700" />
+          <p className="text-sm text-text-secondary">Loading permissions...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="rounded-xl border border-gray-200 bg-white overflow-hidden">
-      <div className="overflow-auto max-h-[420px]">
-        <table className="w-full text-sm border-collapse">
-          <thead className="sticky top-0 z-10">
-            <tr className="bg-gray-50 border-b border-gray-200">
-              <th
-                className="
-                  min-w-[270px] px-4 py-3 text-left
-                  text-[11px] font-bold uppercase tracking-wider
-                  text-gray-500 bg-gray-50
-                "
-              >
-                Module
-              </th>
+    <div className="overflow-hidden rounded-md border border-border-subtle bg-surface">
+      <div className="max-h-[420px] overflow-auto">
+        <table className="hr-table min-w-[560px]">
+          <thead>
+            <tr>
+              <th className="hr-th sticky top-0 z-10 min-w-[270px]">Module</th>
 
               {/* ALL - FIRST OPTION */}
-              <th
-                className="
-                  min-w-[70px] px-2 py-3 text-center
-                  text-[11px] font-bold uppercase tracking-wider
-                  text-orange-600 bg-orange-50
-                "
-              >
+              <th className="hr-th sticky top-0 z-10 min-w-[70px] bg-orange-50! text-center text-accent-600!">
                 All
               </th>
 
               {permissionColumns.map((action) => (
                 <th
                   key={action}
-                  className="
-                    min-w-[70px] px-2 py-3 text-center
-                    text-[11px] font-bold uppercase tracking-wider
-                    text-gray-500 bg-gray-50
-                  "
+                  className="hr-th sticky top-0 z-10 min-w-[70px] text-center"
                 >
                   {permissionLabels[action]}
                 </th>
@@ -509,7 +466,7 @@ const RolePermissionTable = ({
               <tr>
                 <td
                   colSpan={permissionColumns.length + 2}
-                  className="py-12 text-center text-sm text-gray-400"
+                  className="py-12 text-center text-sm text-text-secondary"
                 >
                   No modules found.
                 </td>
@@ -521,8 +478,8 @@ const RolePermissionTable = ({
         </table>
       </div>
 
-      <div className="px-4 py-3 bg-gray-50 border-t border-gray-100">
-        <p className="text-xs text-gray-400">
+      <div className="border-t border-border-subtle bg-background px-4 py-3">
+        <p className="text-xs text-text-secondary">
           Select a module first, then choose the permissions required
           for that module. Use "All" to enable or disable every
           permission at once.

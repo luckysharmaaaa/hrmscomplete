@@ -26,8 +26,7 @@ const resolveImageUrl = (path) => {
 };
 
 // ========================= Validation =========================
-// Same rule as Add User: an official company email OR a personal
-// email is required — not both, and not neither.
+// Only an official company email (@bytesbrick.com) is allowed.
 
 const validationSchema = Yup.object({
   firstName: Yup.string()
@@ -39,29 +38,14 @@ const validationSchema = Yup.object({
     .required("Last Name is required"),
 
   email: Yup.string()
+    .trim()
     .email("Enter a valid email address")
+    .required("Official email is required")
     .test(
       "is-company-domain",
-      `Official email must be a @${COMPANY_EMAIL_DOMAIN} address`,
-      (value) => !value || isCompanyEmail(value),
-    )
-    .when("alternateEmail", {
-      is: (value) => !value,
-      then: (schema) =>
-        schema.required(
-          "Provide an official company email, or a personal email below",
-        ),
-      otherwise: (schema) => schema.notRequired(),
-    }),
-
-  alternateEmail: Yup.string()
-    .email("Enter a valid email address")
-    .test(
-      "not-company-domain",
-      `Personal email must not be a @${COMPANY_EMAIL_DOMAIN} address — use the official email field for that`,
-      (value) => !value || !isCompanyEmail(value),
-    )
-    .notRequired(),
+      `Only @${COMPANY_EMAIL_DOMAIN} email addresses are allowed`,
+      (value) => isCompanyEmail(value),
+    ),
 
   // Password is optional in edit mode
   password: Yup.string().test(
@@ -76,7 +60,7 @@ const validationSchema = Yup.object({
         /[0-9]/.test(value)
       );
     },
-   ),
+  ),
   confirmPassword: Yup.string().when("password", {
     is: (val) => val && val.length > 0,
 
@@ -231,11 +215,6 @@ const EditUserModal = ({
   // Temporary browser image URL
   const previewUrlRef = useRef(null);
 
-  // Still waiting on a company email (created with only a personal
-  // email). Drives the hint text under the Personal Email field.
-  const pendingCompanyEmail =
-    !editUser?.email && !!editUser?.alternateEmail;
-
   // ========================= Drawer Animation =========================
 
   useEffect(() => {
@@ -335,7 +314,6 @@ const EditUserModal = ({
         firstName: editUser.firstName || "",
         lastName: editUser.lastName || "",
         email: editUser.email || "",
-        alternateEmail: editUser.alternateEmail || "",
         phone: editUser.phone || "",
 
         status: isActive,
@@ -421,7 +399,7 @@ const EditUserModal = ({
 
   // ========================= SAVE PROFILE IMAGE =========================
   //
-  // This is completely separate from the main Update User button.
+  // Completely separate from the main Update User button.
   //
   // Choose Image -> preview only
   // Save Image -> upload + save image immediately
@@ -590,7 +568,6 @@ const EditUserModal = ({
       firstName: editUser?.firstName || "",
       lastName: editUser?.lastName || "",
       email: editUser?.email || "",
-      alternateEmail: editUser?.alternateEmail || "",
       phone: editUser?.phone || "",
       password: "",
       confirmPassword: "",
@@ -644,28 +621,17 @@ const EditUserModal = ({
             values.lastName.trim();
         }
 
-        // Only send email when it actually has a value AND changed —
-        // never send an accidental blank that would clear it.
-        const trimmedEmail = values.email.trim();
+        // Email is required and must be @bytesbrick.com (validated by
+        // the schema). Only send it when it actually changed.
+        const trimmedEmail = values.email
+          .trim()
+          .toLowerCase();
 
         if (
-          trimmedEmail &&
-          trimmedEmail !== original.email
+          trimmedEmail !==
+          original.email.toLowerCase()
         ) {
           payload.email = trimmedEmail;
-        }
-
-        // Personal email CAN be intentionally cleared (e.g. once the
-        // official email has been assigned), so blank is allowed here.
-        const trimmedAlternateEmail =
-          values.alternateEmail.trim();
-
-        if (
-          trimmedAlternateEmail !==
-          original.alternateEmail
-        ) {
-          payload.alternateEmail =
-            trimmedAlternateEmail || null;
         }
 
         if (
@@ -715,7 +681,7 @@ const EditUserModal = ({
         }
 
         // IMPORTANT:
-        // Profile image is NOT handled here anymore.
+        // Profile image is NOT handled here.
         // It has its own "Save Image" button.
 
         // ========================= Update User =========================
@@ -809,7 +775,6 @@ const EditUserModal = ({
       mode="edit"
       formik={formik}
       isPasswordOptional
-      pendingCompanyEmail={pendingCompanyEmail}
       roles={roles}
       selectedRoles={selectedRoles}
       onRoleChange={handleRoleChange}

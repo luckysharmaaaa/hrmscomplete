@@ -8,11 +8,11 @@ import { PASSWORD_RULES, passwordSchema } from "./profileValidation";
 import { changePassword } from "../../services/profileApi";
 
 const STRENGTH_LEVELS = [
-  { label: "Too weak", bar: "bg-red-500", text: "text-red-600" },
-  { label: "Weak", bar: "bg-red-500", text: "text-red-600" },
-  { label: "Fair", bar: "bg-amber-500", text: "text-amber-600" },
-  { label: "Good", bar: "bg-lime-500", text: "text-lime-700" },
-  { label: "Strong", bar: "bg-green-600", text: "text-green-700" },
+  { label: "Too weak", bar: "bg-danger-500", text: "text-danger-600" },
+  { label: "Weak", bar: "bg-danger-500", text: "text-danger-600" },
+  { label: "Fair", bar: "bg-warning-500", text: "text-warning-600" },
+  { label: "Good", bar: "bg-info-500", text: "text-info-600" },
+  { label: "Strong", bar: "bg-success-500", text: "text-success-600" },
 ];
 
 const PasswordField = ({ formik, name, label, autoComplete, placeholder, hint }) => {
@@ -43,7 +43,7 @@ const PasswordField = ({ formik, name, label, autoComplete, placeholder, hint })
           onClick={() => setVisible((prev) => !prev)}
           aria-label={visible ? `Hide ${label.toLowerCase()}` : `Show ${label.toLowerCase()}`}
           aria-pressed={visible}
-          className="absolute right-1.5 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-md text-slate-400 transition hover:text-slate-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/40"
+          className="absolute right-1.5 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-md text-text-secondary transition hover:bg-primary-50 hover:text-primary-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-600/30"
         >
           {visible ? <EyeOff size={18} /> : <Eye size={18} />}
         </button>
@@ -62,9 +62,9 @@ const PasswordChecklist = ({ password }) => {
   const level = password ? STRENGTH_LEVELS[score] : null;
 
   return (
-    <div className="rounded-lg bg-slate-50 p-4">
+    <div className="rounded-md border border-border-subtle bg-background p-4">
       <div className="flex items-center justify-between gap-3">
-        <p className="text-sm font-medium text-slate-700">
+        <p className="text-sm font-medium text-primary-700">
           Password requirements
         </p>
 
@@ -80,7 +80,7 @@ const PasswordChecklist = ({ password }) => {
           <span
             key={segment}
             className={`h-1.5 flex-1 rounded-full transition-colors ${
-              password && segment <= score ? level.bar : "bg-slate-200"
+              password && segment <= score ? level.bar : "bg-border-subtle"
             }`}
           />
         ))}
@@ -91,7 +91,7 @@ const PasswordChecklist = ({ password }) => {
           <li
             key={rule.id}
             className={`flex items-center gap-2 text-xs ${
-              rule.met ? "text-green-700" : "text-slate-500"
+              rule.met ? "text-success-600" : "text-text-secondary"
             }`}
           >
             {rule.met ? (
@@ -183,7 +183,7 @@ const ChangePassword = () => {
                 type="button"
                 onClick={() => resetForm()}
                 disabled={isSubmitting || !dirty}
-                className="h-10 rounded-lg border border-slate-300 bg-white px-4 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-300 disabled:cursor-not-allowed disabled:opacity-60"
+                className="hr-btn hr-btn-outline"
               >
                 Clear
               </button>
@@ -191,7 +191,7 @@ const ChangePassword = () => {
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="inline-flex h-10 min-w-[150px] items-center justify-center gap-2 rounded-lg bg-orange-500 px-5 text-sm font-semibold text-white transition hover:bg-orange-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/40 disabled:cursor-not-allowed disabled:opacity-70"
+                className="hr-btn hr-btn-primary min-w-[160px]"
               >
                 {isSubmitting && <Loader2 size={16} className="animate-spin" />}
                 {isSubmitting ? "Updating..." : "Update password"}

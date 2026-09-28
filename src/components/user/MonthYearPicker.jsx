@@ -34,28 +34,28 @@ const MonthYearPicker = ({ year, month, onChange }) => {
   };
 
   return (
-    <div className="flex h-10 items-center gap-1 rounded-lg border border-gray-200 bg-white px-1.5 shadow-sm">
+    <div className="flex h-10 items-center gap-1 rounded-lg border border-border-strong bg-surface px-1.5">
       <button
         type="button"
         onClick={goPrev}
-        className="flex h-7 w-7 items-center justify-center rounded-md text-gray-400 transition hover:bg-gray-50 hover:text-gray-700"
+        className="hr-icon-btn"
         aria-label="Previous month"
       >
-        <ChevronLeft size={15} />
+        <ChevronLeft size={16} />
       </button>
 
-      <span className="flex min-w-[130px] items-center justify-center gap-1.5 px-2 text-sm font-semibold text-gray-700">
-        <CalendarDays size={14} className="text-orange-500" />
+      <span className="flex min-w-[140px] items-center justify-center gap-1.5 px-2 text-sm font-semibold text-primary-700">
+        <CalendarDays size={15} />
         {MONTH_NAMES[month - 1]} {year}
       </span>
 
       <button
         type="button"
         onClick={goNext}
-        className="flex h-7 w-7 items-center justify-center rounded-md text-gray-400 transition hover:bg-gray-50 hover:text-gray-700"
+        className="hr-icon-btn"
         aria-label="Next month"
       >
-        <ChevronRight size={15} />
+        <ChevronRight size={16} />
       </button>
     </div>
   );

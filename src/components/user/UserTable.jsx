@@ -1,20 +1,21 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  FiChevronDown,
-  FiChevronLeft,
-  FiChevronRight,
-  FiChevronUp,
-  FiEdit2,
-  FiRefreshCw,
-  FiSearch,
-  FiTrash2,
-} from "react-icons/fi";
+  ChevronLeft,
+  ChevronRight,
+  Loader2,
+  Pencil,
+  RefreshCw,
+  Search,
+  Trash2,
+  Users,
+} from "lucide-react";
 import { toast } from "react-toastify";
 
 import defaultUser from "../../assets/images/logoo.jpg";
 import EditUserModal from "./EditUserModal";
 import DeleteUserModal from "./DeleteUserModal";
 import DateRangePickerButton from "./DateRangePickerButton";
+import StatusBadge from "../ui/StatusBadge";
 
 import {
   deleteUser,
@@ -31,30 +32,21 @@ const resolveImageUrl = (path) => {
   return `${FILE_BASE_URL}${path.startsWith("/") ? "" : "/"}${path}`;
 };
 
-const SortIcon = () => (
-  <span className="ml-1 inline-flex flex-col leading-none opacity-35">
-    <FiChevronUp size={9} />
-    <FiChevronDown size={9} />
-  </span>
-);
+// 1 … 4 5 6 … 20  (keeps the pagination bar short for large lists)
+const getPageItems = (total, current) => {
+  if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
 
-const EmailStatusCell = ({ user }) =>
-  user.pendingCompanyEmail ? (
-    <span
-      className="inline-flex items-center rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-[11px] font-medium text-amber-700"
-      title={
-        user.alternateEmail
-          ? `Sign-in email: ${user.alternateEmail}`
-          : "Official company email has not been assigned yet"
-      }
-    >
-      Pending official email
-    </span>
-  ) : (
-    <span className="inline-flex items-center rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[11px] font-medium text-emerald-700">
-      Official email
-    </span>
-  );
+  const items = [1];
+  const start = Math.max(2, current - 1);
+  const end = Math.min(total - 1, current + 1);
+
+  if (start > 2) items.push("start-ellipsis");
+  for (let p = start; p <= end; p += 1) items.push(p);
+  if (end < total - 1) items.push("end-ellipsis");
+
+  items.push(total);
+  return items;
+};
 
 const UserTable = ({ roles = [], refresh }) => {
   const [users, setUsers] = useState([]);
@@ -103,8 +95,6 @@ const UserTable = ({ roles = [], refresh }) => {
         lastName: item.lastName,
         name: `${item.firstName || ""} ${item.lastName || ""}`.trim() || "Unnamed User",
         email: item.email,
-        alternateEmail: item.alternateEmail,
-        pendingCompanyEmail: Boolean(item.pendingCompanyEmail),
         phone: item.phone || "—",
         status: Number(item.status) === 1 ? "Active" : "Inactive",
         statusValue: Number(item.status),
@@ -135,21 +125,8 @@ const UserTable = ({ roles = [], refresh }) => {
     fetchUsers();
   }, [fetchUsers, refresh]);
 
-  /*
-   * FIX FOR EDIT ICON:
-   *
-   * Previously the edit drawer/modal was opened ONLY after getUserById()
-   * completed successfully. If that request failed, returned an unexpected
-   * payload, or was delayed, clicking the edit icon looked like it did
-   * nothing.
-   *
-   * We now:
-   * 1. Open the edit modal immediately using the row already loaded.
-   * 2. Fetch the complete user record in the background.
-   * 3. Replace editUser with the detailed response when available.
-   *
-   * This also gives the user immediate visual feedback.
-   */
+  // Opens the edit drawer immediately with the row data, then swaps in the
+  // full record once getUserById() returns.
   const handleEdit = async (user) => {
     if (!user?.id || editingUserId) return;
 
@@ -168,11 +145,7 @@ const UserTable = ({ roles = [], refresh }) => {
     } catch (error) {
       console.error("Failed to load user details:", error);
 
-      /*
-       * Do NOT close the modal here.
-       * The list record is already a valid fallback and the modal can still
-       * be inspected instead of making the edit button appear broken.
-       */
+      // Don't close the drawer — the list record is a valid fallback.
       toast.error(
         error?.response?.data?.message ||
           "Could not load complete user details. Please try again."
@@ -188,10 +161,10 @@ const UserTable = ({ roles = [], refresh }) => {
     setEditUser(null);
   };
 
+  // EditUserModal already shows its own success toast.
   const handleSaveUser = async () => {
     await fetchUsers();
     closeEditModal();
-    toast.success("User details updated successfully.");
   };
 
   const handleDeleteUser = async () => {
@@ -244,7 +217,6 @@ const UserTable = ({ roles = [], refresh }) => {
         !query ||
         user.name.toLowerCase().includes(query) ||
         String(user.email || "").toLowerCase().includes(query) ||
-        String(user.alternateEmail || "").toLowerCase().includes(query) ||
         String(user.phone || "").toLowerCase().includes(query);
 
       const matchRole =
@@ -313,96 +285,88 @@ const UserTable = ({ roles = [], refresh }) => {
   };
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
-      {/* Card Header */}
-      <div className="border-b border-gray-100 px-5 py-4">
-        <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
-          <div>
-            <div className="flex items-center gap-2">
-              <h2 className="text-lg font-bold tracking-tight text-[#0F265C]">
-                Users List
-              </h2>
-
-              <span className="rounded-full bg-gray-100 px-2 py-0.5 text-[11px] font-semibold text-gray-500">
-                {totalEntries}
-              </span>
-            </div>
-
-            <p className="mt-1 text-xs text-gray-400">
-              Manage user profiles, roles, access status and account details.
-            </p>
+    <div className="hr-card overflow-hidden">
+      {/* Card header: title + filters */}
+      <div className="flex flex-col gap-4 border-b border-border-subtle px-5 py-4 xl:flex-row xl:items-center xl:justify-between">
+        <div>
+          <div className="flex items-center gap-2">
+            <h2 className="text-base font-semibold text-primary-700">Users List</h2>
+            <span className="rounded-full bg-primary-50 px-2 py-0.5 text-xs font-semibold text-primary-700">
+              {totalEntries}
+            </span>
           </div>
+          <p className="mt-1 text-xs text-text-secondary">
+            Manage user profiles, roles, access status and account details.
+          </p>
+        </div>
 
-          <div className="flex flex-wrap items-center gap-2">
-            <DateRangePickerButton
-              value={appliedRange}
-              onChange={(newRange) => {
-                setAppliedRange(newRange);
-                setCurrentPage(1);
-              }}
-              defaultPreset="This Year"
-            />
+        <div className="flex flex-wrap items-center gap-2.5">
+          <DateRangePickerButton
+            value={appliedRange}
+            onChange={(newRange) => {
+              setAppliedRange(newRange);
+              setCurrentPage(1);
+            }}
+            defaultPreset="This Year"
+          />
 
-            <select
-              className="select select-bordered h-10 min-h-0 w-36 rounded-lg bg-white text-sm text-gray-700"
-              value={roleFilter}
-              onChange={(e) => {
-                setRoleFilter(e.target.value);
-                setCurrentPage(1);
-              }}
-              aria-label="Filter by role"
-            >
-              <option value="">All Roles</option>
-              {roleOptions.map((role) => (
-                <option key={role} value={role}>
-                  {role}
-                </option>
-              ))}
-            </select>
+          <select
+            className="hr-select !w-36"
+            value={roleFilter}
+            onChange={(e) => {
+              setRoleFilter(e.target.value);
+              setCurrentPage(1);
+            }}
+            aria-label="Filter by role"
+          >
+            <option value="">All Roles</option>
+            {roleOptions.map((role) => (
+              <option key={role} value={role}>
+                {role}
+              </option>
+            ))}
+          </select>
 
-            <select
-              className="select select-bordered h-10 min-h-0 w-32 rounded-lg bg-white text-sm text-gray-700"
-              value={statusFilter}
-              onChange={(e) => {
-                setStatusFilter(e.target.value);
-                setCurrentPage(1);
-              }}
-              aria-label="Filter by status"
-            >
-              <option value="">All Status</option>
-              <option value="Active">Active</option>
-              <option value="Inactive">Inactive</option>
-            </select>
+          <select
+            className="hr-select !w-32"
+            value={statusFilter}
+            onChange={(e) => {
+              setStatusFilter(e.target.value);
+              setCurrentPage(1);
+            }}
+            aria-label="Filter by status"
+          >
+            <option value="">All Status</option>
+            <option value="Active">Active</option>
+            <option value="Inactive">Inactive</option>
+          </select>
 
-            <button
-              type="button"
-              onClick={fetchUsers}
-              disabled={loading}
-              className="flex h-10 w-10 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-500 transition hover:border-gray-300 hover:bg-gray-50 hover:text-[#0F265C] disabled:cursor-not-allowed disabled:opacity-50"
-              title="Refresh users"
-              aria-label="Refresh users"
-            >
-              <FiRefreshCw
-                size={15}
-                className={loading ? "animate-spin" : ""}
-              />
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={fetchUsers}
+            disabled={loading}
+            className="hr-btn hr-btn-outline !w-10 !px-0"
+            title="Refresh users"
+            aria-label="Refresh users"
+          >
+            <RefreshCw size={16} className={loading ? "animate-spin" : ""} />
+          </button>
         </div>
       </div>
 
-      {/* Search / Controls */}
-      <div className="flex flex-col gap-3 border-b border-gray-100 px-5 py-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-center gap-2 text-xs text-gray-500">
+      {/* Rows per page + search */}
+      <div className="flex flex-col gap-3 border-b border-border-subtle px-5 py-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center gap-2 text-sm text-text-secondary">
           <span>Rows per page</span>
 
           <select
-            className="select select-bordered h-9 min-h-0 rounded-lg bg-white text-xs text-gray-700"
+            className="hr-select !h-9 !w-20"
             value={rowsPerPage}
             onChange={(e) => {
               setRowsPerPage(Number(e.target.value));
               setCurrentPage(1);
             }}
+            aria-label="Rows per page"
           >
             <option value={10}>10</option>
             <option value={25}>25</option>
@@ -413,93 +377,68 @@ const UserTable = ({ roles = [], refresh }) => {
             <button
               type="button"
               onClick={resetFilters}
-              className="ml-1 text-xs font-medium text-orange-500 transition hover:text-orange-600"
+              className="ml-1 text-sm font-medium text-primary-700 transition hover:underline"
             >
               Clear filters
             </button>
           )}
         </div>
 
-        <label className="flex h-10 w-full max-w-sm items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 text-gray-400 transition focus-within:border-orange-300 focus-within:ring-2 focus-within:ring-orange-100">
-          <FiSearch size={16} />
-
+        <div className="relative w-full sm:max-w-sm">
+          <Search
+            size={16}
+            className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-text-disabled"
+          />
           <input
             type="text"
-            className="w-full bg-transparent text-sm text-gray-700 outline-none placeholder:text-gray-400"
+            className="hr-input pl-9"
             placeholder="Search name, email or phone..."
             value={search}
             onChange={(e) => {
               setSearch(e.target.value);
               setCurrentPage(1);
             }}
+            aria-label="Search users"
           />
-        </label>
+        </div>
       </div>
 
       {/* Table */}
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[980px]">
-          <thead className="bg-gray-50/80">
-            <tr className="border-b border-gray-100 text-left">
-              <th className="w-8 px-4 py-3" />
-
-              <th className="px-4 py-3 text-[11px] font-semibold uppercase tracking-wide text-gray-500">
-                <span className="inline-flex items-center">
-                  Name
-                  <SortIcon />
-                </span>
-              </th>
-
-              <th className="px-4 py-3 text-[11px] font-semibold uppercase tracking-wide text-gray-500">
-                Email
-              </th>
-
-              <th className="px-4 py-3 text-[11px] font-semibold uppercase tracking-wide text-gray-500">
-                Email Status
-              </th>
-
-              <th className="px-4 py-3 text-[11px] font-semibold uppercase tracking-wide text-gray-500">
-                Created Date
-              </th>
-
-              <th className="px-4 py-3 text-[11px] font-semibold uppercase tracking-wide text-gray-500">
-                Role
-              </th>
-
-              <th className="px-4 py-3 text-[11px] font-semibold uppercase tracking-wide text-gray-500">
-                Status
-              </th>
-
-              <th className="px-4 py-3 text-center text-[11px] font-semibold uppercase tracking-wide text-gray-500">
-                Actions
-              </th>
+        <table className="hr-table min-w-[860px]">
+          <thead>
+            <tr>
+              <th className="hr-th">Name</th>
+              <th className="hr-th">Email</th>
+              <th className="hr-th">Created Date</th>
+              <th className="hr-th">Role</th>
+              <th className="hr-th">Status</th>
+              <th className="hr-th text-center">Actions</th>
             </tr>
           </thead>
 
           <tbody>
             {loading && users.length === 0 ? (
               Array.from({ length: 5 }).map((_, index) => (
-                <tr key={`skeleton-${index}`} className="border-b border-gray-50">
-                  <td colSpan={8} className="px-4 py-4">
-                    <div className="flex items-center gap-4 animate-pulse">
-                      <div className="h-10 w-10 rounded-full bg-gray-100" />
-                      <div className="h-3 w-40 rounded bg-gray-100" />
-                      <div className="h-3 w-56 rounded bg-gray-100" />
+                <tr key={`skeleton-${index}`}>
+                  <td colSpan={6} className="hr-td">
+                    <div className="flex animate-pulse items-center gap-4">
+                      <div className="h-10 w-10 rounded-full bg-primary-50" />
+                      <div className="h-3 w-40 rounded bg-primary-50" />
+                      <div className="h-3 w-56 rounded bg-primary-50" />
                     </div>
                   </td>
                 </tr>
               ))
             ) : paginatedUsers.length === 0 ? (
               <tr>
-                <td colSpan={8} className="px-4 py-16 text-center">
+                <td colSpan={6} className="py-16 text-center">
                   <div className="mx-auto max-w-sm">
-                    <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-gray-50 text-gray-400">
-                      <FiSearch size={20} />
+                    <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-primary-50 text-primary-700">
+                      <Users size={22} />
                     </div>
-                    <p className="text-sm font-semibold text-gray-700">
-                      No users found
-                    </p>
-                    <p className="mt-1 text-xs text-gray-400">
+                    <p className="text-sm font-semibold text-text-primary">No users found</p>
+                    <p className="mt-1 text-xs text-text-secondary">
                       Try changing your search or filter criteria.
                     </p>
                   </div>
@@ -507,15 +446,11 @@ const UserTable = ({ roles = [], refresh }) => {
               </tr>
             ) : (
               paginatedUsers.map((user) => (
-                <tr
-                  key={user.id}
-                  className="border-b border-gray-50 transition hover:bg-orange-50/20"
-                >
-                  <td className="px-4 py-3" />
-
-                  <td className="px-4 py-3">
+                <tr key={user.id}>
+                  {/* Name */}
+                  <td className="hr-td">
                     <div className="flex items-center gap-3">
-                      <div className="h-10 w-10 shrink-0 overflow-hidden rounded-full border border-gray-100 bg-gray-50">
+                      <div className="h-10 w-10 shrink-0 overflow-hidden rounded-full border border-border-subtle bg-background">
                         <img
                           src={user.avatar}
                           alt={user.name}
@@ -529,45 +464,36 @@ const UserTable = ({ roles = [], refresh }) => {
                       </div>
 
                       <div className="min-w-0">
-                        <div className="truncate text-sm font-semibold text-gray-800">
+                        <div className="truncate text-sm font-semibold text-text-primary">
                           {user.name}
                         </div>
-                        <div className="mt-0.5 text-xs text-gray-400">
-                          {user.phone}
-                        </div>
+                        <div className="mt-0.5 text-xs text-text-secondary">{user.phone}</div>
                       </div>
                     </div>
                   </td>
 
-                  <td className="px-4 py-3">
-                    <div className="max-w-[230px] truncate text-sm text-gray-600">
-                      {user.email || (
-                        <span className="italic text-gray-400">
-                          {user.alternateEmail || "—"}
-                        </span>
-                      )}
+                  {/* Email */}
+                  <td className="hr-td">
+                    <div className="max-w-[260px] truncate text-sm text-text-primary">
+                      {user.email || "—"}
                     </div>
                   </td>
 
-                  <td className="px-4 py-3">
-                    <EmailStatusCell user={user} />
-                  </td>
+                  {/* Created date */}
+                  <td className="hr-td whitespace-nowrap text-text-secondary">{user.date}</td>
 
-                  <td className="px-4 py-3 text-sm text-gray-500">
-                    {user.date}
-                  </td>
-
-                  <td className="px-4 py-3">
+                  {/* Role */}
+                  <td className="hr-td">
                     <div className="flex items-center gap-1.5">
                       {user.roles?.length ? (
                         <>
-                          <span className="inline-flex max-w-[130px] truncate rounded-full border border-blue-100 bg-blue-50 px-2.5 py-1 text-[11px] font-medium text-blue-700">
+                          <span className="inline-flex h-6 max-w-[140px] items-center truncate rounded-full border border-primary-100 bg-primary-50 px-2.5 text-xs font-semibold text-primary-700">
                             {user.roles[0]?.roleName || "—"}
                           </span>
 
                           {user.roles.length > 1 && (
                             <span
-                              className="text-[11px] font-semibold text-gray-400"
+                              className="text-xs font-semibold text-text-secondary"
                               title={user.roles
                                 .slice(1)
                                 .map((role) => role?.roleName)
@@ -579,26 +505,21 @@ const UserTable = ({ roles = [], refresh }) => {
                           )}
                         </>
                       ) : (
-                        <span className="text-xs text-gray-400">No role</span>
+                        <span className="text-xs text-text-disabled">No role</span>
                       )}
                     </div>
                   </td>
 
-                  <td className="px-4 py-3">
-                    <span
-                      className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-semibold ${
-                        user.status === "Active"
-                          ? "bg-emerald-50 text-emerald-700"
-                          : "bg-red-50 text-red-600"
-                      }`}
-                    >
+                  {/* Status */}
+                  <td className="hr-td">
+                    <StatusBadge tone={user.status === "Active" ? "success" : "danger"}>
                       {user.status}
-                    </span>
+                    </StatusBadge>
                   </td>
 
                   {/* Actions */}
-                  <td className="px-4 py-3">
-                    <div className="flex items-center justify-center gap-1.5">
+                  <td className="hr-td">
+                    <div className="flex items-center justify-center gap-1">
                       <button
                         type="button"
                         aria-label={`Edit ${user.name}`}
@@ -609,15 +530,12 @@ const UserTable = ({ roles = [], refresh }) => {
                           e.stopPropagation();
                           handleEdit(user);
                         }}
-                        className="group flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-500 transition hover:border-orange-200 hover:bg-orange-50 hover:text-orange-500 disabled:cursor-not-allowed disabled:opacity-50"
+                        className="hr-icon-btn"
                       >
                         {editingUserId === user.id ? (
-                          <FiRefreshCw size={15} className="animate-spin" />
+                          <Loader2 size={16} className="animate-spin" />
                         ) : (
-                          <FiEdit2
-                            size={15}
-                            className="transition-transform group-hover:scale-105"
-                          />
+                          <Pencil size={16} />
                         )}
                       </button>
 
@@ -632,12 +550,9 @@ const UserTable = ({ roles = [], refresh }) => {
                           setDeleteTarget(user);
                           setIsDeleteModalOpen(true);
                         }}
-                        className="group flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-500 transition hover:border-red-200 hover:bg-red-50 hover:text-red-500 disabled:cursor-not-allowed disabled:opacity-50"
+                        className="hr-icon-btn danger"
                       >
-                        <FiTrash2
-                          size={15}
-                          className="transition-transform group-hover:scale-105"
-                        />
+                        <Trash2 size={16} />
                       </button>
                     </div>
                   </td>
@@ -649,53 +564,54 @@ const UserTable = ({ roles = [], refresh }) => {
       </div>
 
       {/* Pagination */}
-      <div className="flex flex-col gap-3 border-t border-gray-100 px-5 py-3 sm:flex-row sm:items-center sm:justify-between">
-        <p className="text-xs text-gray-500">
-          Showing{" "}
-          <span className="font-semibold text-gray-700">{startEntry}</span>–
-          <span className="font-semibold text-gray-700">{endEntry}</span> of{" "}
-          <span className="font-semibold text-gray-700">{totalEntries}</span>{" "}
-          entries
+      <div className="flex flex-col gap-3 border-t border-border-subtle px-5 py-3 sm:flex-row sm:items-center sm:justify-between">
+        <p className="text-sm text-text-secondary">
+          Showing <span className="font-semibold text-text-primary">{startEntry}</span>–
+          <span className="font-semibold text-text-primary">{endEntry}</span> of{" "}
+          <span className="font-semibold text-text-primary">{totalEntries}</span> entries
         </p>
 
         <div className="flex items-center gap-1">
           <button
             type="button"
-            className="flex h-8 w-8 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-500 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
+            className="hr-icon-btn border border-border-subtle"
             disabled={safePage === 1}
             onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
             aria-label="Previous page"
           >
-            <FiChevronLeft size={14} />
+            <ChevronLeft size={16} />
           </button>
 
-          {Array.from({ length: totalPages }, (_, index) => index + 1).map(
-            (page) => (
+          {getPageItems(totalPages, safePage).map((item) =>
+            typeof item === "string" ? (
+              <span key={item} className="px-1 text-sm text-text-disabled">
+                …
+              </span>
+            ) : (
               <button
                 type="button"
-                key={page}
-                onClick={() => setCurrentPage(page)}
-                className={`flex h-8 min-w-8 items-center justify-center rounded-lg px-2 text-xs font-medium transition ${
-                  safePage === page
-                    ? "bg-orange-500 text-white shadow-sm"
-                    : "border border-transparent text-gray-500 hover:bg-gray-50"
+                key={item}
+                onClick={() => setCurrentPage(item)}
+                aria-current={safePage === item ? "page" : undefined}
+                className={`flex h-8 min-w-8 items-center justify-center rounded-md px-2 text-sm font-medium transition-colors ${
+                  safePage === item
+                    ? "bg-primary-700 text-white shadow-sm"
+                    : "text-text-secondary hover:bg-primary-50 hover:text-primary-700"
                 }`}
               >
-                {page}
+                {item}
               </button>
             )
           )}
 
           <button
             type="button"
-            className="flex h-8 w-8 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-500 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
+            className="hr-icon-btn border border-border-subtle"
             disabled={safePage === totalPages}
-            onClick={() =>
-              setCurrentPage((prev) => Math.min(prev + 1, totalPages))
-            }
+            onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
             aria-label="Next page"
           >
-            <FiChevronRight size={14} />
+            <ChevronRight size={16} />
           </button>
         </div>
       </div>
@@ -713,7 +629,7 @@ const UserTable = ({ roles = [], refresh }) => {
         onConfirm={handleDeleteUser}
       />
 
-      {/* Edit Modal */}
+      {/* Edit Drawer */}
       <EditUserModal
         isOpen={isEditModalOpen}
         editUser={editUser}

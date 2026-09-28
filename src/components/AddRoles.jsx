@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from "react";
-import CloseIcon from "@mui/icons-material/Close";
-import { BadgeCheck, Loader2, ShieldCheck } from "lucide-react";
+import { BadgeCheck, Loader2 } from "lucide-react";
+
+import SideDrawer from "./ui/SideDrawer";
+import Switch from "./ui/Switch";
 import RolePermissionTable from "./RolePermissionTable";
 
 const EMPTY_ROLE = {
@@ -9,6 +11,19 @@ const EMPTY_ROLE = {
   description: "",
   status: "Active",
 };
+
+// Section heading with divider (same as the User drawer)
+const Section = ({ title, description, children }) => (
+  <section>
+    <div className="mb-4 border-b border-border-subtle pb-3">
+      <h3 className="text-sm font-semibold text-primary-700">{title}</h3>
+      {description && (
+        <p className="mt-0.5 text-xs text-text-secondary">{description}</p>
+      )}
+    </div>
+    {children}
+  </section>
+);
 
 const AddRoles = ({
   open,
@@ -47,42 +62,6 @@ const AddRoles = ({
     setErrors({});
     setIsSaving(false);
   }, [editRole, open]);
-
-  // ============================================================
-  // LOCK BODY SCROLL
-  // ============================================================
-
-  useEffect(() => {
-    if (!open) return;
-
-    const originalOverflow = document.body.style.overflow;
-
-    document.body.style.overflow = "hidden";
-
-    return () => {
-      document.body.style.overflow = originalOverflow;
-    };
-  }, [open]);
-
-  // ============================================================
-  // ESCAPE KEY
-  // ============================================================
-
-  useEffect(() => {
-    if (!open) return;
-
-    const handleKeyDown = (event) => {
-      if (event.key === "Escape" && !isSaving) {
-        onClose();
-      }
-    };
-
-    document.addEventListener("keydown", handleKeyDown);
-
-    return () => {
-      document.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [open, isSaving, onClose]);
 
   // ============================================================
   // FORM CHANGE
@@ -202,306 +181,173 @@ const AddRoles = ({
     onClose();
   };
 
+  const isActive = roleData.status === "Active";
+
   // ============================================================
   // RENDER
   // ============================================================
 
   return (
-    <>
-      {/* ========================================================
-          BACKDROP
-      ======================================================== */}
+    <SideDrawer
+      open={open}
+      onClose={handleCancel}
+      icon={BadgeCheck}
+      size="lg"
+      title={editRole ? "Edit Role" : "Create Role"}
+      subtitle={
+        editRole
+          ? "Update role details and access permissions"
+          : "Create a custom role and define its access scope"
+      }
+      footer={
+        <div className="flex w-full items-center justify-between gap-3">
+          {/* Status */}
+          <div className="flex items-center gap-3">
+            <span className="text-sm font-medium text-text-primary">Status</span>
+            <Switch
+              checked={isActive}
+              disabled={isSaving}
+              ariaLabel="Toggle role status"
+              onChange={() =>
+                setRoleData((prev) => ({
+                  ...prev,
+                  status: prev.status === "Active" ? "Inactive" : "Active",
+                }))
+              }
+            />
+            <span
+              className={`text-sm font-medium ${
+                isActive ? "text-success-600" : "text-text-secondary"
+              }`}
+            >
+              {roleData.status}
+            </span>
+          </div>
 
-      {open && (
-        <div
-          className="fixed inset-0 z-[999] bg-black/40 backdrop-blur-[2px]"
-          onClick={handleCancel}
-        />
-      )}
-
-      {/* ========================================================
-          DRAWER
-      ======================================================== */}
-
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="role-drawer-title"
-        className={`fixed top-0 right-0 z-[1000] flex h-full w-full max-w-[720px] flex-col bg-white shadow-2xl transition-transform duration-300 ${
-          open ? "translate-x-0" : "translate-x-full"
-        }`}
-      >
-        {/* ======================================================
-            HEADER
-        ====================================================== */}
-
-        <div className="shrink-0 border-b border-gray-100 bg-white px-6 py-5">
-          <div className="flex items-start justify-between gap-4">
-            <div className="flex min-w-0 items-center gap-3.5">
-              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-orange-100 bg-orange-50 text-orange-500">
-                <BadgeCheck size={22} />
-              </div>
-
-              <div className="min-w-0">
-                <h2
-                  id="role-drawer-title"
-                  className="text-xl font-bold tracking-tight text-[#0F265C]"
-                >
-                  {editRole ? "Edit Role" : "Create Role"}
-                </h2>
-
-                <p className="mt-1 text-xs font-medium text-gray-400">
-                  {editRole
-                    ? "Update role details and access permissions"
-                    : "Create a custom role and define its access scope"}
-                </p>
-              </div>
-            </div>
-
+          {/* Actions */}
+          <div className="flex items-center gap-3">
             <button
               type="button"
               onClick={handleCancel}
               disabled={isSaving}
-              aria-label="Close role drawer"
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-gray-200 text-gray-500 transition hover:border-gray-300 hover:bg-gray-50 hover:text-gray-700 disabled:cursor-not-allowed disabled:opacity-50"
+              className="hr-btn hr-btn-outline"
             >
-              <CloseIcon fontSize="small" />
+              Cancel
+            </button>
+
+            <button
+              type="submit"
+              form="role-form"
+              disabled={isSaving}
+              className="hr-btn hr-btn-primary min-w-[140px]"
+            >
+              {isSaving && <Loader2 size={16} className="animate-spin" />}
+              {isSaving ? "Saving..." : editRole ? "Update Role" : "Create Role"}
             </button>
           </div>
         </div>
+      }
+    >
+      <form
+        id="role-form"
+        noValidate
+        onSubmit={(event) => {
+          event.preventDefault();
+          handleSubmit();
+        }}
+        className="space-y-8"
+      >
+        {/* ROLE INFORMATION */}
+        <Section
+          title="Role Information"
+          description="Define the identity and purpose of this role."
+        >
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            {/* Role Name */}
+            <div>
+              <label htmlFor="roleName" className="hr-label">
+                Role Name
+                <span className="ml-0.5 text-danger-500">*</span>
+              </label>
 
-        {/* ======================================================
-            BODY
-        ====================================================== */}
+              <input
+                id="roleName"
+                name="roleName"
+                type="text"
+                value={roleData.roleName}
+                onChange={handleChange}
+                disabled={isSaving}
+                placeholder="e.g. Payroll Manager"
+                className={`hr-input ${errors.roleName ? "is-error" : ""}`}
+              />
 
-        <div className="min-h-0 flex-1 overflow-y-auto">
-          {/* ====================================================
-              ROLE INFORMATION
-          ==================================================== */}
+              {errors.roleName && (
+                <p className="mt-1.5 text-xs text-danger-600">{errors.roleName}</p>
+              )}
+            </div>
 
-          <section className="border-b border-gray-100 px-6 py-6">
-            <div className="mb-5 flex items-center gap-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
-                <ShieldCheck size={18} />
-              </div>
+            {/* Role Code */}
+            <div>
+              <label htmlFor="roleCode" className="hr-label">
+                Role Code
+                <span className="ml-0.5 text-danger-500">*</span>
+              </label>
 
-              <div>
-                <h3 className="text-sm font-bold text-gray-800">
-                  Role Information
-                </h3>
+              <input
+                id="roleCode"
+                name="roleCode"
+                type="text"
+                value={roleData.roleCode}
+                onChange={handleRoleCodeChange}
+                disabled={isSaving}
+                placeholder="e.g. PAYROLL_MANAGER"
+                className={`hr-input font-mono ${errors.roleCode ? "is-error" : ""}`}
+              />
 
-                <p className="text-xs text-gray-400">
-                  Define the identity and purpose of this role.
+              {errors.roleCode ? (
+                <p className="mt-1.5 text-xs text-danger-600">{errors.roleCode}</p>
+              ) : (
+                <p className="mt-1.5 text-xs text-text-secondary">
+                  Uppercase letters, numbers and underscores only.
                 </p>
-              </div>
+              )}
             </div>
 
-            <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
-              {/* Role Name */}
+            {/* Description */}
+            <div className="md:col-span-2">
+              <label htmlFor="roleDescription" className="hr-label">
+                Description
+              </label>
 
-              <div>
-                <label
-                  htmlFor="roleName"
-                  className="mb-2 block text-sm font-semibold text-gray-700"
-                >
-                  Role Name
-                  <span className="ml-1 text-red-500">*</span>
-                </label>
-
-                <input
-                  id="roleName"
-                  name="roleName"
-                  type="text"
-                  value={roleData.roleName}
-                  onChange={handleChange}
-                  disabled={isSaving}
-                  placeholder="e.g. Payroll Manager"
-                  className={`input input-bordered w-full bg-white ${
-                    errors.roleName
-                      ? "border-red-400 focus:border-red-400"
-                      : "border-gray-200 focus:border-blue-400"
-                  }`}
-                />
-
-                {errors.roleName && (
-                  <p className="mt-1.5 text-xs font-medium text-red-500">
-                    {errors.roleName}
-                  </p>
-                )}
-              </div>
-
-              {/* Role Code */}
-
-              <div>
-                <label
-                  htmlFor="roleCode"
-                  className="mb-2 block text-sm font-semibold text-gray-700"
-                >
-                  Role Code
-                  <span className="ml-1 text-red-500">*</span>
-                </label>
-
-                <input
-                  id="roleCode"
-                  name="roleCode"
-                  type="text"
-                  value={roleData.roleCode}
-                  onChange={handleRoleCodeChange}
-                  disabled={isSaving}
-                  placeholder="e.g. PAYROLL_MANAGER"
-                  className={`input input-bordered w-full bg-white font-mono text-sm ${
-                    errors.roleCode
-                      ? "border-red-400 focus:border-red-400"
-                      : "border-gray-200 focus:border-blue-400"
-                  }`}
-                />
-
-                {errors.roleCode ? (
-                  <p className="mt-1.5 text-xs font-medium text-red-500">
-                    {errors.roleCode}
-                  </p>
-                ) : (
-                  <p className="mt-1.5 text-[11px] text-gray-400">
-                    Uppercase letters, numbers and underscores only.
-                  </p>
-                )}
-              </div>
-
-              {/* Description */}
-
-              <div className="md:col-span-2">
-                <label
-                  htmlFor="roleDescription"
-                  className="mb-2 block text-sm font-semibold text-gray-700"
-                >
-                  Description
-                </label>
-
-                <textarea
-                  id="roleDescription"
-                  name="description"
-                  rows={3}
-                  value={roleData.description}
-                  onChange={handleChange}
-                  disabled={isSaving}
-                  placeholder="Describe what this role is responsible for..."
-                  className="textarea textarea-bordered w-full resize-none border-gray-200 bg-white focus:border-blue-400"
-                />
-              </div>
-            </div>
-          </section>
-
-          {/* ====================================================
-              PERMISSIONS
-          ==================================================== */}
-
-          <section className="px-6 py-6">
-            <div className="mb-5">
-              <h3 className="text-sm font-bold text-gray-800">
-                Module & Permission Access
-              </h3>
-
-              <p className="mt-1 text-xs text-gray-400">
-                Select the modules this role can access and define the
-                permitted actions.
-              </p>
-            </div>
-
-            <div className="overflow-hidden rounded-xl border border-gray-200 bg-white">
-              <RolePermissionTable
-                role={editRole}
-                selectedModules={selectedModules}
-                setSelectedModules={setSelectedModules}
-                permissions={permissions}
-                setPermissions={setPermissions}
+              <textarea
+                id="roleDescription"
+                name="description"
+                rows={3}
+                value={roleData.description}
+                onChange={handleChange}
+                disabled={isSaving}
+                placeholder="Describe what this role is responsible for..."
+                className="hr-input h-auto! resize-none py-2.5"
               />
             </div>
-          </section>
-        </div>
-
-        {/* ======================================================
-            FOOTER
-        ====================================================== */}
-
-        <div className="shrink-0 border-t border-gray-100 bg-white px-6 py-4">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            {/* Status */}
-
-            <div className="flex items-center gap-3">
-              <span className="text-sm font-semibold text-gray-700">
-                Status
-              </span>
-
-              <button
-                type="button"
-                disabled={isSaving}
-                onClick={() =>
-                  setRoleData((prev) => ({
-                    ...prev,
-                    status:
-                      prev.status === "Active" ? "Inactive" : "Active",
-                  }))
-                }
-                aria-pressed={roleData.status === "Active"}
-                className={`relative inline-flex h-6 w-11 items-center rounded-full transition ${
-                  roleData.status === "Active"
-                    ? "bg-emerald-500"
-                    : "bg-gray-300"
-                } disabled:opacity-50`}
-              >
-                <span
-                  className={`inline-block h-5 w-5 rounded-full bg-white shadow-sm transition ${
-                    roleData.status === "Active"
-                      ? "translate-x-5"
-                      : "translate-x-1"
-                  }`}
-                />
-              </button>
-
-              <span
-                className={`text-xs font-semibold ${
-                  roleData.status === "Active"
-                    ? "text-emerald-600"
-                    : "text-gray-500"
-                }`}
-              >
-                {roleData.status}
-              </span>
-            </div>
-
-            {/* Actions */}
-
-            <div className="flex items-center justify-end gap-3">
-              <button
-                type="button"
-                onClick={handleCancel}
-                disabled={isSaving}
-                className="rounded-lg border border-gray-200 px-5 py-2.5 text-sm font-semibold text-gray-600 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                Cancel
-              </button>
-
-              <button
-                type="button"
-                onClick={handleSubmit}
-                disabled={isSaving}
-                className="flex min-w-[130px] items-center justify-center gap-2 rounded-lg bg-orange-500 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {isSaving && (
-                  <Loader2 size={16} className="animate-spin" />
-                )}
-
-                {isSaving
-                  ? "Saving..."
-                  : editRole
-                    ? "Update Role"
-                    : "Create Role"}
-              </button>
-            </div>
           </div>
-        </div>
-      </div>
-    </>
+        </Section>
+
+        {/* PERMISSIONS */}
+        <Section
+          title="Module & Permission Access"
+          description="Select the modules this role can access and define the permitted actions."
+        >
+          <RolePermissionTable
+            role={editRole}
+            selectedModules={selectedModules}
+            setSelectedModules={setSelectedModules}
+            permissions={permissions}
+            setPermissions={setPermissions}
+          />
+        </Section>
+      </form>
+    </SideDrawer>
   );
 };
 
