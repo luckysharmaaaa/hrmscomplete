@@ -1,15 +1,17 @@
 import React, { useCallback, useEffect, useState } from "react";
 
 import {
-  ChevronRight,
-  FileText,
-  FileSpreadsheet,
   ChevronDown,
-  Plus,
-  LayoutList,
+  Download,
+  FileSpreadsheet,
+  FileText,
   LayoutGrid,
+  LayoutList,
+  Plus,
+  Users,
 } from "lucide-react";
 
+import PageHeader from "../components/ui/PageHeader";
 import EmployeeStatCards from "../components/employeeList/EmployeeStatCards";
 import EmployeeTable from "../components/employeeList/EmployeeTable";
 import EmployeeGrid from "../components/employeeList/EmployeeGrid";
@@ -72,13 +74,10 @@ export default function EmployeeList() {
 
         name: `${emp?.firstName ?? ""} ${emp?.lastName ?? ""}`.trim(),
 
-        // Default avatar initials
         avatar: `${emp?.firstName?.[0] ?? ""}${emp?.lastName?.[0] ?? ""}`,
 
-        // Default avatar color
         color: AVATAR_COLORS[index % AVATAR_COLORS.length],
 
-        // Profile image
         avatarUrl: emp?.profileImage
           ? `http://localhost:5000/${emp.profileImage}`
           : null,
@@ -96,28 +95,19 @@ export default function EmployeeList() {
         status: emp?.status ? "Active" : "Inactive",
 
         projects: 0,
-
         done: 0,
-
         progress: 0,
-
         productivity: 0,
       }));
 
       setData(employees);
     } catch (error) {
       console.error("Failed to fetch employees:", error);
-
-      // Keep existing data instead of unnecessarily clearing
-      // the table when a refresh request fails.
+      // Keep existing data instead of unnecessarily clearing the table.
     } finally {
       setLoading(false);
     }
   }, []);
-
-  // =========================================================
-  // Initial API Call
-  // =========================================================
 
   useEffect(() => {
     fetchEmployees();
@@ -167,45 +157,27 @@ export default function EmployeeList() {
       const q = String(search ?? "").toLowerCase();
 
       const matchSearch =
-        String(employee?.name ?? "")
-          .toLowerCase()
-          .includes(q) ||
-        String(employee?.empId ?? "")
-          .toLowerCase()
-          .includes(q) ||
-        String(employee?.email ?? "")
-          .toLowerCase()
-          .includes(q) ||
-        String(employee?.designation ?? "")
-          .toLowerCase()
-          .includes(q) ||
-        String(employee?.department ?? "")
-          .toLowerCase()
-          .includes(q);
+        String(employee?.name ?? "").toLowerCase().includes(q) ||
+        String(employee?.empId ?? "").toLowerCase().includes(q) ||
+        String(employee?.email ?? "").toLowerCase().includes(q) ||
+        String(employee?.designation ?? "").toLowerCase().includes(q) ||
+        String(employee?.department ?? "").toLowerCase().includes(q);
 
       const matchDesignation =
         designation === "All Designations" ||
         employee?.designation === designation;
 
-      const matchStatus =
-        status === "All Status" ||
-        employee?.status === status;
+      const matchStatus = status === "All Status" || employee?.status === status;
 
       return matchSearch && matchDesignation && matchStatus;
     })
     .sort((a, b) => {
       if (sortBy === "Ascending") {
-        return String(a?.name ?? "").localeCompare(
-          String(b?.name ?? "")
-        );
+        return String(a?.name ?? "").localeCompare(String(b?.name ?? ""));
       }
-
       if (sortBy === "Descending") {
-        return String(b?.name ?? "").localeCompare(
-          String(a?.name ?? "")
-        );
+        return String(b?.name ?? "").localeCompare(String(a?.name ?? ""));
       }
-
       return 0;
     });
 
@@ -213,10 +185,7 @@ export default function EmployeeList() {
   // Pagination
   // =========================================================
 
-  const totalPages = Math.max(
-    1,
-    Math.ceil(filtered.length / rowsPerPage)
-  );
+  const totalPages = Math.max(1, Math.ceil(filtered.length / rowsPerPage));
 
   const paginated = filtered.slice(
     (currentPage - 1) * rowsPerPage,
@@ -229,7 +198,6 @@ export default function EmployeeList() {
 
   const handleSubmit = async () => {
     await fetchEmployees();
-
     setDrawerOpen(false);
     setEditItem(null);
   };
@@ -241,13 +209,7 @@ export default function EmployeeList() {
   const handleDelete = async (id) => {
     try {
       await deleteEmployee(id);
-
-      // Remove deleted employee from local state
-      setData((prev) =>
-        prev.filter((employee) => employee.id !== id)
-      );
-
-      // Close delete modal after successful deletion
+      setData((prev) => prev.filter((employee) => employee.id !== id));
       setDeleteTarget(null);
     } catch (error) {
       console.error("Failed to delete employee:", error);
@@ -262,123 +224,100 @@ export default function EmployeeList() {
     setCurrentPage(1);
   }, [search, designation, status, rowsPerPage]);
 
+  // Closes the daisyUI focus-dropdown after an item is clicked
+  const closeDropdown = () => document.activeElement?.blur?.();
+
   // =========================================================
   // Render
   // =========================================================
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-start justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-[#0F265C]">
-            Employees List
-          </h1>
+      <PageHeader
+        icon={Users}
+        title="Employees List"
+        breadcrumbs={[{ label: "Employees" }, { label: "Employee List" }]}
+        actions={
+          <>
+            {/* List / Grid toggle */}
+            <div className="flex items-center overflow-hidden rounded-md border border-white/20">
+              <button
+                type="button"
+                onClick={() => setViewMode("list")}
+                className={`flex h-10 w-10 items-center justify-center transition-colors ${
+                  viewMode === "list"
+                    ? "bg-accent-500 text-white"
+                    : "bg-white/10 text-white hover:bg-white/20"
+                }`}
+                title="List View"
+              >
+                <LayoutList size={16} />
+              </button>
 
-          <nav className="flex items-center gap-1.5 mt-1 text-xs text-gray-400">
-            <span>Employees</span>
+              <button
+                type="button"
+                onClick={() => setViewMode("grid")}
+                className={`flex h-10 w-10 items-center justify-center transition-colors ${
+                  viewMode === "grid"
+                    ? "bg-accent-500 text-white"
+                    : "bg-white/10 text-white hover:bg-white/20"
+                }`}
+                title="Grid View"
+              >
+                <LayoutGrid size={16} />
+              </button>
+            </div>
 
-            <ChevronRight size={12} />
+            {/* Export */}
+            <div className="dropdown dropdown-end">
+              <div tabIndex={0} role="button" className="hr-btn hr-btn-glass">
+                <Download size={16} />
+                Export
+                <ChevronDown size={16} />
+              </div>
 
-            <span className="text-orange-500 font-medium">
-              Employee List
-            </span>
-          </nav>
-        </div>
-
-        <div className="flex items-center gap-2">
-          {/* List / Grid Toggle */}
-          <div className="flex items-center border border-gray-200 rounded-lg overflow-hidden">
-            <button
-              type="button"
-              onClick={() => setViewMode("list")}
-              className={`p-2.5 transition ${
-                viewMode === "list"
-                  ? "bg-orange-500 text-white"
-                  : "bg-white text-gray-500 hover:bg-gray-50"
-              }`}
-              title="List View"
-            >
-              <LayoutList size={16} />
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setViewMode("grid")}
-              className={`p-2.5 transition ${
-                viewMode === "grid"
-                  ? "bg-orange-500 text-white"
-                  : "bg-white text-gray-500 hover:bg-gray-50"
-              }`}
-              title="Grid View"
-            >
-              <LayoutGrid size={16} />
-            </button>
-          </div>
-
-          {/* Export Dropdown */}
-          <div className="dropdown dropdown-end">
-            <label
-              tabIndex={0}
-              className="flex items-center gap-2 px-4 py-2.5 bg-white hover:bg-gray-50 text-gray-700 border border-gray-200 text-sm font-semibold rounded-lg transition shadow-sm cursor-pointer"
-            >
-              <FileText
-                size={16}
-                className="text-gray-500"
-              />
-
-              <span>Export</span>
-
-              <ChevronDown size={14} />
-            </label>
-
-            <ul
-              tabIndex={0}
-              className="dropdown-content menu bg-white border border-gray-100 rounded-xl shadow-xl z-50 w-48 p-1.5 mt-2"
-            >
-              <li>
-                <a className="flex items-center gap-3 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-lg">
-                  <FileText
-                    size={16}
-                    className="text-red-500 shrink-0"
-                  />
-
-                  <span className="font-medium">
+              <ul
+                tabIndex={0}
+                className="dropdown-content z-50 mt-2 w-52 rounded-lg border border-border-subtle bg-surface p-1.5 shadow-lg"
+              >
+                <li>
+                  <button
+                    type="button"
+                    onClick={closeDropdown}
+                    className="flex h-10 w-full items-center gap-2.5 rounded-md px-3 text-sm text-text-primary transition-colors hover:bg-primary-50 hover:text-primary-700"
+                  >
+                    <FileText size={16} className="text-danger-500" />
                     Export as PDF
-                  </span>
-                </a>
-              </li>
-
-              <li>
-                <a className="flex items-center gap-3 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-lg">
-                  <FileSpreadsheet
-                    size={16}
-                    className="text-green-600 shrink-0"
-                  />
-
-                  <span className="font-medium">
+                  </button>
+                </li>
+                <li>
+                  <button
+                    type="button"
+                    onClick={closeDropdown}
+                    className="flex h-10 w-full items-center gap-2.5 rounded-md px-3 text-sm text-text-primary transition-colors hover:bg-primary-50 hover:text-primary-700"
+                  >
+                    <FileSpreadsheet size={16} className="text-success-600" />
                     Export as Excel
-                  </span>
-                </a>
-              </li>
-            </ul>
-          </div>
+                  </button>
+                </li>
+              </ul>
+            </div>
 
-          {/* Add Employee */}
-          <button
-            type="button"
-            onClick={() => {
-              setEditItem(null);
-              setDrawerOpen(true);
-            }}
-            className="flex items-center gap-2 px-4 py-2.5 bg-orange-500 text-white text-sm font-semibold rounded-lg hover:bg-orange-600 transition shadow-sm"
-          >
-            <Plus size={15} />
-
-            Add Employee
-          </button>
-        </div>
-      </div>
+            {/* Add Employee */}
+            <button
+              type="button"
+              onClick={() => {
+                setEditItem(null);
+                setDrawerOpen(true);
+              }}
+              className="hr-btn hr-btn-primary"
+            >
+              <Plus size={16} />
+              Add Employee
+            </button>
+          </>
+        }
+      />
 
       {/* Stat Cards */}
       <EmployeeStatCards data={data} />
@@ -407,12 +346,8 @@ export default function EmployeeList() {
             setEditItem(row);
             setDrawerOpen(true);
           }}
-          onDelete={(row) => {
-            setDeleteTarget(row);
-          }}
-          onViewShift={(row) => {
-            setShiftTarget(row);
-          }}
+          onDelete={(row) => setDeleteTarget(row)}
+          onViewShift={(row) => setShiftTarget(row)}
         />
       ) : (
         <EmployeeGrid
@@ -425,9 +360,7 @@ export default function EmployeeList() {
             setEditItem(row);
             setDrawerOpen(true);
           }}
-          onDelete={(row) => {
-            setDeleteTarget(row);
-          }}
+          onDelete={(row) => setDeleteTarget(row)}
         />
       )}
 

@@ -4,8 +4,8 @@ import { Loader2 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 
 /**
- * Sends anyone who is not logged in to /login.
- * Without this the dashboard layout rendered for signed-out visitors.
+ * Jo bhi logged-in nahi hai use turant /login par bhejta hai.
+ * Context state + localStorage token dono check karta hai.
  */
 export default function RequireAuth({ children }) {
   const { isAuthenticated, loading } = useAuth();
@@ -19,7 +19,9 @@ export default function RequireAuth({ children }) {
     );
   }
 
-  if (!isAuthenticated) {
+  const hasToken = !!localStorage.getItem("token");
+
+  if (!isAuthenticated || !hasToken) {
     return <Navigate to="/login" replace state={{ from: location.pathname }} />;
   }
 
