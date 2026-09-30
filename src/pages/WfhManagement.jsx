@@ -6,7 +6,7 @@ import { toYMD } from "../components/wfhManagement/wfhData";
 import WfhStatCards from "../components/wfhManagement/WfhStatCards";
 import WfhTable from "../components/wfhManagement/WfhTable";
 import WfhModal from "../components/wfhManagement/WfhModal";
-import WfhReviewModal from "../components/wfhManagement/WfhReviewModal";
+import WfhReviewModal from "../components/wfhManagement/Wfhreviewmodal";
 import DeleteModal from "../components/leaveAdmin/DeleteModal";
 import {
   getWfhRequests,

@@ -9,7 +9,7 @@ import {
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 
-import AuthLayout from "../components/auth/AuthLayout";
+import AuthLayout from "../components/auth/Authlayout";
 import { loginUser } from "../services/loginAPI";
 import { useAuth } from "../context/AuthContext";
 import {
