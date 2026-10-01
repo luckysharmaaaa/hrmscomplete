@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { ChevronDown, ChevronRight, Loader2 } from "lucide-react";
 import api from "../services/api";
 
-const permissionColumns = [
+const DEFAULT_COLUMNS = [
   "view",
   "add",
   "edit",
@@ -10,7 +10,7 @@ const permissionColumns = [
   "delete",
 ];
 
-const permissionLabels = {
+const DEFAULT_LABELS = {
   view: "View",
   add: "Add",
   edit: "Edit",
@@ -56,6 +56,14 @@ const RolePermissionTable = ({
   const [modules, setModules] = useState([]);
   const [expanded, setExpanded] = useState({});
   const [loading, setLoading] = useState(false);
+  const [actionDefs, setActionDefs] = useState(null);
+
+  useEffect(() => {
+    api.get("/permissions/actions").then((r) => setActionDefs(r.data?.data || null)).catch(() => {});
+  }, []);
+
+  const permissionColumns = actionDefs ? actionDefs.map((a) => a.code) : DEFAULT_COLUMNS;
+  const permissionLabels = actionDefs ? Object.fromEntries(actionDefs.map((a) => [a.code, a.label])) : DEFAULT_LABELS;
 
   useEffect(() => {
     loadModules();

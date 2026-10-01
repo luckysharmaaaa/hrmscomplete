@@ -1,10 +1,11 @@
-import { useEffect } from "react";
-import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
+import { Suspense, useEffect, useMemo } from "react";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { ThemeProvider, createTheme } from "@mui/material/styles";
+import { Loader2 } from "lucide-react";
 
-import { AuthProvider } from "./context/AuthContext";
+import { AuthProvider, useAuth } from "./context/AuthContext";
 import { SidebarProvider, useSidebar } from "./context/SidebarContext";
 import { FORBIDDEN_EVENT } from "./services/api";
 
@@ -18,113 +19,90 @@ import RequirePermission from "./components/rbac/RequirePermission";
 // Pages
 import Dashboard from "./pages/Dashboard";
 import Login from "./pages/Login";
-import User from "./pages/User";
 import Profile from "./pages/Profile/Profile";
-import Roles from "./pages/Roles";
-import Modules from "./pages/Modules";
-import RolePermissions from "../src/pages/RolePermissions";
-import LeaveAdmin from "./pages/LeaveAdmin";
-import LeaveEmployee from "./pages/LeaveEmployee";
-import LeaveSetting from "./pages/LeaveSetting";
-
-import AttendanceAdmin from "./pages/AttendanceAdmin";
-import AttendanceEmployee from "./pages/AttendanceEmployee";
-
-import HolidayCalender from "./pages/HolidayCalender";
-import WfhManagement from "./pages/WfhManagement";
-
-import EmployeeList from "./pages/EmployeeList";
-import EmployeeDetail from "./pages/EmployeeDetail";
-import Designation from "./pages/Designation";
-import Department from "./pages/Department";
-
-import AttendanceRegularizationAdmin from "./pages/AttendanceRegularizationAdmin";
+import Forbidden from "./pages/Forbidden";
+import ModulePlaceholder from "./pages/ModulePlaceholder";
+import { BUILT_IN_PAGES, BUILT_IN_PATHS, getDynamicPage } from "./pages/ModuleRegistry";
 
 // Auth Pages
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import FirstTimeAccess from "./pages/Firsttimeaccess";
-import MyWfh from "./pages/Mywfh";
 
-
-// ─────────────────────────────────────────────────────────────────────────
-// MUI Theme — full palette + shape sync so every MUI component (Chip,
-// Alert, Select, DatePicker, Button, TextField) matches the same brand
-// tokens defined in index.css, instead of mixing MUI defaults (Roboto,
-// MUI blue/green/orange) with our own colors.
-// ─────────────────────────────────────────────────────────────────────────
 const muiTheme = createTheme({
-  typography: {
-    fontFamily: '"Inter", ui-sans-serif, system-ui, sans-serif',
-  },
-  shape: {
-    borderRadius: 10, // matches --radius-md in index.css — keeps MUI corners in sync with Tailwind
-  },
+  typography: { fontFamily: '"Inter", ui-sans-serif, system-ui, sans-serif' },
+  shape: { borderRadius: 10 },
   palette: {
     primary: { main: "#041D5F", light: "#0F265C", dark: "#031646" },
-    secondary: { main: "#F97316", light: "#FB923C", dark: "#EA580C" }, // brand accent orange
+    secondary: { main: "#F97316", light: "#FB923C", dark: "#EA580C" },
     success: { main: "#22C55E", dark: "#16A34A" },
-    warning: { main: "#F59E0B", dark: "#D97706" }, // true semantic warning amber, distinct from brand orange
+    warning: { main: "#F59E0B", dark: "#D97706" },
     error: { main: "#EF4444", dark: "#DC2626" },
     info: { main: "#3B82F6", dark: "#2563EB" },
   },
   components: {
-    MuiButton: {
-      styleOverrides: {
-        root: { textTransform: "none", fontWeight: 600 },
-      },
-    },
+    MuiButton: { styleOverrides: { root: { textTransform: "none", fontWeight: 600 } } },
     MuiPaper: {
       styleOverrides: {
-        root: {
-          boxShadow:
-            "0 1px 2px 0 rgb(4 29 95 / 0.04), 0 1px 3px 0 rgb(4 29 95 / 0.06)",
-        },
+        root: { boxShadow: "0 1px 2px 0 rgb(4 29 95 / 0.04), 0 1px 3px 0 rgb(4 29 95 / 0.06)" },
       },
     },
-    MuiChip: {
-      styleOverrides: {
-        root: { fontWeight: 600 },
-      },
-    },
+    MuiChip: { styleOverrides: { root: { fontWeight: 600 } } },
   },
 });
 
-// ─────────────────────────────────────────────────────────────────────────
-// guard(slug, page) — the page opens only when the user's role(s) have
-// "<slug>:view" in role_permissions. The slug must match modules.slug.
-// Without permission the user sees the 403 page, even via a direct URL.
-// ─────────────────────────────────────────────────────────────────────────
+// A page opens only when the user's role(s) hold "<slug>:view" in role_permissions.
+// Without it the user sees the 403 page, even via a direct URL.
 const guard = (moduleSlug, page, action = "view") => (
   <RequirePermission module={moduleSlug} action={action}>
     {page}
   </RequirePermission>
 );
 
-// Shows one friendly message whenever the API answers 403 (deduplicated).
 function ForbiddenNotice() {
   useEffect(() => {
     const onForbidden = () =>
-      toast.error("You don't have permission to perform this action.", {
-        toastId: "forbidden",
-      });
-
+      toast.error("You don't have permission to perform this action.", { toastId: "forbidden" });
     window.addEventListener(FORBIDDEN_EVENT, onForbidden);
     return () => window.removeEventListener(FORBIDDEN_EVENT, onForbidden);
   }, []);
-
   return null;
 }
 
-// ─────────────────────────────────────────────────────────────────────────
-// LayoutContent
-// margin kept in sync with Sidebar.jsx: 288px expanded (lg:ml-72) / 80px
-// collapsed (lg:ml-20)
-// ─────────────────────────────────────────────────────────────────────────
+const PageLoader = () => (
+  <div className="flex min-h-[40vh] items-center justify-center text-primary-700">
+    <Loader2 size={24} className="animate-spin" />
+  </div>
+);
 
+// margin kept in sync with Sidebar.jsx: 288px expanded (lg:ml-72) / 80px collapsed (lg:ml-20)
 function LayoutContent() {
-  const location = useLocation();
   const { collapsed } = useSidebar();
+  const { menu } = useAuth();
+
+  // Pages for modules that were added in the DB later (e.g. Payroll): the route
+  // comes from the module's own `path`, so no code change is needed.
+  const dynamicRoutes = useMemo(
+    () =>
+      (menu || [])
+        .filter((m) => m.navigable && m.path && !BUILT_IN_PATHS.has(m.path) && !["/dashboard", "/profile"].includes(m.path))
+        .map((m) => {
+          const Page = getDynamicPage(m.slug);
+          return (
+            <Route
+              key={m.slug}
+              path={m.path}
+              element={guard(
+                m.slug,
+                <Suspense fallback={<PageLoader />}>
+                  {Page ? <Page /> : <ModulePlaceholder name={m.name} slug={m.slug} />}
+                </Suspense>,
+              )}
+            />
+          );
+        }),
+    [menu],
+  );
 
   const mainMarginClass = `
     ${collapsed ? "lg:ml-20" : "lg:ml-72"}
@@ -157,96 +135,22 @@ function LayoutContent() {
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/profile" element={<Profile />} />
 
-            {/* User */}
-            <Route path="/user" element={guard("users", <User />)} />
+            {/* Built-in pages â€” each one guarded by its module slug */}
+            {BUILT_IN_PAGES.map(({ path, slug, Component }) => (
+              <Route key={path} path={path} element={guard(slug, <Component />)} />
+            ))}
 
-            {/* RBAC */}
-            <Route path="/roles" element={guard("roles", <Roles />)} />
-            <Route path="/modules" element={guard("modules", <Modules />)} />
-            <Route
-              path="/role-permissions"
-              element={guard("roles", <RolePermissions />)}
-            />
+            {/* Pages for modules added from the Modules screen */}
+            {dynamicRoutes}
 
-            {/* Leave */}
-            <Route
-              path="/leave-admin"
-              element={guard("leave-admin", <LeaveAdmin />)}
-            />
-            <Route
-              path="/leave-employee"
-              element={guard("leave-employee", <LeaveEmployee />)}
-            />
-            <Route
-              path="/leave-setting"
-              element={guard("leave-settings", <LeaveSetting />)}
-            />
-
-            {/* Attendance */}
-            <Route
-              path="/attendance-admin"
-              element={guard("attendance-admin", <AttendanceAdmin />)}
-            />
-
-            <Route
-              path="/attendance-employee"
-              element={guard("attendance-employee", <AttendanceEmployee />)}
-            />
-
-            {/* Attendance Regularization */}
-            <Route
-              path="/attendance-regularization"
-              element={guard(
-                "attendance-regularization",
-                <AttendanceRegularizationAdmin />,
-              )}
-            />
-
-            {/* Holiday */}
-            <Route
-              path="/holiday-calender"
-              element={guard("holiday-calendar", <HolidayCalender />)}
-            />
-
-            {/* WFH */}
-            <Route
-              path="/wfh-management"
-              element={guard("wfh-management", <WfhManagement />)}
-            />
-
-            <Route path="/my-wfh" element={<MyWfh />} />
-
-            {/* Employee */}
-            <Route
-              path="/employee-list"
-              element={guard("employee-list", <EmployeeList />)}
-            />
-
-            <Route
-              path="/employee/:id"
-              element={guard("employee-list", <EmployeeDetail />)}
-            />
-
-            {/* Organization */}
-            <Route
-              path="/designations"
-              element={guard("designations", <Designation />)}
-            />
-
-            <Route
-              path="/department"
-              element={guard("department", <Department />)}
-            />
+            {/* Anything else: no access / not found */}
+            <Route path="*" element={<Forbidden />} />
           </Routes>
         </main>
       </div>
     </div>
   );
 }
-
-// ─────────────────────────────────────────────────────────────────────────
-// Dashboard Layout (only for signed-in users)
-// ─────────────────────────────────────────────────────────────────────────
 
 function Layout() {
   return (
@@ -257,10 +161,6 @@ function Layout() {
     </RequireAuth>
   );
 }
-
-// ─────────────────────────────────────────────────────────────────────────
-// App
-// ─────────────────────────────────────────────────────────────────────────
 
 function App() {
   return (

@@ -1,5 +1,6 @@
 // Pure helpers for the role-permission matrix. No React, no API calls.
-// State shape: { [moduleId]: ["view","add",...] } with actions kept in ACTIONS order.
+// State shape: { [moduleId]: ["view","add",...] } with actions kept in `actions` order.
+// `actions` comes from the DB (GET /permissions/actions); ACTIONS is only the fallback.
 
 export const ACTIONS = ["view", "add", "edit", "approved", "delete"];
 
@@ -11,71 +12,65 @@ export const ACTION_LABELS = {
   delete: "Delete",
 };
 
-const ordered = (list) => ACTIONS.filter((a) => list.includes(a));
+const ordered = (list, actions) => actions.filter((a) => list.includes(a));
 
 /** role_permissions rows -> matrix state */
-export const fromRows = (rows = []) => {
+export const fromRows = (rows = [], actions = ACTIONS) => {
   const state = {};
   rows.forEach((row) => {
-    if (!ACTIONS.includes(row.action)) return;
+    if (!actions.includes(row.action)) return;
     const id = Number(row.moduleId);
-    state[id] = ordered([...(state[id] || []), row.action]);
+    state[id] = ordered([...(state[id] || []), row.action], actions);
   });
   return state;
 };
 
 const has = (state, id, action) => (state[id] || []).includes(action);
 
-const withActions = (state, id, actions) => {
+const withActions = (state, id, list, actions) => {
   const next = { ...state };
-  if (actions.length === 0) delete next[id];
-  else next[id] = ordered(actions);
+  if (list.length === 0) delete next[id];
+  else next[id] = ordered(list, actions);
   return next;
 };
 
 /**
  * Rules (also enforced by the API):
- *  - ticking Add/Edit/Approved/Delete also ticks View
+ *  - ticking any other action also ticks View
  *  - unticking View clears every action of that module
  */
-export const toggleAction = (state, id, action) => {
+export const toggleAction = (state, id, action, actions = ACTIONS) => {
   const current = state[id] || [];
-
   if (current.includes(action)) {
     return action === "view"
-      ? withActions(state, id, [])
-      : withActions(state, id, current.filter((a) => a !== action));
+      ? withActions(state, id, [], actions)
+      : withActions(state, id, current.filter((a) => a !== action), actions);
   }
-
-  return withActions(state, id, [...current, action, "view"]);
+  return withActions(state, id, [...current, action, "view"], actions);
 };
 
 /** "All" checkbox of one row. */
-export const toggleRow = (state, id) =>
-  (state[id] || []).length === ACTIONS.length
-    ? withActions(state, id, [])
-    : withActions(state, id, ACTIONS);
+export const toggleRow = (state, id, actions = ACTIONS) =>
+  (state[id] || []).length === actions.length
+    ? withActions(state, id, [], actions)
+    : withActions(state, id, actions, actions);
 
 /** Header checkbox of one column, applied to the given (visible) modules. */
-export const setColumn = (state, ids, action, on) => {
+export const setColumn = (state, ids, action, on, actions = ACTIONS) => {
   let next = state;
   ids.forEach((id) => {
     const current = next[id] || [];
-    if (on) {
-      next = withActions(next, id, [...current, action, "view"]);
-    } else if (action === "view") {
-      next = withActions(next, id, []);
-    } else {
-      next = withActions(next, id, current.filter((a) => a !== action));
-    }
+    if (on) next = withActions(next, id, [...current, action, "view"], actions);
+    else if (action === "view") next = withActions(next, id, [], actions);
+    else next = withActions(next, id, current.filter((a) => a !== action), actions);
   });
   return next;
 };
 
 /** "none" | "some" | "all" for a row. */
-export const rowStatus = (state, id) => {
+export const rowStatus = (state, id, actions = ACTIONS) => {
   const n = (state[id] || []).length;
-  return n === 0 ? "none" : n === ACTIONS.length ? "all" : "some";
+  return n === 0 ? "none" : n === actions.length ? "all" : "some";
 };
 
 /** "none" | "some" | "all" for a column across the given modules. */
@@ -101,10 +96,7 @@ export const toPayload = (state) =>
     .filter((k) => state[k].length > 0)
     .map((k) => ({ moduleId: Number(k), actions: state[k] }));
 
-/**
- * Flat module list -> [{ module, children: [module, ...] }] using parentId.
- * A search keeps a parent if it or any child matches.
- */
+/** Flat module list -> [{ module, children }] using parentId. Search keeps a parent if it or any child matches. */
 export const buildTree = (modules = [], query = "") => {
   const q = query.trim().toLowerCase();
   const matches = (m) =>
@@ -138,5 +130,4 @@ export const buildTree = (modules = [], query = "") => {
 };
 
 /** ids of every module row currently shown in a tree. */
-export const visibleIds = (tree) =>
-  tree.flatMap((n) => [n.module.id, ...n.children.map((c) => c.id)]);
+export const visibleIds = (tree) => tree.flatMap((n) => [n.module.id, ...n.children.map((c) => c.id)]);

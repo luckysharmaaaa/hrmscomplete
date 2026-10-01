@@ -1,3 +1,4 @@
+import usePermission from "../../hooks/usePermission";
 import React from "react";
 import {
   Search,
@@ -65,6 +66,7 @@ export default function WfhTable({
   onDelete,
   onReview,
 }) {
+  const perm = usePermission("wfh-management");
   const from = total === 0 ? 0 : (currentPage - 1) * rowsPerPage + 1;
   const to = Math.min(currentPage * rowsPerPage, total);
   const reset = (setter) => (e) => {
@@ -240,7 +242,7 @@ export default function WfhTable({
 
                     <td className="px-4 py-3 text-right">
                       <div className="flex items-center justify-end gap-1">
-                        {pending && canApprove && (
+                        {pending && perm.canApprove && (
                           <>
                             <button
                               type="button"
@@ -262,7 +264,8 @@ export default function WfhTable({
                             </button>
                           </>
                         )}
-                        <button
+                        {perm.canEdit && (
+<button
                           type="button"
                           onClick={() => onEdit(row)}
                           disabled={!pending}
@@ -272,7 +275,9 @@ export default function WfhTable({
                         >
                           <Pencil size={15} />
                         </button>
-                        <button
+)}
+                        {perm.canDelete && (
+<button
                           type="button"
                           onClick={() => onDelete(row)}
                           className="p-1.5 rounded-lg hover:bg-red-50 text-gray-500 hover:text-red-500 transition"
@@ -281,6 +286,7 @@ export default function WfhTable({
                         >
                           <Trash2 size={15} />
                         </button>
+)}
                       </div>
                     </td>
                   </tr>

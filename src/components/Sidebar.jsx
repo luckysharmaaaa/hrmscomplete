@@ -1,48 +1,39 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { logout } from "../services/loginAPI";
 import { useSidebar } from "../context/SidebarContext";
 import { useAuth } from "../context/AuthContext";
 import {
-  LayoutDashboard,
-  CalendarCheck,
-  CalendarDays,
-  ClipboardCheck,
-  CalendarClock,
-  Settings2,
-  Home,
-  ClipboardEdit,
-  Users,
-  Building2,
-  Briefcase,
-  ClipboardList,
-  ShieldCheck,
-  UserCircle,
-  BadgeCheck,
-  Layers,
-  LogOut,
-  X,
-  ChevronDown,
-  ChevronLeft,
-  ChevronRight,
-  Laptop
+  LayoutDashboard, CalendarCheck, CalendarDays, ClipboardCheck, CalendarClock, Settings2, Home,
+  ClipboardEdit, Users, Building2, Briefcase, ClipboardList, ShieldCheck, UserCircle, BadgeCheck,
+  Layers, LogOut, X, ChevronDown, ChevronLeft, ChevronRight, Laptop, Circle, FileText, Wallet,
+  Banknote, Receipt, Calculator, BarChart3, FileSpreadsheet, UserPlus, UserCheck, Clock, Settings,
+  Folder, Package, Truck, ShoppingCart, CreditCard, Landmark, Bell, Mail, Megaphone, GraduationCap,
+  Award, Target, Shield, Key, Lock, Network, Workflow, Calendar,
 } from "lucide-react";
 
-// Save your uploaded logo as: src/assets/technovatic-logo.png
-// Full wordmark logo is used when expanded. At 80px collapsed width the
-// full "Technovatic Solutions" wordmark cannot fit legibly, so collapsed
-// state shows a small monogram instead — same pattern as Slack/Gmail.
 import companyLogo from "../assets/images/logo.png";
+
+// Icon NAME stored in modules.icon -> lucide component (unknown names fall back to a dot).
+const ICONS = {
+  LayoutDashboard, CalendarCheck, CalendarDays, ClipboardCheck, CalendarClock, Settings2, Home,
+  ClipboardEdit, Users, Building2, Briefcase, ClipboardList, ShieldCheck, UserCircle, BadgeCheck,
+  Layers, Laptop, FileText, Wallet, Banknote, Receipt, Calculator, BarChart3, FileSpreadsheet,
+  UserPlus, UserCheck, Clock, Settings, Folder, Package, Truck, ShoppingCart, CreditCard, Landmark,
+  Bell, Mail, Megaphone, GraduationCap, Award, Target, Shield, Key, Lock, Network, Workflow, Calendar,
+};
+const iconFor = (name) => ICONS[name] || Circle;
+
+// Core pages every signed-in user has (not permission modules in the menu)
+const CORE_SLUGS = ["dashboard", "profile"];
 
 function Sidebar() {
   const navigate = useNavigate();
   const location = useLocation();
   const { open, close, collapsed, toggleCollapsed } = useSidebar();
-  const { hasPermission, permissionsLoaded } = useAuth();
+  const { menu, permissionsLoaded } = useAuth();
 
   const isActive = (path) => location.pathname === path;
-  const can = (slug) => permissionsLoaded && hasPermission(slug, "view");
-
   const labelCls = collapsed ? "lg:hidden" : "";
   const justifyCls = collapsed ? "lg:justify-center" : "";
 
@@ -73,33 +64,105 @@ function Sidebar() {
     }
   };
 
-  const canLeaveAdmin = can("leave-admin");
-  const canLeaveEmployee = can("leave-employee");
-  const canLeaveSettings = can("leave-settings");
-  const canAttendanceAdmin = can("attendance-admin");
-  const canAttendanceEmployee = can("attendance-employee");
-  const canHoliday = can("holiday-calendar");
-  const canWfh = can("wfh-management");
-  const canRegularization = can("attendance-regularization");
-  const canMyWfh = canAttendanceEmployee;
-  const showAttendanceGroup =
-    canLeaveAdmin ||
-    canLeaveEmployee ||
-    canLeaveSettings ||
-    canAttendanceAdmin ||
-    canAttendanceEmployee ||
-    canHoliday ||
-    canWfh ||
-    canRegularization;
+  // Build the sidebar from the DB menu (modules the user can "view"):
+  //  - a module without a path = group header with its pages inside
+  //  - a module with a path    = a normal link
+  const { items, profileModuleId } = useMemo(() => {
+    const all = (menu || []).filter((m) => !CORE_SLUGS.includes(m.slug));
+    const ids = new Set(all.map((m) => m.id));
+    const byParent = new Map();
+    all.forEach((m) => {
+      const key = m.parentId && ids.has(m.parentId) ? m.parentId : 0;
+      byParent.set(key, [...(byParent.get(key) || []), m]);
+    });
+    const leaves = (id) =>
+      (byParent.get(id) || []).flatMap((c) => [...(c.navigable ? [c] : []), ...leaves(c.id)]);
 
-  const canEmployeeList = can("employee-list");
-  const canDepartment = can("department");
-  const canDesignations = can("designations");
-  const showEmployeesGroup = canEmployeeList || canDepartment || canDesignations;
+    const out = [];
+    (byParent.get(0) || []).forEach((root) => {
+      const kids = leaves(root.id);
+      if (root.navigable) {
+        out.push({ type: "link", ...root });
+        kids.forEach((k) => out.push({ type: "link", ...k }));
+      } else if (kids.length) {
+        out.push({ type: "group", ...root, children: kids });
+      }
+    });
 
-  const canUsers = can("users");
-  const canRoles = can("roles");
-  const canModules = can("modules");
+    const profile = (menu || []).find((m) => m.slug === "profile");
+    return { items: out, profileModuleId: profile?.id ?? 17 };
+  }, [menu]);
+
+  const renderLink = (item) => {
+    const Icon = iconFor(item.icon);
+    return (
+      <li key={`l-${item.id}`}>
+        <Link to={item.path} title={collapsed ? item.name : undefined} className={topItem(item.path)}>
+          <Icon size={18} className="shrink-0" />
+          <span className={labelCls}>{item.name}</span>
+        </Link>
+      </li>
+    );
+  };
+
+  const renderGroup = (group) => {
+    const GroupIcon = iconFor(group.icon);
+    return (
+      <li key={`g-${group.id}`}>
+        <details className="group" open>
+          <summary
+            onClick={handleGroupClick}
+            title={collapsed ? group.name : undefined}
+            className={`${groupHeader} ${justifyCls} list-none`}
+          >
+            <span className="flex items-center gap-3">
+              <GroupIcon size={18} className="shrink-0" />
+              <span className={labelCls}>{group.name}</span>
+            </span>
+            <ChevronDown
+              size={14}
+              className={`shrink-0 transition-transform duration-fast ease-standard group-open:rotate-180 ${labelCls}`}
+            />
+          </summary>
+
+          <ul className={`flex flex-col gap-0.5 mt-0.5 ${collapsed ? "lg:hidden" : ""}`}>
+            {group.children.map((child) => {
+              const ChildIcon = iconFor(child.icon);
+              return (
+                <li key={child.id}>
+                  <Link to={child.path} className={childItem(child.path)}>
+                    <ChildIcon size={14} className="shrink-0" />
+                    {child.name}
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        </details>
+      </li>
+    );
+  };
+
+  const profileLink = (
+    <li key="profile">
+      <Link to="/profile" title={collapsed ? "Profile" : undefined} className={topItem("/profile")}>
+        <UserCircle size={18} className="shrink-0" />
+        <span className={labelCls}>Profile</span>
+      </Link>
+    </li>
+  );
+
+  // Profile keeps its familiar spot (before the access-control items)
+  const rendered = [];
+  let profileDone = false;
+  items.forEach((item) => {
+    if (!profileDone && item.id > profileModuleId) {
+      rendered.push(profileLink);
+      profileDone = true;
+    }
+    rendered.push(item.type === "group" ? renderGroup(item) : renderLink(item));
+  });
+  if (!profileDone) rendered.push(profileLink);
 
   return (
     <>
@@ -110,7 +173,7 @@ function Sidebar() {
           }`}
       />
 
-      {/* Expanded: 288px (w-72) · Collapsed: 80px (w-20) — kept in sync with Navbar.jsx and App.jsx margins */}
+      {/* Expanded: 288px (w-72) Â· Collapsed: 80px (w-20) â€” kept in sync with Navbar.jsx and App.jsx margins */}
       <aside
         className={`h-screen bg-surface border-r border-border-subtle fixed left-0 top-0 z-50 flex flex-col shadow-sm
           transition-all duration-base ease-standard
@@ -127,28 +190,17 @@ function Sidebar() {
           {collapsed ? <ChevronRight size={13} /> : <ChevronLeft size={13} />}
         </button>
 
-        {/* Header.
-            IMPORTANT: on mobile/tablet (below lg) the sidebar is ALWAYS
-            full width regardless of `collapsed` (that flag only affects
-            desktop). So visibility below must key off the lg breakpoint,
-            not off `collapsed` alone — plain `hidden` with no breakpoint
-            was the earlier bug, hiding the logo everywhere. */}
         <div className="shrink-0 border-b border-border-subtle">
           <div className="h-16 flex items-center justify-center px-5 relative">
             <Link to="/dashboard" className="shrink-0 flex items-center">
-              {/* Full wordmark: always shown below lg; shown at lg only when NOT collapsed */}
               <img
                 src={companyLogo}
                 alt="Technovatic Solutions"
                 className={`object-contain h-11 block ${collapsed ? "lg:hidden" : ""}`}
               />
-
-              {/* Monogram: shown at lg only when collapsed; never shown below lg */}
               {collapsed && (
                 <div className="hidden lg:flex h-10 w-10 rounded-lg bg-gradient-brand items-center justify-center shadow-sm">
-                  <span className="text-white font-extrabold text-sm leading-none">
-                    TS
-                  </span>
+                  <span className="text-white font-extrabold text-sm leading-none">TS</span>
                 </div>
               )}
             </Link>
@@ -178,194 +230,14 @@ function Sidebar() {
               </Link>
             </li>
 
-            {showAttendanceGroup && (
-              <li>
-                <details className="group" open>
-                  <summary
-                    onClick={handleGroupClick}
-                    title={collapsed ? "Attendance" : undefined}
-                    className={`${groupHeader} ${justifyCls} list-none`}
-                  >
-                    <span className="flex items-center gap-3">
-                      <CalendarCheck size={18} className="shrink-0" />
-                      <span className={labelCls}>Attendance</span>
-                    </span>
-                    <ChevronDown
-                      size={14}
-                      className={`shrink-0 transition-transform duration-fast ease-standard group-open:rotate-180 ${labelCls}`}
-                    />
-                  </summary>
-
-                  <ul className={`flex flex-col gap-0.5 mt-0.5 ${collapsed ? "lg:hidden" : ""}`}>
-                    {canLeaveAdmin && (
-                      <li>
-                        <Link to="/leave-admin" className={childItem("/leave-admin")}>
-                          <ClipboardCheck size={14} className="shrink-0" />
-                          Leave (Admin)
-                        </Link>
-                      </li>
-                    )}
-                    {canLeaveEmployee && (
-                      <li>
-                        <Link to="/leave-employee" className={childItem("/leave-employee")}>
-                          <CalendarClock size={14} className="shrink-0" />
-                          Leave (Employee)
-                        </Link>
-                      </li>
-                    )}
-                    {canLeaveSettings && (
-                      <li>
-                        <Link to="/leave-setting" className={childItem("/leave-setting")}>
-                          <Settings2 size={14} className="shrink-0" />
-                          Leave Settings
-                        </Link>
-                      </li>
-                    )}
-                    {canAttendanceAdmin && (
-                      <li>
-                        <Link to="/attendance-admin" className={childItem("/attendance-admin")}>
-                          <CalendarCheck size={14} className="shrink-0" />
-                          Attendance (Admin)
-                        </Link>
-                      </li>
-                    )}
-                    {canAttendanceEmployee && (
-                      <li>
-                        <Link to="/attendance-employee" className={childItem("/attendance-employee")}>
-                          <CalendarDays size={14} className="shrink-0" />
-                          Attendance (Employee)
-                        </Link>
-                      </li>
-                    )}
-                    {canHoliday && (
-                      <li>
-                        <Link to="/holiday-calender" className={childItem("/holiday-calender")}>
-                          <CalendarDays size={14} className="shrink-0" />
-                          Holiday Calendar
-                        </Link>
-                      </li>
-                    )}
-                    {canWfh && (
-                      <li>
-                        <Link to="/wfh-management" className={childItem("/wfh-management")}>
-                          <Home size={14} className="shrink-0" />
-                          WFH Management
-                        </Link>
-                      </li>
-                    )}
-
-                    {canMyWfh && (
-                      <li>
-                        <Link to="/my-wfh" className={childItem("/my-wfh")}>
-                          <Laptop size={14} className="shrink-0" />
-                          My WFH
-                        </Link>
-                      </li>
-                    )}
-                    {canRegularization && (
-                      <li>
-                        <Link to="/attendance-regularization" className={childItem("/attendance-regularization")}>
-                          <ClipboardEdit size={14} className="shrink-0" />
-                          Regularization
-                        </Link>
-                      </li>
-                    )}
-                  </ul>
-                </details>
-              </li>
-            )}
-
-            {showEmployeesGroup && (
-              <li>
-                <details className="group" open>
-                  <summary
-                    onClick={handleGroupClick}
-                    title={collapsed ? "Employees" : undefined}
-                    className={`${groupHeader} ${justifyCls} list-none`}
-                  >
-                    <span className="flex items-center gap-3">
-                      <Users size={18} className="shrink-0" />
-                      <span className={labelCls}>Employees</span>
-                    </span>
-                    <ChevronDown
-                      size={14}
-                      className={`shrink-0 transition-transform duration-fast ease-standard group-open:rotate-180 ${labelCls}`}
-                    />
-                  </summary>
-
-                  <ul className={`flex flex-col gap-0.5 mt-0.5 ${collapsed ? "lg:hidden" : ""}`}>
-                    {canEmployeeList && (
-                      <li>
-                        <Link to="/employee-list" className={childItem("/employee-list")}>
-                          <ClipboardList size={14} className="shrink-0" />
-                          Employee List
-                        </Link>
-                      </li>
-                    )}
-                    {canDepartment && (
-                      <li>
-                        <Link to="/department" className={childItem("/department")}>
-                          <Building2 size={14} className="shrink-0" />
-                          Department
-                        </Link>
-                      </li>
-                    )}
-                    {canDesignations && (
-                      <li>
-                        <Link to="/designations" className={childItem("/designations")}>
-                          <Briefcase size={14} className="shrink-0" />
-                          Designations
-                        </Link>
-                      </li>
-                    )}
-                  </ul>
-                </details>
-              </li>
-            )}
-
-            {canUsers && (
-              <li>
-                <Link to="/user" title={collapsed ? "Users" : undefined} className={topItem("/user")}>
-                  <Users size={18} className="shrink-0" />
-                  <span className={labelCls}>Users</span>
-                </Link>
-              </li>
-            )}
-
-            <li>
-              <Link to="/profile" title={collapsed ? "Profile" : undefined} className={topItem("/profile")}>
-                <UserCircle size={18} className="shrink-0" />
-                <span className={labelCls}>Profile</span>
-              </Link>
-            </li>
-
-            {canRoles && (
-              <li>
-                <Link to="/roles" title={collapsed ? "Roles" : undefined} className={topItem("/roles")}>
-                  <BadgeCheck size={18} className="shrink-0" />
-                  <span className={labelCls}>Roles</span>
-                </Link>
-              </li>
-            )}
-
-            {canRoles && (
-              <li>
-                <Link to="/role-permissions" title={collapsed ? "Role Permissions" : undefined} className={topItem("/role-permissions")}>
-                  <ShieldCheck size={18} className="shrink-0" />
-                  <span className={labelCls}>Role Permissions</span>
-                </Link>
-              </li>
-            )}
-
-
-            {canModules && (
-              <li>
-                <Link to="/modules" title={collapsed ? "Modules" : undefined} className={topItem("/modules")}>
-                  <Layers size={18} className="shrink-0" />
-                  <span className={labelCls}>Modules</span>
-                </Link>
-              </li>
-            )}
+            {/* While permissions load, show a skeleton instead of a wrong menu */}
+            {!permissionsLoaded
+              ? [0, 1, 2, 3, 4].map((i) => (
+                  <li key={`sk-${i}`} className="h-11 px-3.5 flex items-center">
+                    <div className="h-4 w-full rounded bg-primary-50 animate-pulse" />
+                  </li>
+                ))
+              : rendered}
           </ul>
         </nav>
 

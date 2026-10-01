@@ -5,6 +5,7 @@ import { useAuth } from "../../context/AuthContext";
 import usePermission from "../../hooks/usePermission";
 import {
   extractList,
+  fetchActions,
   fetchModules,
   fetchRolePermissions,
   fetchRoles,
@@ -61,10 +62,14 @@ const errorMessage = (err, fallback) =>
  */
 export default function RolePermissionMatrix({ roleId: fixedRoleId, onSaved }) {
   const { refreshPermissions } = useAuth();
-  const { canEdit } = usePermission("roles");
+  const rolePerm = usePermission("role-permissions");
+  const rolesPerm = usePermission("roles");
+  const canEdit = rolePerm.canEdit || rolesPerm.canEdit;
 
   const [roles, setRoles] = useState([]);
   const [modules, setModules] = useState([]);
+  const [actions, setActions] = useState(ACTIONS);
+  const [labels, setLabels] = useState(ACTION_LABELS);
   const [roleId, setRoleId] = useState(fixedRoleId ?? "");
   const [saved, setSaved] = useState({});
   const [draft, setDraft] = useState({});
@@ -85,12 +90,17 @@ export default function RolePermissionMatrix({ roleId: fixedRoleId, onSaved }) {
     let active = true;
     setLoadingMeta(true);
 
-    Promise.all([fetchRoles(), fetchModules()])
-      .then(([rolesRes, modulesRes]) => {
+    Promise.all([fetchRoles(), fetchModules(), fetchActions().catch(() => null)])
+      .then(([rolesRes, modulesRes, actionsRes]) => {
         if (!active) return;
         const roleList = extractList(rolesRes);
         setRoles(roleList);
         setModules(extractList(modulesRes).filter((m) => !m.trashedAt));
+        const actionList = actionsRes ? extractList(actionsRes) : [];
+        if (actionList.length) {
+          setActions(actionList.map((a) => a.code));
+          setLabels(Object.fromEntries(actionList.map((a) => [a.code, a.label])));
+        }
         setRoleId((current) => current || (roleList[0]?.id ?? ""));
       })
       .catch((err) => active && setError(errorMessage(err, "Couldn't load roles and modules.")))
@@ -106,7 +116,7 @@ export default function RolePermissionMatrix({ roleId: fixedRoleId, onSaved }) {
   }, [fixedRoleId]);
 
   useEffect(() => {
-    if (!roleId) return undefined;
+    if (!roleId || loadingMeta) return undefined;
     let active = true;
 
     setLoadingPerms(true);
@@ -115,7 +125,7 @@ export default function RolePermissionMatrix({ roleId: fixedRoleId, onSaved }) {
     fetchRolePermissions(roleId)
       .then((res) => {
         if (!active) return;
-        const state = fromRows(extractList(res));
+        const state = fromRows(extractList(res), actions);
         setSaved(state);
         setDraft(state);
       })
@@ -125,7 +135,7 @@ export default function RolePermissionMatrix({ roleId: fixedRoleId, onSaved }) {
     return () => {
       active = false;
     };
-  }, [roleId]);
+  }, [roleId, loadingMeta]);
 
   // Warn before closing the tab with unsaved changes.
   useEffect(() => {
@@ -158,7 +168,7 @@ export default function RolePermissionMatrix({ roleId: fixedRoleId, onSaved }) {
     setError("");
     try {
       const res = await saveRolePermissions(roleId, toPayload(draft));
-      const state = fromRows(extractList(res));
+      const state = fromRows(extractList(res), actions);
       setSaved(state);
       setDraft(state);
       setNotice("Permissions saved.");
@@ -169,7 +179,7 @@ export default function RolePermissionMatrix({ roleId: fixedRoleId, onSaved }) {
     } finally {
       setSaving(false);
     }
-  }, [roleId, draft, refreshPermissions, onSaved]);
+  }, [roleId, draft, actions, refreshPermissions, onSaved]);
 
   /* ------------------------------- derived ------------------------------- */
 
@@ -193,20 +203,20 @@ export default function RolePermissionMatrix({ roleId: fixedRoleId, onSaved }) {
       </td>
       <td className="px-3 text-center">
         <TriCheckbox
-          status={rowStatus(draft, m.id)}
+          status={rowStatus(draft, m.id, actions)}
           disabled={readOnly}
           label={`All permissions for ${m.moduleName}`}
-          onChange={() => setDraft((d) => toggleRow(d, m.id))}
+          onChange={() => setDraft((d) => toggleRow(d, m.id, actions))}
         />
       </td>
-      {ACTIONS.map((action) => (
+      {actions.map((action) => (
         <td key={action} className="px-3 text-center">
           <input
             type="checkbox"
-            aria-label={`${ACTION_LABELS[action]} ${m.moduleName}`}
+            aria-label={`${labels[action]} ${m.moduleName}`}
             checked={(draft[m.id] || []).includes(action)}
             disabled={readOnly}
-            onChange={() => setDraft((d) => toggleAction(d, m.id, action))}
+            onChange={() => setDraft((d) => toggleAction(d, m.id, action, actions))}
             className={`h-4 w-4 cursor-pointer rounded border-gray-300 accent-orange-500 disabled:cursor-not-allowed disabled:opacity-50 ${focusRing}`}
           />
         </td>
@@ -306,16 +316,16 @@ export default function RolePermissionMatrix({ roleId: fixedRoleId, onSaved }) {
               <tr className="bg-gray-50/70 text-xs uppercase tracking-wider text-gray-500">
                 <th className="py-3 pl-5 pr-4 text-left font-semibold">Module</th>
                 <th className="px-3 text-center font-semibold">All</th>
-                {ACTIONS.map((action) => (
+                {actions.map((action) => (
                   <th key={action} className="px-3 text-center font-semibold">
                     <div className="flex flex-col items-center gap-1.5">
-                      {ACTION_LABELS[action]}
+                      {labels[action]}
                       <TriCheckbox
                         status={columnStatus(draft, ids, action)}
                         disabled={readOnly}
-                        label={`${ACTION_LABELS[action]} for all shown modules`}
+                        label={`${labels[action]} for all shown modules`}
                         onChange={() =>
-                          setDraft((d) => setColumn(d, ids, action, columnStatus(d, ids, action) !== "all"))
+                          setDraft((d) => setColumn(d, ids, action, columnStatus(d, ids, action) !== "all", actions))
                         }
                       />
                     </div>

@@ -1,3 +1,4 @@
+import usePermission from "../hooks/usePermission";
 import { useMemo, useState, useCallback } from "react";
 import { CalendarRange, CalendarClock, CalendarDays } from "lucide-react";
 import HolidayHeader from "../components/HolidayCalender/HolidayHeader";
@@ -28,7 +29,9 @@ const ALL = HOLIDAY_TYPES.map((t) => t.value);
  * canManage: pass true only for HR/Admin roles, e.g.
  *   <HolidayCalendar canManage={user.role === "hr" || user.role === "admin"} />
  */
-export default function HolidayCalendar({ canManage = true }) {
+export default function HolidayCalendar() {
+  const { canAdd, canEdit, canDelete } = usePermission("holiday-calendar");
+  const canManage = canAdd || canEdit || canDelete;
   const { holidays, addHoliday, updateHoliday, removeHoliday } = useHolidays();
   const [drawer, setDrawer] = useState({ open: false, id: null, date: "" });
   const [activeTypes, setActiveTypes] = useState(ALL);

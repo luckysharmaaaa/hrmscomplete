@@ -1,3 +1,4 @@
+import usePermission from "../hooks/usePermission";
 import React, { useEffect, useState } from "react";
 import { ChevronDown, FileText, FileSpreadsheet, Download, Plus, Loader2, Users } from "lucide-react";
 
@@ -7,6 +8,7 @@ import AddUserDrawer from "../components/user/AddUserDrawer";
 import { getRoles } from "../services/userApi";
 
 const User = ({ refresh }) => {
+  const { canAdd } = usePermission("users");
   const [openDrawer, setOpenDrawer] = useState(false);
   const [refreshTable, setRefreshTable] = useState(false);
   const [roles, setRoles] = useState([]);
@@ -99,7 +101,8 @@ const User = ({ refresh }) => {
             </div>
 
             {/* Add User */}
-            <button
+            {canAdd && (
+<button
               type="button"
               className="hr-btn hr-btn-primary"
               onClick={() => setOpenDrawer(true)}
@@ -109,6 +112,7 @@ const User = ({ refresh }) => {
               {rolesLoading ? <Loader2 size={16} className="animate-spin" /> : <Plus size={16} />}
               {rolesLoading ? "Loading..." : "Add User"}
             </button>
+)}
           </>
         }
       />

@@ -1,3 +1,4 @@
+import usePermission from "../hooks/usePermission";
 import React, { useState, useEffect, useCallback } from "react";
 import { ChevronRight, FileText, FileSpreadsheet, ChevronDown, Plus } from "lucide-react";
 
@@ -12,6 +13,7 @@ import {
 } from "../services/leaveService";
 
 const LeaveEmployee = () => {
+  const { canAdd } = usePermission("leave-employee");
   const [modalOpen, setModalOpen] = useState(false);
   const [rows, setRows] = useState([]);
   const [total, setTotal] = useState(0);
@@ -122,7 +124,8 @@ const LeaveEmployee = () => {
             </div>
 
             {/* Add Leave */}
-            <button
+            {canAdd && (
+<button
               onClick={() => {
                 setEditItem(null);
                 setModalOpen(true);
@@ -132,6 +135,7 @@ const LeaveEmployee = () => {
               <Plus size={15} />
               Apply Leave
             </button>
+)}
           </div>
         </div>
         <LeaveStatCardsEmployee />

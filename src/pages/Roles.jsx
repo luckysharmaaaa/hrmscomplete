@@ -1,3 +1,4 @@
+import usePermission from "../hooks/usePermission";
 import React, { useEffect, useState } from "react";
 import api from "../services/api";
 import { toast } from "react-toastify";
@@ -22,6 +23,7 @@ import {
 } from "../services/RolePermissionApi";
 
 const Roles = () => {
+  const { canAdd } = usePermission("roles");
   const [roles, setRoles] = useState([]);
 
   const [loading, setLoading] = useState(false);
@@ -382,7 +384,8 @@ const Roles = () => {
             </div>
 
             {/* Add Role */}
-            <button
+            {canAdd && (
+<button
               type="button"
               onClick={handleOpenDrawer}
               className="hr-btn hr-btn-primary"
@@ -390,6 +393,7 @@ const Roles = () => {
               <Plus size={16} />
               Add Role
             </button>
+)}
           </>
         }
       />

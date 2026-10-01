@@ -1,3 +1,4 @@
+import usePermission from "../hooks/usePermission";
 import React, { useState, useEffect, useCallback } from "react";
 import { ChevronRight, FileText, FileSpreadsheet, ChevronDown, Plus } from "lucide-react";
 import { toast } from "react-toastify";
@@ -6,7 +7,7 @@ import { toYMD } from "../components/wfhManagement/wfhData";
 import WfhStatCards from "../components/wfhManagement/WfhStatCards";
 import WfhTable from "../components/wfhManagement/WfhTable";
 import WfhModal from "../components/wfhManagement/WfhModal";
-import WfhReviewModal from "../components/wfhManagement/Wfhreviewmodal";
+import WfhReviewModal from "../components/wfhManagement/WfhReviewModal";
 import DeleteModal from "../components/leaveAdmin/DeleteModal";
 import {
   getWfhRequests,
@@ -34,6 +35,7 @@ const defaultRange = () => {
 };
 
 export default function WfhManagement() {
+  const { canAdd } = usePermission("wfh-management");
   // server data
   const [rows, setRows] = useState([]);
   const [total, setTotal] = useState(0);
@@ -203,7 +205,8 @@ export default function WfhManagement() {
             </ul>
           </div>
 
-          <button
+          {canAdd && (
+<button
             type="button"
             onClick={() => {
               setEditItem(null);
@@ -214,6 +217,7 @@ export default function WfhManagement() {
             <Plus size={15} />
             Add New Request
           </button>
+)}
         </div>
       </div>
 

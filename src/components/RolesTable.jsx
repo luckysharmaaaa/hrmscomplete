@@ -1,3 +1,4 @@
+import usePermission from "../hooks/usePermission";
 import React, { useState, useEffect } from "react";
 import {
   ChevronLeft,
@@ -28,6 +29,7 @@ const getPageItems = (total, current) => {
 };
 
 const RolesTable = ({ roles, setRoles, onEditRole, onDeleteRole }) => {
+  const { canEdit, canDelete } = usePermission("roles");
   // ===========================
   // Filters
   // ===========================
@@ -235,7 +237,8 @@ const RolesTable = ({ roles, setRoles, onEditRole, onDeleteRole }) => {
 
                   <td className="hr-td">
                     <div className="flex items-center justify-center gap-1">
-                      <button
+                      {canEdit && (
+<button
                         type="button"
                         onClick={() => onEditRole(item)}
                         title="Edit"
@@ -244,8 +247,10 @@ const RolesTable = ({ roles, setRoles, onEditRole, onDeleteRole }) => {
                       >
                         <Pencil size={16} />
                       </button>
+)}
 
-                      <button
+                      {canDelete && (
+<button
                         type="button"
                         onClick={() => setRoleToDelete(item)}
                         title="Delete"
@@ -254,6 +259,7 @@ const RolesTable = ({ roles, setRoles, onEditRole, onDeleteRole }) => {
                       >
                         <Trash2 size={16} />
                       </button>
+)}
                     </div>
                   </td>
                 </tr>

@@ -1,3 +1,4 @@
+import usePermission from "../../hooks/usePermission";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ChevronLeft,
@@ -49,6 +50,7 @@ const getPageItems = (total, current) => {
 };
 
 const UserTable = ({ roles = [], refresh }) => {
+  const { canEdit, canDelete } = usePermission("users");
   const [users, setUsers] = useState([]);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -520,7 +522,8 @@ const UserTable = ({ roles = [], refresh }) => {
                   {/* Actions */}
                   <td className="hr-td">
                     <div className="flex items-center justify-center gap-1">
-                      <button
+                      {canEdit && (
+<button
                         type="button"
                         aria-label={`Edit ${user.name}`}
                         title={`Edit ${user.name}`}
@@ -538,8 +541,10 @@ const UserTable = ({ roles = [], refresh }) => {
                           <Pencil size={16} />
                         )}
                       </button>
+)}
 
-                      <button
+                      {canDelete && (
+<button
                         type="button"
                         aria-label={`Delete ${user.name}`}
                         title={`Delete ${user.name}`}
@@ -554,6 +559,7 @@ const UserTable = ({ roles = [], refresh }) => {
                       >
                         <Trash2 size={16} />
                       </button>
+)}
                     </div>
                   </td>
                 </tr>

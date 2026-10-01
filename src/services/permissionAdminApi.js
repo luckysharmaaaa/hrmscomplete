@@ -1,14 +1,12 @@
 import api from "./api";
 
-// Reuses the existing endpoints. Nothing new on the backend.
-
-// Roles and modules come from the DB, so a new role / module shows up in the
-// permission screen automatically.
+// Roles, modules and actions all come from the DB, so a new role / module /
+// action shows up in the permission screen automatically.
 export const fetchRoles = () => api.get("/roles", { params: { limit: 100 } });
 export const fetchModules = () => api.get("/modules");
+export const fetchActions = () => api.get("/permissions/actions");
 
-export const fetchRolePermissions = (roleId) =>
-  api.get(`/role-permissions/${roleId}`);
+export const fetchRolePermissions = (roleId) => api.get(`/role-permissions/${roleId}`);
 
 // Body: { roleId, permissions: [{ moduleId, actions: ["view", ...] }] }
 export const saveRolePermissions = (roleId, permissions) =>

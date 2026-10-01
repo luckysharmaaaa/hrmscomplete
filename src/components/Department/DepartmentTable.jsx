@@ -1,3 +1,4 @@
+import usePermission from "../../hooks/usePermission";
 import React, { useEffect, useState } from "react";
 import { ChevronUp, ChevronDown, Pencil, Search, Trash2, ChevronLeft, ChevronRight, Building2 } from "lucide-react";
 import DateRangePickerButton from "../user/DateRangePickerButton";
@@ -22,6 +23,7 @@ const DepartmentTable = ({
   onDeleteDepartment,
 }) => {
   const today = new Date();
+  const { canEdit, canDelete } = usePermission("department");
 
   const [appliedRange, setAppliedRange] = useState([
     {
@@ -184,12 +186,16 @@ const DepartmentTable = ({
                   </td>
                   <td className="hr-td">
                     <div className="flex items-center justify-center gap-1">
-                      <button type="button" onClick={() => onEditDepartment(dept)} className="hr-icon-btn" title="Edit">
+                      {canEdit && (
+<button type="button" onClick={() => onEditDepartment(dept)} className="hr-icon-btn" title="Edit">
                         <Pencil size={16} />
                       </button>
-                      <button type="button" onClick={() => onDeleteDepartment(dept)} className="hr-icon-btn danger" title="Delete">
+)}
+                      {canDelete && (
+<button type="button" onClick={() => onDeleteDepartment(dept)} className="hr-icon-btn danger" title="Delete">
                         <Trash2 size={16} />
                       </button>
+)}
                     </div>
                   </td>
                 </tr>
@@ -202,7 +208,7 @@ const DepartmentTable = ({
       {/* Pagination */}
       <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border-subtle px-5 py-3">
         <p className="text-sm text-text-secondary">
-          Showing {startEntry}–{endEntry} of {totalEntries} entries
+          Showing {startEntry}â€“{endEntry} of {totalEntries} entries
         </p>
 
         <div className="flex items-center gap-1">
@@ -217,7 +223,7 @@ const DepartmentTable = ({
 
           {getPageItems(totalPages, safePage).map((item) =>
             typeof item === "string" ? (
-              <span key={item} className="px-1 text-sm text-text-disabled">…</span>
+              <span key={item} className="px-1 text-sm text-text-disabled">â€¦</span>
             ) : (
               <button
                 type="button"

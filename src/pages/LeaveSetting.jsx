@@ -1,3 +1,4 @@
+import usePermission from "../hooks/usePermission";
 import React, {
   useState,
   useEffect,
@@ -194,6 +195,7 @@ const LeaveTypeCard = ({ leave, pending, onEdit, onToggle }) => {
   const paid = isPaidLeave(leave);
   const days = Number(leave.maxBalance) || 0;
   const palette = getPalette(leave);
+  const { canEdit } = usePermission("leave-settings");
 
   return (
     <article
@@ -247,7 +249,8 @@ const LeaveTypeCard = ({ leave, pending, onEdit, onToggle }) => {
 
         <div className="mt-auto pt-6">
           <div className="flex items-center justify-between border-t border-gray-200 pt-4">
-            <button
+            {canEdit && (
+<button
               type="button"
               onClick={() => onEdit(leave)}
               aria-label={`Edit ${leave.leaveName}`}
@@ -256,6 +259,7 @@ const LeaveTypeCard = ({ leave, pending, onEdit, onToggle }) => {
               <Pencil size={14} />
               Edit
             </button>
+)}
 
             <div className="flex items-center gap-3">
               {pending && <Loader2 size={15} className="animate-spin text-gray-400" />}
@@ -266,7 +270,7 @@ const LeaveTypeCard = ({ leave, pending, onEdit, onToggle }) => {
               </span>
               <Switch
                 checked={active}
-                disabled={pending}
+                disabled={pending || !canEdit}
                 onChange={() => onToggle(leave)}
                 label={`${active ? "Deactivate" : "Activate"} ${leave.leaveName}`}
               />
@@ -382,6 +386,7 @@ const ConfirmDeactivateDialog = ({ leave, onCancel, onConfirm }) => {
 /* -------------------------------------------------------------------------- */
 
 const LeaveSettings = () => {
+  const { canAdd } = usePermission("leave-settings");
   const [leaveTypes, setLeaveTypes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
@@ -581,7 +586,8 @@ const LeaveSettings = () => {
             )}
           </label>
 
-          <button
+          {canAdd && (
+<button
             type="button"
             onClick={openCreate}
             className={`inline-flex h-11 shrink-0 items-center justify-center gap-2 rounded-lg bg-orange-500 px-5 text-sm font-semibold text-white shadow-sm transition hover:bg-orange-600 ${focusRing}`}
@@ -589,6 +595,7 @@ const LeaveSettings = () => {
             <Plus size={17} />
             Create leave type
           </button>
+)}
         </div>
       </header>
 
@@ -671,13 +678,15 @@ const LeaveSettings = () => {
           title="No leave types yet"
           description="Create your first leave type so employees can start requesting time off."
         >
-          <button
+          {canAdd && (
+<button
             type="button"
             onClick={openCreate}
             className={`inline-flex items-center gap-2 rounded-lg bg-orange-500 px-5 py-2.5 text-sm font-semibold text-white hover:bg-orange-600 ${focusRing}`}
           >
             <Plus size={16} /> Create leave type
           </button>
+)}
         </StateMessage>
       ) : visible.length === 0 ? (
         <StateMessage

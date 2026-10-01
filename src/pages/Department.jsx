@@ -1,3 +1,4 @@
+import usePermission from "../hooks/usePermission";
 
 import React, { useEffect, useState } from "react";
 import {
@@ -19,6 +20,7 @@ import {
 } from "../services/department.service";
 
 const Department = () => {
+  const { canAdd } = usePermission("department");
   const [departments, setDepartments] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editData, setEditData] = useState(null);
@@ -258,7 +260,8 @@ const Department = () => {
           {/* ==================================================
               Add Department
           =================================================== */}
-          <button
+          {canAdd && (
+<button
             type="button"
             onClick={handleAdd}
             disabled={loading}
@@ -268,6 +271,7 @@ const Department = () => {
 
             Add Department
           </button>
+)}
         </div>
       </div>
 
@@ -305,7 +309,7 @@ const Department = () => {
           Loading Indicator
       ======================================================= */}
       {loading && (
-        <div className="fixed bottom-5 right-5 z-2000 bg-white border border-gray-200 shadow-lg rounded-lg px-4 py-2 text-sm text-gray-600">
+        <div className="fixed bottom-5 right-5 z-[2000] bg-white border border-gray-200 shadow-lg rounded-lg px-4 py-2 text-sm text-gray-600">
           Processing...
         </div>
       )}

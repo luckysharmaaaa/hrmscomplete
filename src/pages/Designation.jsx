@@ -1,3 +1,4 @@
+import usePermission from "../hooks/usePermission";
 import React, { useEffect, useState } from "react";
 import {
   ChevronRight,
@@ -21,6 +22,7 @@ import {
 import { getDepartments } from "../services/department.service";
 
 const Designation = () => {
+  const { canAdd } = usePermission("designations");
   const [designations, setDesignations] = useState([]);
   const [departments, setDepartments] = useState([]);
 
@@ -302,7 +304,8 @@ const Designation = () => {
               ADD DESIGNATION
           ================================================= */}
 
-          <button
+          {canAdd && (
+<button
             type="button"
             onClick={handleAdd}
             disabled={loading}
@@ -312,6 +315,7 @@ const Designation = () => {
 
             Add Designation
           </button>
+)}
         </div>
       </div>
 

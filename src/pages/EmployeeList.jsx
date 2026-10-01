@@ -1,3 +1,4 @@
+import usePermission from "../hooks/usePermission";
 import React, { useCallback, useEffect, useState } from "react";
 
 import {
@@ -38,6 +39,7 @@ const AVATAR_COLORS = [
 ];
 
 export default function EmployeeList() {
+  const { canAdd } = usePermission("employee-list");
   // =========================================================
   // Employee Data
   // =========================================================
@@ -304,7 +306,8 @@ export default function EmployeeList() {
             </div>
 
             {/* Add Employee */}
-            <button
+            {canAdd && (
+<button
               type="button"
               onClick={() => {
                 setEditItem(null);
@@ -315,6 +318,7 @@ export default function EmployeeList() {
               <Plus size={16} />
               Add Employee
             </button>
+)}
           </>
         }
       />

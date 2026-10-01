@@ -1,3 +1,4 @@
+import usePermission from "../../hooks/usePermission";
 import React from "react";
 import { Search, X, Check, ChevronLeft, ChevronRight } from "lucide-react";
 import ReasonTooltip from "./ReasonTooltip";
@@ -53,6 +54,7 @@ export default function LeaveTable({
   onApprove,
   onReject,
 }) {
+  const { canApprove } = usePermission("leave-admin");
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-100">
       {/* Status pill tabs + type filter */}
@@ -200,20 +202,24 @@ export default function LeaveTable({
                   <td className="px-4 py-3 text-right">
                     {row.leaveStatus === "PENDING" ? (
                       <div className="flex items-center justify-end gap-1.5">
-                        <button
+                        {canApprove && (
+<button
                           onClick={() => onApprove(row)}
                           title="Approve"
                           className="w-7 h-7 flex items-center justify-center rounded-full bg-green-50 text-green-600 hover:bg-green-100 transition"
                         >
                           <Check size={14} strokeWidth={3} />
                         </button>
-                        <button
+)}
+                        {canApprove && (
+<button
                           onClick={() => onReject(row)}
                           title="Reject"
                           className="w-7 h-7 flex items-center justify-center rounded-full bg-red-50 text-red-500 hover:bg-red-100 transition"
                         >
                           <X size={14} strokeWidth={3} />
                         </button>
+)}
                       </div>
                     ) : (
                       <span className="text-xs text-gray-300">—</span>

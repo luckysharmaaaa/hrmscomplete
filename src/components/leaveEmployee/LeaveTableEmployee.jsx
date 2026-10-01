@@ -1,3 +1,4 @@
+import usePermission from "../../hooks/usePermission";
 import React from "react";
 import { Search, X, ChevronLeft, ChevronRight, Pencil, Ban } from "lucide-react";
 import ReasonTooltip from "../leaveAdmin/ReasonTooltip";
@@ -56,6 +57,7 @@ export default function LeaveTableEmployee({
   onEdit,
   onCancel,
 }) {
+  const { canEdit } = usePermission("leave-employee");
   const filteredRows = search
     ? rows.filter(
         (r) =>
@@ -198,22 +200,26 @@ export default function LeaveTableEmployee({
                   <td className="px-4 py-3 text-right">
                     <div className="flex items-center justify-end gap-1">
                       {row.leaveStatus === "PENDING" && (
-                        <button
+                        canEdit && (
+<button
                           onClick={() => onEdit(row)}
                           className="p-1.5 rounded-lg hover:bg-orange-50 text-gray-500 hover:text-orange-500 transition"
                           title="Edit"
                         >
                           <Pencil size={15} />
                         </button>
+)
                       )}
                       {["PENDING", "APPROVED"].includes(row.leaveStatus) && (
-                        <button
+                        canEdit && (
+<button
                           onClick={() => onCancel(row)}
                           className="p-1.5 rounded-lg hover:bg-red-50 text-gray-500 hover:text-red-500 transition"
                           title="Cancel"
                         >
                           <Ban size={15} />
                         </button>
+)
                       )}
                     </div>
                   </td>
