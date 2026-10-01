@@ -305,7 +305,7 @@ const Department = () => {
           Loading Indicator
       ======================================================= */}
       {loading && (
-        <div className="fixed bottom-5 right-5 z-[2000] bg-white border border-gray-200 shadow-lg rounded-lg px-4 py-2 text-sm text-gray-600">
+        <div className="fixed bottom-5 right-5 z-2000 bg-white border border-gray-200 shadow-lg rounded-lg px-4 py-2 text-sm text-gray-600">
           Processing...
         </div>
       )}
