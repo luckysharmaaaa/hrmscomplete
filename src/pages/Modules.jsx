@@ -16,6 +16,31 @@ import {
   Inbox,
   CheckCircle2,
   XCircle,
+  LayoutDashboard,
+  Users,
+  UserRound,
+  CalendarDays,
+  ClipboardList,
+  Clock,
+  Building2,
+  BriefcaseBusiness,
+  Settings,
+  ShieldCheck,
+  FileCheck,
+  WalletCards,
+  BarChart3,
+  Bell,
+  UserCog,
+  CalendarCheck,
+  ListChecks,
+  CircleDollarSign,
+  Package,
+  Truck,
+  Contact,
+  GraduationCap,
+  MessageSquare,
+  Database,
+  KeyRound,
 } from "lucide-react";
 
 import PageHeader from "../components/ui/PageHeader";
@@ -31,21 +56,68 @@ import {
   deleteModule as deleteModuleApi,
 } from "../services/moduleApi";
 
-const EMPTY_FORM = { moduleName: "", parentId: "", path: "", icon: "", status: "1" };
+const EMPTY_FORM = {
+  moduleName: "",
+  parentId: "",
+  path: "",
+  icon: "",
+  status: "1",
+};
+
+/*
+ * Icon options stored in the database as Lucide component names.
+ * The component itself is used only for rendering in the UI.
+ */
+const ICON_OPTIONS = [
+  { name: "LayoutDashboard", label: "Dashboard", component: LayoutDashboard },
+  { name: "Users", label: "Users", component: Users },
+  { name: "UserRound", label: "User", component: UserRound },
+  { name: "UserCog", label: "User Management", component: UserCog },
+  { name: "CalendarDays", label: "Calendar", component: CalendarDays },
+  { name: "CalendarCheck", label: "Calendar Check", component: CalendarCheck },
+  { name: "ClipboardList", label: "Clipboard List", component: ClipboardList },
+  { name: "ListChecks", label: "List Checks", component: ListChecks },
+  { name: "Clock", label: "Clock", component: Clock },
+  { name: "Building2", label: "Company / Building", component: Building2 },
+  { name: "BriefcaseBusiness", label: "Business", component: BriefcaseBusiness },
+  { name: "Contact", label: "Contact", component: Contact },
+  { name: "GraduationCap", label: "Training", component: GraduationCap },
+  { name: "Settings", label: "Settings", component: Settings },
+  { name: "ShieldCheck", label: "Security / Roles", component: ShieldCheck },
+  { name: "FileText", label: "Document", component: FileText },
+  { name: "FileCheck", label: "Approved Document", component: FileCheck },
+  { name: "WalletCards", label: "Payroll / Wallet", component: WalletCards },
+  { name: "CircleDollarSign", label: "Finance", component: CircleDollarSign },
+  { name: "Package", label: "Products", component: Package },
+  { name: "Truck", label: "Vendors / Delivery", component: Truck },
+  { name: "BarChart3", label: "Reports / Analytics", component: BarChart3 },
+  { name: "Bell", label: "Notifications", component: Bell },
+  { name: "MessageSquare", label: "Messages", component: MessageSquare },
+  { name: "Database", label: "Database", component: Database },
+  { name: "KeyRound", label: "Permissions / Access", component: KeyRound },
+];
+
+function getIconComponent(iconName) {
+  return ICON_OPTIONS.find((icon) => icon.name === iconName)?.component;
+}
 
 function buildTree(flatList) {
   const byId = {};
+
   flatList.forEach((item) => {
     byId[item.id] = { ...item, children: [] };
   });
+
   const roots = [];
+
   flatList.forEach((item) => {
     const node = byId[item.id];
     const parent = byId[item.parentId];
+
     if (parent) {
       parent.children.push(node);
     } else {
-      roots.push(node); // no parent (or parent not in filtered list) = top level
+      roots.push(node);
     }
   });
 
@@ -56,12 +128,18 @@ function buildTree(flatList) {
 // under one of its own descendants (would create a cycle in the tree).
 function getDescendantIds(modules, moduleId) {
   const descendants = new Set();
-  const stack = modules.filter((m) => m.parentId === moduleId).map((m) => m.id);
+
+  const stack = modules
+    .filter((m) => m.parentId === moduleId)
+    .map((m) => m.id);
 
   while (stack.length > 0) {
     const currentId = stack.pop();
-    if (descendants.has(currentId)) continue; // guard against pre-existing bad data
+
+    if (descendants.has(currentId)) continue;
+
     descendants.add(currentId);
+
     modules
       .filter((m) => m.parentId === currentId)
       .forEach((m) => stack.push(m.id));
@@ -81,7 +159,7 @@ function countDirectChildren(modules, id) {
 }
 
 // ------------------------------------------------------------
-// TABLE ROW (renders itself, then its children below it)
+// TABLE ROW
 // ------------------------------------------------------------
 
 function ModuleRow({
@@ -94,6 +172,7 @@ function ModuleRow({
   pendingId,
 }) {
   const [isExpanded, setIsExpanded] = useState(true);
+
   const hasChildren = node.children.length > 0;
   const isActive = node.status === "1";
   const isPending = pendingId === node.id;
@@ -105,33 +184,54 @@ function ModuleRow({
         ? "text-sm font-medium text-text-primary"
         : "text-sm text-text-secondary";
 
+  const SelectedIcon = getIconComponent(node.icon);
+
   return (
     <>
       <tr>
-        {/* Module name + expand arrow + indentation */}
+        {/* Module name + expand arrow + indentation + selected icon */}
         <td className="hr-td">
-          <div className="flex items-center gap-2" style={{ paddingLeft: `${level * 24}px` }}>
+          <div
+            className="flex items-center gap-2"
+            style={{ paddingLeft: `${level * 24}px` }}
+          >
             {hasChildren ? (
               <button
                 type="button"
                 onClick={() => setIsExpanded((prev) => !prev)}
                 className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-text-secondary transition-colors hover:bg-primary-50 hover:text-primary-700 focus-visible:outline-2 focus-visible:outline-primary-600"
-                aria-label={isExpanded ? `Collapse ${node.moduleName}` : `Expand ${node.moduleName}`}
+                aria-label={
+                  isExpanded
+                    ? `Collapse ${node.moduleName}`
+                    : `Expand ${node.moduleName}`
+                }
                 aria-expanded={isExpanded}
               >
                 <ChevronRight
                   size={15}
-                  className={`transition-transform ${isExpanded ? "rotate-90" : ""}`}
+                  className={`transition-transform ${isExpanded ? "rotate-90" : ""
+                    }`}
                 />
               </button>
             ) : (
               <span className="w-6 shrink-0" />
             )}
 
-            {level === 0 ? (
-              <FolderOpen size={17} className="shrink-0 text-primary-700" />
+            {SelectedIcon ? (
+              <SelectedIcon
+                size={17}
+                className="shrink-0 text-primary-700"
+              />
+            ) : level === 0 ? (
+              <FolderOpen
+                size={17}
+                className="shrink-0 text-primary-700"
+              />
             ) : (
-              <FileText size={16} className="shrink-0 text-text-disabled" />
+              <FileText
+                size={16}
+                className="shrink-0 text-text-disabled"
+              />
             )}
 
             <span className={nameClass}>{node.moduleName}</span>
@@ -146,7 +246,9 @@ function ModuleRow({
 
         {/* Parent */}
         <td className="hr-td text-text-secondary">
-          {node.parentId ? findModuleName(allModules, node.parentId) : "—"}
+          {node.parentId
+            ? findModuleName(allModules, node.parentId)
+            : "—"}
         </td>
 
         {/* Path */}
@@ -160,26 +262,34 @@ function ModuleRow({
           )}
         </td>
 
-        {/* Icon */}
-        <td className="hr-td font-mono text-xs text-text-secondary">
-          {node.icon || <span className="text-text-disabled">—</span>}
-        </td>
-
+        {/* Status */}
         {/* Status */}
         <td className="hr-td">
-          <div className="flex items-center gap-2.5">
+          <button
+            type="button"
+            onClick={() =>
+              !isPending && onToggleStatus(node.id, node.status)
+            }
+            disabled={isPending}
+            className="flex items-center gap-2.5 cursor-pointer disabled:cursor-not-allowed"
+            title={isActive ? "Click to deactivate" : "Click to activate"}
+          >
             <Switch
               checked={isActive}
               disabled={isPending}
-              onChange={() => onToggleStatus(node.id, node.status)}
-              ariaLabel={isActive ? "Active — click to deactivate" : "Inactive — click to activate"}
+              onChange={() => { }}
+              ariaLabel={isActive ? "Active" : "Inactive"}
             />
+
             <span
-              className={`text-xs font-medium ${isActive ? "text-success-600" : "text-text-secondary"}`}
+              className={`text-xs font-medium ${isActive
+                  ? "text-success-600"
+                  : "text-text-secondary"
+                }`}
             >
               {isActive ? "Active" : "Inactive"}
             </span>
-          </div>
+          </button>
         </td>
 
         {/* Actions */}
@@ -194,6 +304,7 @@ function ModuleRow({
             >
               <Pencil size={16} />
             </button>
+
             <button
               type="button"
               onClick={() => onDelete(node)}
@@ -229,10 +340,13 @@ function SkeletonRows() {
     <>
       {[0, 1, 2, 3, 4].map((i) => (
         <tr key={i}>
-          <td className="hr-td" colSpan={6}>
+          <td className="hr-td" colSpan={5}>
             <div
               className="h-4 animate-pulse rounded bg-primary-50"
-              style={{ width: `${70 - i * 8}%`, marginLeft: i > 2 ? 24 : 0 }}
+              style={{
+                width: `${70 - i * 8}%`,
+                marginLeft: i > 2 ? 24 : 0,
+              }}
             />
           </td>
         </tr>
@@ -242,10 +356,16 @@ function SkeletonRows() {
 }
 
 // ------------------------------------------------------------
-// ADD / EDIT DRAWER (opens from the right)
+// ADD / EDIT DRAWER
 // ------------------------------------------------------------
 
-function ModuleFormDrawer({ isOpen, onClose, editData, allModules, onSave }) {
+function ModuleFormDrawer({
+  isOpen,
+  onClose,
+  editData,
+  allModules,
+  onSave,
+}) {
   const [form, setForm] = useState(editData ?? EMPTY_FORM);
   const [isSaving, setIsSaving] = useState(false);
   const [formError, setFormError] = useState(null);
@@ -261,39 +381,61 @@ function ModuleFormDrawer({ isOpen, onClose, editData, allModules, onSave }) {
   // Focus the first field once the slide-in animation is done
   useEffect(() => {
     if (!isOpen) return;
-    const t = setTimeout(() => nameInputRef.current?.focus(), 350);
+
+    const t = setTimeout(
+      () => nameInputRef.current?.focus(),
+      350
+    );
+
     return () => clearTimeout(t);
   }, [isOpen]);
 
   // A module can't be its own parent, nor a child of its own descendants
   const blockedIds = editData
-    ? new Set([editData.id, ...getDescendantIds(allModules, editData.id)])
+    ? new Set([
+      editData.id,
+      ...getDescendantIds(allModules, editData.id),
+    ])
     : new Set();
-  const parentOptions = allModules.filter((m) => !blockedIds.has(m.id));
+
+  const parentOptions = allModules.filter(
+    (m) => !blockedIds.has(m.id)
+  );
 
   const trimmedName = form.moduleName.trim();
   const canSubmit = trimmedName.length > 0 && !isSaving;
 
   async function handleSubmit(e) {
     e.preventDefault();
+
     if (!canSubmit) return;
 
     setIsSaving(true);
     setFormError(null);
+
     try {
-      await onSave({ ...form, moduleName: trimmedName });
-      // On success the parent closes the drawer.
+      await onSave({
+        ...form,
+        moduleName: trimmedName,
+      });
     } catch (err) {
       setFormError(
-        err?.response?.data?.message || "Couldn't save this module. Please try again."
+        err?.response?.data?.message ||
+        "Couldn't save this module. Please try again."
       );
+
       setIsSaving(false);
     }
   }
 
   function toggleFormStatus() {
-    setForm((prev) => ({ ...prev, status: prev.status === "1" ? "0" : "1" }));
+    setForm((prev) => ({
+      ...prev,
+      status: prev.status === "1" ? "0" : "1",
+    }));
   }
+
+  const SelectedFormIcon = getIconComponent(form.icon);
 
   return (
     <SideDrawer
@@ -317,55 +459,94 @@ function ModuleFormDrawer({ isOpen, onClose, editData, allModules, onSave }) {
           >
             Cancel
           </button>
+
           <button
             type="submit"
             form="module-form"
             disabled={!canSubmit}
             className="hr-btn hr-btn-primary min-w-[150px]"
           >
-            {isSaving && <Loader2 size={16} className="animate-spin" />}
-            {isSaving ? "Saving…" : editData ? "Update Module" : "Add Module"}
+            {isSaving && (
+              <Loader2 size={16} className="animate-spin" />
+            )}
+
+            {isSaving
+              ? "Saving…"
+              : editData
+                ? "Update Module"
+                : "Add Module"}
           </button>
         </>
       }
     >
-      <form id="module-form" onSubmit={handleSubmit} className="space-y-5">
+      <form
+        id="module-form"
+        onSubmit={handleSubmit}
+        className="space-y-5"
+      >
         {formError && (
           <div
             role="alert"
             className="flex items-start gap-2 rounded-md border border-danger-500/20 bg-danger-50 px-3.5 py-2.5 text-xs text-danger-600"
           >
-            <AlertTriangle size={14} className="mt-0.5 shrink-0" />
+            <AlertTriangle
+              size={14}
+              className="mt-0.5 shrink-0"
+            />
             <span>{formError}</span>
           </div>
         )}
 
+        {/* Module Name */}
         <div>
-          <label htmlFor="moduleName" className="hr-label">
-            Module Name <span className="text-danger-500">*</span>
+          <label
+            htmlFor="moduleName"
+            className="hr-label"
+          >
+            Module Name{" "}
+            <span className="text-danger-500">*</span>
           </label>
+
           <input
             id="moduleName"
             ref={nameInputRef}
             required
             value={form.moduleName}
-            onChange={(e) => setForm({ ...form, moduleName: e.target.value })}
+            onChange={(e) =>
+              setForm({
+                ...form,
+                moduleName: e.target.value,
+              })
+            }
             placeholder="e.g. Leave Management"
             className="hr-input"
           />
         </div>
 
+        {/* Parent Module */}
         <div>
-          <label htmlFor="parentId" className="hr-label">
+          <label
+            htmlFor="parentId"
+            className="hr-label"
+          >
             Parent Module
           </label>
+
           <select
             id="parentId"
             value={form.parentId ?? ""}
-            onChange={(e) => setForm({ ...form, parentId: e.target.value || null })}
+            onChange={(e) =>
+              setForm({
+                ...form,
+                parentId: e.target.value || null,
+              })
+            }
             className="hr-select"
           >
-            <option value="">— None (Top Level) —</option>
+            <option value="">
+              — None (Top Level) —
+            </option>
+
             {parentOptions.map((m) => (
               <option key={m.id} value={m.id}>
                 {m.moduleName}
@@ -374,42 +555,90 @@ function ModuleFormDrawer({ isOpen, onClose, editData, allModules, onSave }) {
           </select>
         </div>
 
+        {/* Route Path */}
         <div>
-          <label htmlFor="path" className="hr-label">
+          <label
+            htmlFor="path"
+            className="hr-label"
+          >
             Route Path
           </label>
+
           <input
             id="path"
             value={form.path ?? ""}
-            onChange={(e) => setForm({ ...form, path: e.target.value })}
+            onChange={(e) =>
+              setForm({
+                ...form,
+                path: e.target.value,
+              })
+            }
             placeholder="e.g. /apply-leave"
             className="hr-input font-mono"
           />
         </div>
 
+        {/* Icon Dropdown */}
         <div>
-          <label htmlFor="icon" className="hr-label">
-            Icon Name
+          <label
+            htmlFor="icon"
+            className="hr-label"
+          >
+            Module Icon
           </label>
-          <input
-            id="icon"
-            value={form.icon ?? ""}
-            onChange={(e) => setForm({ ...form, icon: e.target.value })}
-            placeholder="e.g. LayoutDashboard"
-            className="hr-input font-mono"
-          />
+
+          <div className="flex items-center gap-2">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-border-subtle bg-background text-primary-700">
+              {SelectedFormIcon ? (
+                <SelectedFormIcon size={18} />
+              ) : (
+                <Layers size={18} />
+              )}
+            </div>
+
+            <select
+              id="icon"
+              value={form.icon ?? ""}
+              onChange={(e) =>
+                setForm({
+                  ...form,
+                  icon: e.target.value,
+                })
+              }
+              className="hr-select flex-1"
+            >
+              <option value="">
+                — Select Module Icon —
+              </option>
+
+              {ICON_OPTIONS.map((icon) => (
+                <option
+                  key={icon.name}
+                  value={icon.name}
+                >
+                  {icon.label} ({icon.name})
+                </option>
+              ))}
+            </select>
+          </div>
+
           <p className="mt-1.5 text-xs text-text-secondary">
-            Use Lucide icon component names (e.g. FileText, Users)
+            Select an icon to display before the module name.
           </p>
         </div>
 
+        {/* Active Status */}
         <div className="flex items-center justify-between gap-4 rounded-md border border-border-subtle bg-background px-4 py-3.5">
           <div>
-            <p className="text-sm font-medium text-text-primary">Active Status</p>
+            <p className="text-sm font-medium text-text-primary">
+              Active Status
+            </p>
+
             <p className="text-xs text-text-secondary">
               Module will appear in navigation when active
             </p>
           </div>
+
           <Switch
             checked={form.status === "1"}
             onChange={toggleFormStatus}
@@ -422,7 +651,7 @@ function ModuleFormDrawer({ isOpen, onClose, editData, allModules, onSave }) {
 }
 
 // ------------------------------------------------------------
-// MAIN PAGE — owns all the state, wires everything together
+// MAIN PAGE
 // ------------------------------------------------------------
 
 export default function Modules() {
@@ -432,34 +661,56 @@ export default function Modules() {
 
   const [searchText, setSearchText] = useState("");
   const [isFormOpen, setIsFormOpen] = useState(false);
-  const [editingModule, setEditingModule] = useState(null); // null = "add" mode
+  const [editingModule, setEditingModule] = useState(null);
   const [moduleToDelete, setModuleToDelete] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [pendingToggleId, setPendingToggleId] = useState(null);
 
   // --- derived data ---
   const matchesSearch = (m) =>
-    m.moduleName.toLowerCase().includes(searchText.toLowerCase());
-  const visibleModules = searchText ? modules.filter(matchesSearch) : modules;
+    m.moduleName
+      .toLowerCase()
+      .includes(searchText.toLowerCase());
+
+  const visibleModules = searchText
+    ? modules.filter(matchesSearch)
+    : modules;
+
   const tree = buildTree(visibleModules);
 
-  const activeCount = modules.filter((m) => m.status === "1").length;
-  const inactiveCount = modules.filter((m) => m.status === "0").length;
+  const activeCount = modules.filter(
+    (m) => m.status === "1"
+  ).length;
+
+  const inactiveCount = modules.filter(
+    (m) => m.status === "0"
+  ).length;
 
   // --- data fetch ---
-  const fetchModules = useCallback(async ({ silent } = {}) => {
-    if (!silent) setIsLoading(true);
-    setLoadError(null);
-    try {
-      const response = await getAllModules();
-      setModules(response.data.data);
-    } catch (error) {
-      console.error("Error fetching modules:", error);
-      setLoadError("Couldn't load modules. Check your connection and try again.");
-    } finally {
-      if (!silent) setIsLoading(false);
-    }
-  }, []);
+  const fetchModules = useCallback(
+    async ({ silent } = {}) => {
+      if (!silent) setIsLoading(true);
+
+      setLoadError(null);
+
+      try {
+        const response = await getAllModules();
+        setModules(response.data.data);
+      } catch (error) {
+        console.error(
+          "Error fetching modules:",
+          error
+        );
+
+        setLoadError(
+          "Couldn't load modules. Check your connection and try again."
+        );
+      } finally {
+        if (!silent) setIsLoading(false);
+      }
+    },
+    []
+  );
 
   useEffect(() => {
     fetchModules();
@@ -474,6 +725,7 @@ export default function Modules() {
   function openEditForm(module) {
     // Strip the tree-only `children` array so it never reaches the API
     const { children, ...cleanModule } = module;
+
     setEditingModule(cleanModule);
     setIsFormOpen(true);
   }
@@ -481,26 +733,45 @@ export default function Modules() {
   // Throws back to the drawer on failure so it can show an inline error.
   async function handleSaveModule(formData) {
     if (editingModule) {
-      await updateModule(editingModule.id, formData);
-      toast.success(`"${formData.moduleName}" updated.`);
+      await updateModule(
+        editingModule.id,
+        formData
+      );
+
+      toast.success(
+        `"${formData.moduleName}" updated.`
+      );
     } else {
       await createModule(formData);
-      toast.success(`"${formData.moduleName}" added.`);
+
+      toast.success(
+        `"${formData.moduleName}" added.`
+      );
     }
+
     await fetchModules({ silent: true });
     setIsFormOpen(false);
   }
 
-  async function toggleModuleStatus(id, currentStatus) {
+  async function toggleModuleStatus(
+    id,
+    currentStatus
+  ) {
     setPendingToggleId(id);
+
     try {
       await updateModule(id, {
-        status: currentStatus === "1" ? "0" : "1",
+        status:
+          currentStatus === "1" ? "0" : "1",
       });
+
       await fetchModules({ silent: true });
     } catch (error) {
       console.error(error);
-      toast.error("Couldn't update status. Please try again.");
+
+      toast.error(
+        "Couldn't update status. Please try again."
+      );
     } finally {
       setPendingToggleId(null);
     }
@@ -508,24 +779,37 @@ export default function Modules() {
 
   async function deleteModule() {
     if (!moduleToDelete || isDeleting) return;
+
     const target = moduleToDelete;
 
     setIsDeleting(true);
+
     try {
       await deleteModuleApi(target.id);
+
       await fetchModules({ silent: true });
+
       setModuleToDelete(null);
-      toast.success(`"${target.moduleName ?? "Module"}" deleted.`);
+
+      toast.success(
+        `"${target.moduleName ?? "Module"}" deleted.`
+      );
     } catch (error) {
       console.error(error);
-      toast.error("Couldn't delete this module. Please try again.");
+
+      toast.error(
+        "Couldn't delete this module. Please try again."
+      );
     } finally {
       setIsDeleting(false);
     }
   }
 
   const deleteChildCount = moduleToDelete
-    ? countDirectChildren(modules, moduleToDelete.id)
+    ? countDirectChildren(
+      modules,
+      moduleToDelete.id
+    )
     : 0;
 
   // --- render ---
@@ -535,9 +819,16 @@ export default function Modules() {
         icon={Layers}
         title="Modules"
         subtitle="Manage navigation modules and their hierarchy"
-        breadcrumbs={[{ label: "User Management" }, { label: "Modules" }]}
+        breadcrumbs={[
+          { label: "User Management" },
+          { label: "Modules" },
+        ]}
         actions={
-          <button type="button" onClick={openAddForm} className="hr-btn hr-btn-primary">
+          <button
+            type="button"
+            onClick={openAddForm}
+            className="hr-btn hr-btn-primary"
+          >
             <Plus size={16} />
             Add Module
           </button>
@@ -546,9 +837,26 @@ export default function Modules() {
 
       {/* Stat cards */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <StatCard icon={Layers} label="Total Modules" value={modules.length} tone="primary" />
-        <StatCard icon={CheckCircle2} label="Active" value={activeCount} tone="success" />
-        <StatCard icon={XCircle} label="Inactive" value={inactiveCount} tone="danger" />
+        <StatCard
+          icon={Layers}
+          label="Total Modules"
+          value={modules.length}
+          tone="primary"
+        />
+
+        <StatCard
+          icon={CheckCircle2}
+          label="Active"
+          value={activeCount}
+          tone="success"
+        />
+
+        <StatCard
+          icon={XCircle}
+          label="Inactive"
+          value={inactiveCount}
+          tone="danger"
+        />
       </div>
 
       {/* Table card */}
@@ -556,7 +864,10 @@ export default function Modules() {
         {/* Toolbar */}
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border-subtle px-5 py-4">
           <div className="flex items-center gap-2">
-            <h2 className="text-base font-semibold text-primary-700">Module Tree</h2>
+            <h2 className="text-base font-semibold text-primary-700">
+              Module Tree
+            </h2>
+
             <span className="rounded-full bg-primary-50 px-2 py-0.5 text-xs font-semibold text-primary-700">
               {modules.length}
             </span>
@@ -567,13 +878,17 @@ export default function Modules() {
               size={16}
               className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-text-disabled"
             />
+
             <input
               value={searchText}
-              onChange={(e) => setSearchText(e.target.value)}
+              onChange={(e) =>
+                setSearchText(e.target.value)
+              }
               placeholder="Search modules..."
               aria-label="Search modules"
               className="hr-input pl-9 pr-9"
             />
+
             {searchText && (
               <button
                 type="button"
@@ -589,26 +904,35 @@ export default function Modules() {
 
         {/* Table */}
         <div className="overflow-x-auto">
-          <table className="hr-table min-w-[880px]">
+          <table className="hr-table min-w-[780px]">
             <thead>
               <tr>
                 <th className="hr-th">Module Name</th>
                 <th className="hr-th">Parent</th>
                 <th className="hr-th">Path</th>
-                <th className="hr-th">Icon</th>
                 <th className="hr-th">Status</th>
-                <th className="hr-th text-center">Actions</th>
+                <th className="hr-th text-center">
+                  Actions
+                </th>
               </tr>
             </thead>
+
             <tbody>
               {isLoading ? (
                 <SkeletonRows />
               ) : loadError ? (
                 <tr>
-                  <td colSpan={6} className="py-14">
+                  <td colSpan={5} className="py-14">
                     <div className="flex flex-col items-center gap-2 text-center">
-                      <AlertTriangle size={24} className="text-danger-500" />
-                      <p className="text-sm text-text-secondary">{loadError}</p>
+                      <AlertTriangle
+                        size={24}
+                        className="text-danger-500"
+                      />
+
+                      <p className="text-sm text-text-secondary">
+                        {loadError}
+                      </p>
+
                       <button
                         type="button"
                         onClick={() => fetchModules()}
@@ -622,19 +946,23 @@ export default function Modules() {
                 </tr>
               ) : tree.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="py-14">
+                  <td colSpan={5} className="py-14">
                     <div className="flex flex-col items-center gap-2 text-center">
                       <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary-50 text-primary-700">
                         <Inbox size={22} />
                       </div>
+
                       {searchText ? (
                         <>
                           <p className="text-sm font-medium text-text-primary">
                             No modules match "{searchText}"
                           </p>
+
                           <button
                             type="button"
-                            onClick={() => setSearchText("")}
+                            onClick={() =>
+                              setSearchText("")
+                            }
                             className="hr-btn hr-btn-outline hr-btn-sm"
                           >
                             Clear search
@@ -642,7 +970,10 @@ export default function Modules() {
                         </>
                       ) : (
                         <>
-                          <p className="text-sm font-medium text-text-primary">No modules yet</p>
+                          <p className="text-sm font-medium text-text-primary">
+                            No modules yet
+                          </p>
+
                           <button
                             type="button"
                             onClick={openAddForm}
@@ -677,8 +1008,10 @@ export default function Modules() {
         {/* Footer count */}
         <div className="flex h-12 items-center border-t border-border-subtle px-5 text-xs text-text-secondary">
           {searchText
-            ? `Showing ${visibleModules.length} of ${modules.length} module${modules.length !== 1 ? "s" : ""}`
-            : `Showing ${modules.length} module${modules.length !== 1 ? "s" : ""}`}
+            ? `Showing ${visibleModules.length} of ${modules.length} module${modules.length !== 1 ? "s" : ""
+            }`
+            : `Showing ${modules.length} module${modules.length !== 1 ? "s" : ""
+            }`}
         </div>
       </div>
 
@@ -697,19 +1030,25 @@ export default function Modules() {
         title="Delete Module?"
         loading={isDeleting}
         confirmLabel="Yes, Delete"
-        onClose={() => !isDeleting && setModuleToDelete(null)}
+        onClose={() =>
+          !isDeleting && setModuleToDelete(null)
+        }
         onConfirm={deleteModule}
       >
         <p>
           Are you sure you want to delete{" "}
-          <span className="font-semibold text-text-primary">"{moduleToDelete?.moduleName}"</span>?
-          This action cannot be undone.
+          <span className="font-semibold text-text-primary">
+            "{moduleToDelete?.moduleName}"
+          </span>
+          ? This action cannot be undone.
         </p>
 
         {deleteChildCount > 0 && (
           <p className="mt-3 rounded-md border border-warning-500/30 bg-warning-50 px-3 py-2 text-left text-xs text-warning-600">
-            This module has {deleteChildCount} sub-module{deleteChildCount !== 1 ? "s" : ""}. They
-            won't be deleted, but will move up to the top level of the menu.
+            This module has {deleteChildCount} sub-module
+            {deleteChildCount !== 1 ? "s" : ""}. They
+            won't be deleted, but will move up to the top
+            level of the menu.
           </p>
         )}
       </ConfirmModal>

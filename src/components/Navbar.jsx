@@ -149,20 +149,7 @@ function Navbar() {
       </div>
 
       <div className="flex items-center gap-1 sm:gap-3 lg:gap-4 shrink-0">
-        <button className="hidden md:flex w-9 h-9 items-center justify-center rounded-lg text-text-secondary hover:bg-primary-50 hover:text-primary-700 transition-colors duration-fast ease-standard">
-          <Settings size={19} />
-        </button>
-
-        <button className="hidden md:flex w-9 h-9 items-center justify-center rounded-lg text-text-secondary hover:bg-primary-50 hover:text-primary-700 transition-colors duration-fast ease-standard">
-          <Mail size={19} />
-        </button>
-
-        <button className="relative w-9 h-9 flex items-center justify-center rounded-lg text-text-secondary hover:bg-primary-50 hover:text-primary-700 transition-colors duration-fast ease-standard">
-          <Bell size={19} />
-          <span className="absolute top-1.5 right-1.5 bg-danger-500 w-2 h-2 rounded-full" />
-        </button>
-
-        <div
+            <div
           className="relative sm:pl-4 sm:ml-1 sm:border-l border-border-subtle"
           ref={dropdownRef}
         >

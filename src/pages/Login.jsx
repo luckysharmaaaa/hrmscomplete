@@ -107,7 +107,7 @@ const Login = () => {
 
       toast.success("Login successful");
 
-      navigate("/profile", {
+      navigate("/dashboard", {
         replace: true,
       });
     } catch (error) {

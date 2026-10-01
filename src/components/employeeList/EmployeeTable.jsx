@@ -1,10 +1,7 @@
 import React from "react";
-import { useNavigate } from "react-router-dom";
 import {
   ChevronLeft,
   ChevronRight,
-  Clock,
-  Eye,
   Pencil,
   Search,
   Trash2,
@@ -13,31 +10,66 @@ import {
 } from "lucide-react";
 import DateRangePickerButton from "../user/DateRangePickerButton";
 import StatusBadge from "../ui/StatusBadge";
-import {
-  DESIGNATIONS,
-  STATUSES,
-  SORT_OPTIONS,
-  ROWS_OPTIONS,
-} from "./employeeData";
+
+const DESIGNATIONS = [
+  "All Designations",
+  "Finance",
+  "Developer",
+  "Executive",
+  "Manager",
+];
+
+const STATUSES = ["All Status", "Active", "Inactive"];
+
+const SORT_OPTIONS = [
+  "Recently Added",
+  "Ascending",
+  "Descending",
+  "Last 7 Days",
+  "Last Month",
+];
+
+const ROWS_OPTIONS = [10, 25, 50, 100];
 
 const getPageItems = (total, current) => {
-  if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
+  if (total <= 7) {
+    return Array.from({ length: total }, (_, i) => i + 1);
+  }
+
   const items = [1];
   const start = Math.max(2, current - 1);
   const end = Math.min(total - 1, current + 1);
-  if (start > 2) items.push("s-ellipsis");
-  for (let p = start; p <= end; p += 1) items.push(p);
-  if (end < total - 1) items.push("e-ellipsis");
+
+  if (start > 2) {
+    items.push("s-ellipsis");
+  }
+
+  for (let p = start; p <= end; p += 1) {
+    items.push(p);
+  }
+
+  if (end < total - 1) {
+    items.push("e-ellipsis");
+  }
+
   items.push(total);
+
   return items;
 };
 
 function formatJoiningDate(rawDate) {
   if (!rawDate) return "-";
+
   const datePart = String(rawDate).split(" ")[0];
   const parsed = new Date(datePart);
+
   if (isNaN(parsed.getTime())) return rawDate;
-  return parsed.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
+
+  return parsed.toLocaleDateString("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
 }
 
 export default function EmployeeTable({
@@ -62,13 +94,14 @@ export default function EmployeeTable({
   onViewShift,
   onDelete,
 }) {
-  const navigate = useNavigate();
-
   return (
     <div className="hr-card overflow-hidden">
       {/* Toolbar top row */}
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border-subtle px-5 py-4">
-        <h2 className="text-base font-semibold text-primary-700">Employee List</h2>
+        <h2 className="text-base font-semibold text-primary-700">
+          Employee List
+        </h2>
+
         <div className="flex flex-wrap items-center gap-2">
           <DateRangePickerButton
             value={dateRange}
@@ -77,6 +110,7 @@ export default function EmployeeTable({
               setCurrentPage(1);
             }}
           />
+
           <select
             value={designation}
             onChange={(e) => {
@@ -89,6 +123,7 @@ export default function EmployeeTable({
               <option key={d}>{d}</option>
             ))}
           </select>
+
           <select
             value={status}
             onChange={(e) => {
@@ -101,6 +136,7 @@ export default function EmployeeTable({
               <option key={s}>{s}</option>
             ))}
           </select>
+
           <select
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value)}
@@ -119,6 +155,7 @@ export default function EmployeeTable({
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border-subtle px-5 py-3">
         <div className="flex items-center gap-2 text-sm text-text-secondary">
           <span>Rows per page</span>
+
           <select
             value={rowsPerPage}
             onChange={(e) => {
@@ -134,7 +171,11 @@ export default function EmployeeTable({
         </div>
 
         <div className="relative w-56">
-          <Search size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-text-disabled" />
+          <Search
+            size={14}
+            className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-text-disabled"
+          />
+
           <input
             value={search}
             onChange={(e) => {
@@ -144,11 +185,16 @@ export default function EmployeeTable({
             placeholder="Search"
             className="hr-input !h-9 pl-8 pr-8"
           />
+
           {search && (
             <button
               type="button"
-              onClick={() => setSearch("")}
+              onClick={() => {
+                setSearch("");
+                setCurrentPage(1);
+              }}
               className="absolute right-2 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-md text-text-secondary hover:bg-primary-50 hover:text-primary-700"
+              title="Clear Search"
             >
               <X size={13} />
             </button>
@@ -168,10 +214,11 @@ export default function EmployeeTable({
               <th className="hr-th">Designation</th>
               <th className="hr-th">Joining Date</th>
               <th className="hr-th">Status</th>
-              <th className="hr-th text-center">View</th>
+              <th className="hr-th text-center">Shift</th>
               <th className="hr-th text-right">Action</th>
             </tr>
           </thead>
+
           <tbody>
             {paginated.length === 0 ? (
               <tr>
@@ -179,16 +226,22 @@ export default function EmployeeTable({
                   <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-primary-50 text-primary-700">
                     <Users size={22} />
                   </div>
-                  <p className="text-sm font-medium text-text-primary">No employee records found</p>
+
+                  <p className="text-sm font-medium text-text-primary">
+                    No employee records found
+                  </p>
                 </td>
               </tr>
             ) : (
               paginated.map((row, index) => {
-                const serialNo = (currentPage - 1) * rowsPerPage + index + 1;
+                const serialNo =
+                  (currentPage - 1) * rowsPerPage + index + 1;
 
                 return (
                   <tr key={row.id}>
-                    <td className="hr-td w-14 text-center font-medium text-text-secondary">{serialNo}</td>
+                    <td className="hr-td w-14 text-center font-medium text-text-secondary">
+                      {serialNo}
+                    </td>
 
                     <td className="hr-td">
                       <div className="flex items-center gap-3">
@@ -204,25 +257,42 @@ export default function EmployeeTable({
                             />
                           ) : (
                             <div
-                              className={`flex h-full w-full items-center justify-center ${row.color || "bg-primary-700"} text-xs font-bold text-white`}
+                              className={`flex h-full w-full items-center justify-center ${
+                                row.color || "bg-primary-700"
+                              } text-xs font-bold text-white`}
                             >
-                              {row.avatar || row.name?.charAt(0)?.toUpperCase() || "U"}
+                              {row.avatar ||
+                                row.name?.charAt(0)?.toUpperCase() ||
+                                "U"}
                             </div>
                           )}
                         </div>
+
                         <div>
-                          <p className="text-sm font-semibold text-text-primary">{row.name}</p>
-                          <p className="text-xs text-text-secondary">{row.empId}</p>
+                          <p className="text-sm font-semibold text-text-primary">
+                            {row.name}
+                          </p>
+
+                          <p className="text-xs text-text-secondary">
+                            {row.empId}
+                          </p>
                         </div>
                       </div>
                     </td>
 
                     <td className="hr-td">
-                      <p className="text-sm text-text-primary">{row.email}</p>
-                      <p className="text-xs text-text-secondary">{row.phone}</p>
+                      <p className="text-sm text-text-primary">
+                        {row.email}
+                      </p>
+
+                      <p className="text-xs text-text-secondary">
+                        {row.phone}
+                      </p>
                     </td>
 
-                    <td className="hr-td text-text-secondary">{row.department}</td>
+                    <td className="hr-td text-text-secondary">
+                      {row.department}
+                    </td>
 
                     <td className="hr-td">
                       <span className="inline-flex items-center rounded-md border border-border-subtle bg-background px-2.5 py-1 text-xs font-medium text-text-secondary">
@@ -230,33 +300,56 @@ export default function EmployeeTable({
                       </span>
                     </td>
 
-                    <td className="hr-td text-text-secondary">{formatJoiningDate(row.joiningDate)}</td>
-
-                    <td className="hr-td">
-                      <StatusBadge tone={row.status === "Active" ? "success" : "danger"}>{row.status}</StatusBadge>
+                    <td className="hr-td text-text-secondary">
+                      {formatJoiningDate(row.joiningDate)}
                     </td>
 
+                    <td className="hr-td">
+                      <StatusBadge
+                        tone={
+                          row.status === "Active" ||
+                          row.status === "1"
+                            ? "success"
+                            : "danger"
+                        }
+                      >
+                        {row.status === "Active" ||
+                        row.status === "1"
+                          ? "Active"
+                          : "Inactive"}
+                      </StatusBadge>
+                    </td>
+
+                    {/* Shift */}
                     <td className="hr-td text-center">
                       <button
                         type="button"
-                        onClick={() => navigate(`/employee/${row.id}`)}
+                        onClick={() => onViewShift(row)}
                         className="inline-flex items-center gap-1.5 rounded-md border border-info-500/20 bg-info-50 px-3 py-1.5 text-xs font-semibold text-info-600 transition hover:bg-info-500/15"
-                        title="View Profile"
+                        title="View Shift"
                       >
-                        <Eye size={13} />
-                        View
+                        Shift
                       </button>
                     </td>
 
+                    {/* Action */}
                     <td className="hr-td">
                       <div className="flex items-center justify-end gap-1">
-                        <button type="button" onClick={() => onViewShift(row)} className="hr-icon-btn" title="Shift">
-                          <Clock size={16} />
-                        </button>
-                        <button type="button" onClick={() => onEdit(row)} className="hr-icon-btn" title="Edit">
+                        <button
+                          type="button"
+                          onClick={() => onEdit(row)}
+                          className="hr-icon-btn"
+                          title="Edit"
+                        >
                           <Pencil size={16} />
                         </button>
-                        <button type="button" onClick={() => onDelete(row)} className="hr-icon-btn danger" title="Delete">
+
+                        <button
+                          type="button"
+                          onClick={() => onDelete(row)}
+                          className="hr-icon-btn danger"
+                          title="Delete"
+                        >
                           <Trash2 size={16} />
                         </button>
                       </div>
@@ -273,14 +366,26 @@ export default function EmployeeTable({
       <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border-subtle px-5 py-3">
         <span className="text-sm text-text-secondary">
           Showing{" "}
-          {filtered.length === 0 ? 0 : Math.min((currentPage - 1) * rowsPerPage + 1, filtered.length)}–
-          {Math.min(currentPage * rowsPerPage, filtered.length)} of {filtered.length} entries
+          {filtered.length === 0
+            ? 0
+            : Math.min(
+                (currentPage - 1) * rowsPerPage + 1,
+                filtered.length
+              )}
+          –
+          {Math.min(
+            currentPage * rowsPerPage,
+            filtered.length
+          )}{" "}
+          of {filtered.length} entries
         </span>
 
         <div className="flex items-center gap-1">
           <button
             type="button"
-            onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
+            onClick={() =>
+              setCurrentPage((p) => Math.max(p - 1, 1))
+            }
             disabled={currentPage === 1}
             className="hr-icon-btn border border-border-subtle"
           >
@@ -289,14 +394,21 @@ export default function EmployeeTable({
 
           {getPageItems(totalPages, currentPage).map((item) =>
             typeof item === "string" ? (
-              <span key={item} className="px-1 text-sm text-text-disabled">…</span>
+              <span
+                key={item}
+                className="px-1 text-sm text-text-disabled"
+              >
+                …
+              </span>
             ) : (
               <button
                 type="button"
                 key={item}
                 onClick={() => setCurrentPage(item)}
                 className={`flex h-8 min-w-8 items-center justify-center rounded-md px-2 text-sm font-medium transition-colors ${
-                  item === currentPage ? "bg-primary-700 text-white" : "text-text-secondary hover:bg-primary-50 hover:text-primary-700"
+                  item === currentPage
+                    ? "bg-primary-700 text-white"
+                    : "text-text-secondary hover:bg-primary-50 hover:text-primary-700"
                 }`}
               >
                 {item}
@@ -306,8 +418,14 @@ export default function EmployeeTable({
 
           <button
             type="button"
-            onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
-            disabled={currentPage === totalPages || totalPages === 0}
+            onClick={() =>
+              setCurrentPage((p) =>
+                Math.min(p + 1, totalPages)
+              )
+            }
+            disabled={
+              currentPage === totalPages || totalPages === 0
+            }
             className="hr-icon-btn border border-border-subtle"
           >
             <ChevronRight size={16} />
