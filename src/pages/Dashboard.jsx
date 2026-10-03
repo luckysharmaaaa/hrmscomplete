@@ -10,6 +10,7 @@ import { toast } from "react-toastify";
 import PageHeader from "../components/ui/PageHeader";
 import StatusBadge from "../components/ui/StatusBadge";
 import { useAuth } from "../context/AuthContext";
+import { useAttendanceGate } from "../context/AttendanceGateContext";
 import api from "../services/api";
 import { getTodayAttendance, punchIn, punchOut, getAttendanceHistory } from "../services/attendanceApi";
 import { getAdminAttendanceSummary } from "../services/attendanceAdminApi";
@@ -171,6 +172,12 @@ export default function Dashboard() {
   const monthEnd = ymd(new Date(now.getFullYear(), now.getMonth() + 1, 0));
   const [punching, setPunching] = useState(false);
 
+  // The attendance policy comes from the backend gate (office / WFH / biometric / fallback).
+  const { gate, refresh: refreshGate } = useAttendanceGate();
+  const canPunchNow = gate
+    ? gate.canPunch || (gate.attendanceState === "PUNCHED_IN" && gate.record?.checkInSource === "web")
+    : true;
+
   // organisation (admin) widgets
   const attSummary = useLoad(() => getAdminAttendanceSummary({ date: today, startDate: today, endDate: today }), canAdminAtt);
   const leaveSummary = useLoad(() => getAdminSummary(), canAdminLeave);
@@ -244,7 +251,7 @@ export default function Dashboard() {
     try {
       const res = checkedIn && !checkedOut ? await punchOut() : await punchIn();
       toast.success(res?.message || "Done");
-      todayAtt.reload(); history.reload();
+      todayAtt.reload(); history.reload(); refreshGate();
     } catch (e) {
       toast.error(e?.response?.data?.message || "Punch failed");
     } finally { setPunching(false); }
@@ -260,7 +267,7 @@ export default function Dashboard() {
         title={`${greeting()}, ${user?.firstName || "there"}`}
         subtitle={now.toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
         breadcrumbs={[{ label: "Dashboard" }]}
-        actions={canEmpAtt && !todayAtt.loading && !(checkedIn && checkedOut) ? (
+        actions={canEmpAtt && canPunchNow && !todayAtt.loading && !(checkedIn && checkedOut) ? (
           <button type="button" onClick={handlePunch} disabled={punching} className="hr-btn hr-btn-primary">
             {punching ? <Loader2 size={16} className="animate-spin" /> : checkedIn ? <LogOut size={16} /> : <LogIn size={16} />}
             {checkedIn ? "Punch Out" : "Punch In"}
@@ -374,11 +381,14 @@ export default function Dashboard() {
                     <div><dt className="text-xs text-text-secondary">Shift</dt><dd className="font-semibold text-text-primary">{shift ? `${String(shift.startTime).slice(0, 5)} – ${String(shift.endTime).slice(0, 5)}` : "Not assigned"}</dd></div>
                   </dl>
                 </div>
-                {!(checkedIn && checkedOut) && (
+                {!(checkedIn && checkedOut) && canPunchNow && (
                   <button type="button" onClick={handlePunch} disabled={punching} className="hr-btn hr-btn-primary mt-5 w-full">
                     {punching ? <Loader2 size={16} className="animate-spin" /> : checkedIn ? <LogOut size={16} /> : <LogIn size={16} />}
                     {checkedIn ? "Punch Out" : "Punch In"}
                   </button>
+                )}
+                {!canPunchNow && !(checkedIn && checkedOut) && (
+                  <p className="mt-5 rounded-md bg-background py-2 text-center text-xs text-text-secondary">Office attendance is recorded by the biometric device.</p>
                 )}
                 {checkedIn && checkedOut && <p className="mt-5 rounded-md bg-success-50 py-2 text-center text-sm font-medium text-success-600">Day completed</p>}
               </Widget>
@@ -454,3 +464,4 @@ export default function Dashboard() {
     </div>
   );
 }
+  

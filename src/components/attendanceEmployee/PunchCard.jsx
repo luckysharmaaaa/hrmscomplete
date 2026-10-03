@@ -31,10 +31,9 @@ const formatDuration = (minutes) => {
 // While the employee is still punched in, count up live from checkIn
 // to `now` instead of showing a frozen "0h 0m" all day.
 const getLiveProductionMinutes = (user, now) => {
-  const backendMinutes = toMinutesSafe(user?.workDurationMins);
-
-  if (backendMinutes > 0) {
-    return backendMinutes;
+  // Completed day: trust the backend value, even a legitimate 0.
+  if (user?.checkOutRaw && user?.workDurationMins !== null && user?.workDurationMins !== undefined) {
+    return toMinutesSafe(user.workDurationMins);
   }
 
   if (user?.checkInRaw && !user?.checkOutRaw) {
@@ -470,28 +469,34 @@ const PunchCard = ({ user, onPunchIn, onPunchOut }) => {
             PUNCH BUTTON
         ================================================================= */}
 
-        <button
-          type="button"
-          onClick={handlePunch}
-          disabled={punchedOutToday}
-          className={`w-full flex items-center justify-center gap-2 h-11 rounded-lg text-sm font-bold transition-all duration-200 active:scale-95 shadow-lg ${
-            user?.punchedIn || punchedOutToday
-              ? "bg-gradient-to-r from-[#0F265C] to-[#1a3a7c] hover:from-[#0a1d4a] text-white shadow-blue-900/25"
-              : "bg-gradient-to-r from-orange-500 to-orange-400 hover:from-orange-600 hover:to-orange-500 text-white shadow-orange-500/30"
-          } ${punchedOutToday ? "cursor-not-allowed opacity-80" : ""}`}
-        >
-          {user?.punchedIn || punchedOutToday ? (
-            <>
-              <LogOut size={15} />
-              Punch Out
-            </>
-          ) : (
-            <>
-              <LogIn size={15} />
-              Punch In
-            </>
-          )}
-        </button>
+        {user?.canPunch !== false && (
+          <button
+            type="button"
+            onClick={handlePunch}
+            disabled={punchedOutToday}
+            className={`w-full flex items-center justify-center gap-2 h-11 rounded-lg text-sm font-bold transition-all duration-200 active:scale-95 shadow-lg ${
+              user?.punchedIn || punchedOutToday
+                ? "bg-gradient-to-r from-[#0F265C] to-[#1a3a7c] hover:from-[#0a1d4a] text-white shadow-blue-900/25"
+                : "bg-gradient-to-r from-orange-500 to-orange-400 hover:from-orange-600 hover:to-orange-500 text-white shadow-orange-500/30"
+            } ${punchedOutToday ? "cursor-not-allowed opacity-80" : ""}`}
+          >
+            {user?.punchedIn || punchedOutToday ? (
+              <>
+                <LogOut size={15} />
+                Punch Out
+              </>
+            ) : (
+              <>
+                <LogIn size={15} />
+                Punch In
+              </>
+            )}
+          </button>
+        )}
+
+        {user?.punchHint && (
+          <p className="text-center text-[11px] text-gray-400">{user.punchHint}</p>
+        )}
       </div>
     </div>
   );

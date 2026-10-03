@@ -23,6 +23,8 @@ import {
 import { formatTime, minsToHrsMins } from "../utils/attendanceFormat";
 import { buildMonthAttendance } from "../utils/monthAttendance";
 import { useAuth } from "../context/AuthContext";
+import { useAttendanceGate } from "../context/AttendanceGateContext";
+import Can from "../components/rbac/Can";
 
 const now = new Date();
 
@@ -39,6 +41,7 @@ const monthBounds = (year, month) => {
 
 const AttendanceEmployee = () => {
   const { user } = useAuth();
+  const { gate, refresh: refreshGate } = useAttendanceGate();
   // const { user } = useAuth();
 const regularizationRef = useRef(null);
 
@@ -96,6 +99,7 @@ const regularizationRef = useRef(null);
       const res = await punchIn();
       toast.success(res?.message || "Punched in successfully");
       await loadAll();
+      await refreshGate();
     } catch (error) {
       toast.error(error?.response?.data?.message || "Punch in failed");
     } finally {
@@ -109,6 +113,7 @@ const regularizationRef = useRef(null);
       const res = await punchOut();
       toast.success(res?.message || "Punched out successfully");
       await loadAll();
+      await refreshGate();
     } catch (error) {
       toast.error(error?.response?.data?.message || "Punch out failed");
     } finally {
@@ -156,7 +161,15 @@ const regularizationRef = useRef(null);
     progressPercent: 0,
     shiftStart: today?.shift?.startTime || "-",
     shiftEnd: today?.shift?.endTime || "-",
-    location: "Office",
+    location: gate?.workLocation === "WFH" ? "WFH" : "Office",
+    // policy from the backend gate: may this user punch from HRMS right now?
+    canPunch: gate
+      ? gate.canPunch || (gate.attendanceState === "PUNCHED_IN" && gate.record?.checkInSource === "web")
+      : true,
+    punchHint:
+      gate && !gate.canPunch && gate.attendanceState !== "PUNCHED_OUT" && gate.attendanceMethod === "BIOMETRIC"
+        ? "Office attendance is recorded by the biometric device."
+        : null,
   };
 
 
@@ -210,6 +223,7 @@ const regularizationRef = useRef(null);
               </ul>
             </div>
 
+            <Can module="attendance-admin" action="view">
             <button
               onClick={() => setReportOpen(true)}
               className="flex-1 sm:flex-none flex items-center justify-center gap-2 h-10 px-4 bg-orange-500 hover:bg-orange-600 text-white text-sm font-semibold rounded-lg transition-colors shadow-sm shadow-orange-300/30"
@@ -217,6 +231,7 @@ const regularizationRef = useRef(null);
               <BarChart3 size={15} />
               Report
             </button>
+            </Can>
           </div>
         </div>
 
@@ -254,7 +269,9 @@ const regularizationRef = useRef(null);
         />
       </div>
 
-      <AttendanceReportModal open={reportOpen} onClose={() => setReportOpen(false)} />
+      <Can module="attendance-admin" action="view">
+        <AttendanceReportModal open={reportOpen} onClose={() => setReportOpen(false)} />
+      </Can>
     </div>
   );
 };

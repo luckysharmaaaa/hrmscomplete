@@ -1,22 +1,28 @@
 import React, { useState } from "react";
 import {
+  ChevronRight,
   ChevronDown,
-  ClipboardList,
-  Download,
-  FileSpreadsheet,
   FileText,
+  FileSpreadsheet,
+  HomeIcon,
+  Upload,
 } from "lucide-react";
 
-import PageHeader from "../components/ui/PageHeader";
 import AttendanceDetailsToday from "../components/attendanceAdmin/AttendanceDetailsToday";
 import AttendanceAdminTable from "../components/attendanceAdmin/AttendanceAdminTable";
 import AttendanceReportModal from "../components/attendanceAdmin/AttendanceReportModal";
+import BiometricStatusPanel from "../components/attendanceAdmin/BiometricStatusPanel";
+import ImportAttendanceDrawer from "../components/attendanceAdmin/ImportAttendanceDrawer";
+import Can from "../components/rbac/Can";
 
 const AttendanceAdmin = () => {
   const [reportOpen, setReportOpen] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
+  const [tableKey, setTableKey] = useState(0); // remount the table after an import
 
   /**
    * Filters currently selected inside AttendanceAdminTable.
+   *
    * AttendanceDetailsToday uses the same filters.
    */
   const [attendanceFilters, setAttendanceFilters] = useState({
@@ -29,68 +35,125 @@ const AttendanceAdmin = () => {
     search: "",
   });
 
-  const closeDropdown = () => document.activeElement?.blur?.();
-
   return (
     <div>
       <div className="space-y-6">
-        <PageHeader
-          icon={ClipboardList}
-          title="Attendance Admin"
-          breadcrumbs={[{ label: "Attendance" }, { label: "Attendance Admin" }]}
-          actions={
-            <>
-              {/* Export */}
-              <div className="dropdown dropdown-end">
-                <div tabIndex={0} role="button" className="hr-btn hr-btn-glass">
-                  <Download size={16} />
-                  Export
-                  <ChevronDown size={16} />
-                </div>
+        {/* Header */}
+        <div className="flex items-start justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-[#0F265C]">
+              Attendance Admin
+            </h1>
 
-                <ul
-                  tabIndex={0}
-                  className="dropdown-content z-50 mt-2 w-52 rounded-lg border border-border-subtle bg-surface p-1.5 shadow-lg"
-                >
-                  <li>
-                    <button
-                      type="button"
-                      onClick={closeDropdown}
-                      className="flex h-10 w-full items-center gap-2.5 rounded-md px-3 text-sm text-text-primary transition-colors hover:bg-primary-50 hover:text-primary-700"
-                    >
-                      <FileText size={16} className="text-danger-500" />
+            <nav className="flex items-center gap-1.5 mt-1 text-xs text-gray-400 leading-none">
+              <HomeIcon size={12} className="shrink-0" />
+
+              <ChevronRight
+                size={12}
+                className="shrink-0"
+              />
+
+              <span>Attendance</span>
+
+              <ChevronRight
+                size={12}
+                className="shrink-0"
+              />
+
+              <span className="text-orange-500 font-medium">
+                Attendance Admin
+              </span>
+            </nav>
+          </div>
+
+          <div className="flex items-center gap-2">
+            {/* Export Dropdown */}
+            <div className="dropdown dropdown-end">
+              <label
+                tabIndex={0}
+                className="flex items-center gap-2 px-4 py-2.5 bg-orange-500 hover:bg-orange-600 text-white text-sm font-semibold rounded-lg transition shadow-sm cursor-pointer"
+              >
+                <FileText size={16} />
+
+                <span>Export</span>
+
+                <ChevronDown size={14} />
+              </label>
+
+              <ul
+                tabIndex={0}
+                className="dropdown-content menu bg-white border border-gray-100 rounded-xl shadow-xl z-50 w-48 p-1.5 mt-2"
+              >
+                <li>
+                  <a className="flex items-center gap-3 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-lg">
+                    <FileText
+                      size={16}
+                      className="text-red-500 shrink-0"
+                    />
+
+                    <span className="font-medium">
                       Export as PDF
-                    </button>
-                  </li>
-                  <li>
-                    <button
-                      type="button"
-                      onClick={closeDropdown}
-                      className="flex h-10 w-full items-center gap-2.5 rounded-md px-3 text-sm text-text-primary transition-colors hover:bg-primary-50 hover:text-primary-700"
-                    >
-                      <FileSpreadsheet size={16} className="text-success-600" />
-                      Export as Excel
-                    </button>
-                  </li>
-                </ul>
-              </div>
+                    </span>
+                  </a>
+                </li>
 
-              <button type="button" onClick={() => setReportOpen(true)} className="hr-btn hr-btn-primary">
-                Report
+                <li>
+                  <a className="flex items-center gap-3 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-lg">
+                    <FileSpreadsheet
+                      size={16}
+                      className="text-green-600 shrink-0"
+                    />
+
+                    <span className="font-medium">
+                      Export as Excel
+                    </span>
+                  </a>
+                </li>
+              </ul>
+            </div>
+
+            <Can module="attendance-import" action="add">
+              <button
+                type="button"
+                onClick={() => setImportOpen(true)}
+                className="flex items-center gap-2 px-4 py-2.5 bg-white hover:bg-gray-50 text-gray-700 border border-gray-200 text-sm font-semibold rounded-lg transition shadow-sm"
+              >
+                <Upload size={15} /> Import Attendance
               </button>
-            </>
-          }
-        />
+            </Can>
+
+            <button
+              onClick={() => setReportOpen(true)}
+              className="px-5 py-2.5 bg-orange-500 hover:bg-orange-600 text-white text-sm font-semibold rounded-lg transition shadow-sm shadow-orange-300/30"
+            >
+              Report
+            </button>
+          </div>
+        </div>
+
+        {/* Biometric availability + policy (needs attendance-biometric-status:view) */}
+        <BiometricStatusPanel />
 
         {/* Attendance Summary */}
-        <AttendanceDetailsToday filters={attendanceFilters} />
+        <AttendanceDetailsToday
+          filters={attendanceFilters}
+        />
 
         {/* Attendance Admin Table */}
-        <AttendanceAdminTable onFiltersChange={setAttendanceFilters} />
+        <AttendanceAdminTable key={tableKey} onFiltersChange={setAttendanceFilters} />
       </div>
 
+      <ImportAttendanceDrawer
+        open={importOpen}
+        onClose={() => setImportOpen(false)}
+        onImported={() => setTableKey((k) => k + 1)}
+      />
+
       {/* Attendance Report Side Panel */}
-      <AttendanceReportModal open={reportOpen} onClose={() => setReportOpen(false)} />
+      <AttendanceReportModal
+        open={reportOpen}
+        onClose={() => setReportOpen(false)}
+      />
     </div>
   );
 };

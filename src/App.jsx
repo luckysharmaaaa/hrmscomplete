@@ -7,6 +7,8 @@ import { Loader2 } from "lucide-react";
 
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import { SidebarProvider, useSidebar } from "./context/SidebarContext";
+import { AttendanceGateProvider } from "./context/AttendanceGateContext";
+import AttendanceGate from "./components/attendanceGate/AttendanceGate";
 import { FORBIDDEN_EVENT } from "./services/api";
 
 import Sidebar from "./components/Sidebar";
@@ -22,7 +24,7 @@ import Login from "./pages/Login";
 import Profile from "./pages/Profile/Profile";
 import Forbidden from "./pages/Forbidden";
 import ModulePlaceholder from "./pages/ModulePlaceholder";
-import { BUILT_IN_PAGES, BUILT_IN_PATHS, getDynamicPage } from "./pages/ModuleRegistry";
+import { BUILT_IN_PAGES, BUILT_IN_PATHS, getDynamicPage } from "./pages/moduleRegistry";
 
 // Auth Pages
 import ForgotPassword from "./pages/ForgotPassword";
@@ -155,9 +157,13 @@ function LayoutContent() {
 function Layout() {
   return (
     <RequireAuth>
-      <SidebarProvider>
-        <LayoutContent />
-      </SidebarProvider>
+      <AttendanceGateProvider>
+        <AttendanceGate>
+          <SidebarProvider>
+            <LayoutContent />
+          </SidebarProvider>
+        </AttendanceGate>
+      </AttendanceGateProvider>
     </RequireAuth>
   );
 }

@@ -14,6 +14,7 @@ import { toast } from "react-toastify";
 import DateRangePickerButton from "../user/DateRangePickerButton";
 import EditAttendanceModal from "./EditAttendanceModal";
 import Can from "../rbac/Can";
+import { WorkLocationBadge, AttendanceSourceBadge } from "../attendance/AttendanceBadges";
 
 import {
   getAdminAttendance,
@@ -351,7 +352,7 @@ const parseTimeToMySQL = (dateStr, timeStr) => {
 // ============================================================
 //
 // NOTE: "Late" is intentionally absent here. It is not a real
-// attendanceStatus value — it is derived from
+// attendanceStatus value â€” it is derived from
 // (attendanceStatus === "PRESENT" && isLate === 1). If
 // EditAttendanceModal ever offers "Late" as a savable status,
 // this map will silently drop the status field from the update
@@ -482,7 +483,7 @@ const AttendanceAdminTable = ({ onFiltersChange }) => {
   //
   // Tracks attendance record IDs the admin has just saved a change
   // for, in this component's lifetime only. This is intentionally
-  // NOT persisted anywhere (no localStorage, no backend flag) — it
+  // NOT persisted anywhere (no localStorage, no backend flag) â€” it
   // resets as soon as the admin navigates away or reloads the page.
   //
   // ----------------------------------------------------------
@@ -623,12 +624,12 @@ const AttendanceAdminTable = ({ onFiltersChange }) => {
 
   const dateLabel = resolvedDate
     ? resolvedDate === todayStr
-      ? `Today — ${formatDisplayDate(resolvedDate)}`
+      ? `Today â€” ${formatDisplayDate(resolvedDate)}`
       : formatDisplayDate(resolvedDate)
     : dateRange[0]?.startDate && dateRange[0]?.endDate
     ? `${formatDisplayDate(
         toDateStr(new Date(dateRange[0].startDate))
-      )} – ${formatDisplayDate(
+      )} â€“ ${formatDisplayDate(
         toDateStr(new Date(dateRange[0].endDate))
       )}`
     : "";
@@ -949,11 +950,23 @@ const AttendanceAdminTable = ({ onFiltersChange }) => {
                 </th>
 
                 <th className="px-4 py-4">
+                  Emp Code
+                </th>
+
+                <th className="px-4 py-4">
                   Date
                 </th>
 
                 <th className="px-4 py-4">
                   Status
+                </th>
+
+                <th className="px-4 py-4">
+                  Work Location
+                </th>
+
+                <th className="px-4 py-4">
+                  Source
                 </th>
 
                 <th className="px-4 py-4">
@@ -989,16 +1002,16 @@ const AttendanceAdminTable = ({ onFiltersChange }) => {
               {loading ? (
                 <tr>
                   <td
-                    colSpan={9}
+                    colSpan={12}
                     className="text-center py-12 text-gray-400 text-sm"
                   >
-                    Loading…
+                    Loadingâ€¦
                   </td>
                 </tr>
               ) : rows.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={9}
+                    colSpan={12}
                     className="text-center py-12 text-gray-400 text-sm"
                   >
                     No attendance records found.
@@ -1102,6 +1115,12 @@ const AttendanceAdminTable = ({ onFiltersChange }) => {
                         </div>
                       </td>
 
+                      {/* EMP CODE */}
+
+                      <td className="px-4 py-3 text-gray-500 text-sm whitespace-nowrap">
+                        {row.employeeCode || "-"}
+                      </td>
+
                       {/* DATE */}
 
                       <td className="px-4 py-3 text-gray-500 text-sm whitespace-nowrap">
@@ -1128,6 +1147,18 @@ const AttendanceAdminTable = ({ onFiltersChange }) => {
 
                           {displayStatus(row)}
                         </span>
+                      </td>
+
+                      {/* WORK LOCATION */}
+
+                      <td className="px-4 py-3">
+                        <WorkLocationBadge value={row.workLocation} />
+                      </td>
+
+                      {/* SOURCE */}
+
+                      <td className="px-4 py-3">
+                        <AttendanceSourceBadge row={row} />
                       </td>
 
                       {/* CHECK IN */}

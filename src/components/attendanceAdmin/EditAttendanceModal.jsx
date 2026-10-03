@@ -14,7 +14,8 @@ import {
 } from "lucide-react";
 
 // ── Status options ────────────────────────────────────────────────────────────
-const STATUS_OPTIONS = ["Present", "Absent", "Late", "Half Day"];
+// "Late" is calculated from the times, it is not a savable status
+const STATUS_OPTIONS = ["Present", "Absent", "Half Day"];
 
 // ── Convert existing attendance time into <input type="time"> format ─────────
 const toTimeInputValue = (value) => {
@@ -179,7 +180,7 @@ const EditAttendanceModal = ({ open, onClose, employee, onSave }) => {
   };
 
   // ── Save ────────────────────────────────────────────────────────────────────
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!employee) {
       return;
     }
@@ -225,10 +226,9 @@ const EditAttendanceModal = ({ open, onClose, employee, onSave }) => {
     };
 
     if (typeof onSave === "function") {
-      onSave(updatedEmployee);
+      const ok = await onSave(updatedEmployee);
+      if (ok === false) return; // keep the drawer open so the admin does not lose the edit
     }
-
-    console.log("Saved attendance:", updatedEmployee);
 
     onClose();
   };
@@ -490,4 +490,4 @@ const EditAttendanceModal = ({ open, onClose, employee, onSave }) => {
   );
 };
 
-export default EditAttendanceModal;
+export default EditAttendanceModal; 
