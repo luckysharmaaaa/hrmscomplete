@@ -316,7 +316,7 @@ const ImportAttendanceDrawer = ({ open, onClose, onImported }) => {
                   <div className="flex items-center justify-between text-xs text-gray-500 mb-1.5">
                     <span className="inline-flex items-center gap-1.5">
                       <Loader2 size={13} className="animate-spin" />
-                      {phase === "validating" ? "Validating fileâ€¦" : "Importing attendanceâ€¦"}
+                      {phase === "validating" ? "Validating file…" : "Importing attendance…"}
                     </span>
                     <span className="tabular-nums">{progress < 100 ? `${progress}%` : "Processing"}</span>
                   </div>
@@ -350,7 +350,7 @@ const ImportAttendanceDrawer = ({ open, onClose, onImported }) => {
                     </div>
                     {preview.validRecords > 0 && (
                       <p className="text-xs text-gray-400 mt-2.5">
-                        {preview.employeesAffected} employee{preview.employeesAffected === 1 ? "" : "s"} Â·{" "}
+                        {preview.employeesAffected} employee{preview.employeesAffected === 1 ? "" : "s"} ·{" "}
                         {preview.dateFrom === preview.dateTo
                           ? preview.dateFrom
                           : `${preview.dateFrom} to ${preview.dateTo}`}
@@ -426,7 +426,7 @@ const ImportAttendanceDrawer = ({ open, onClose, onImported }) => {
           {tab === "history" && !errorsView && (
             <>
               {historyLoading ? (
-                <p className="py-10 text-center text-sm text-gray-400">Loadingâ€¦</p>
+                <p className="py-10 text-center text-sm text-gray-400">Loading…</p>
               ) : history.length === 0 ? (
                 <div className="py-14 text-center">
                   <Copy size={22} className="mx-auto text-gray-300" />

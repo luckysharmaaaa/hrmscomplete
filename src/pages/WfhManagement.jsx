@@ -1,7 +1,22 @@
+// ```jsx
 import usePermission from "../hooks/usePermission";
-import React, { useState, useEffect, useCallback } from "react";
-import { ChevronRight, FileText, FileSpreadsheet, ChevronDown, Plus } from "lucide-react";
+
+import React, {
+  useState,
+  useEffect,
+  useCallback,
+} from "react";
+
+import {
+  FileText,
+  FileSpreadsheet,
+  ChevronDown,
+  Plus,
+} from "lucide-react";
+
 import { toast } from "react-toastify";
+
+import PageHeader from "../components/ui/PageHeader";
 
 import { toYMD } from "../components/wfhManagement/wfhData";
 import WfhStatCards from "../components/wfhManagement/WfhStatCards";
@@ -9,6 +24,7 @@ import WfhTable from "../components/wfhManagement/WfhTable";
 import WfhModal from "../components/wfhManagement/WfhModal";
 import WfhReviewModal from "../components/wfhManagement/WfhReviewModal";
 import DeleteModal from "../components/leaveAdmin/DeleteModal";
+
 import {
   getWfhRequests,
   getWfhSummary,
@@ -18,34 +34,55 @@ import {
   reviewWfhRequest,
   deleteWfhRequest,
   apiErrorMessage,
-} from "../services/wfhApi"; // ← adjust to where you keep attendanceAdminApi.js
+} from "../services/wfhApi";
 
 function useDebounced(value, delay = 400) {
   const [v, setV] = useState(value);
+
   useEffect(() => {
     const t = setTimeout(() => setV(value), delay);
+
     return () => clearTimeout(t);
   }, [value, delay]);
+
   return v;
 }
 
 const defaultRange = () => {
   const y = new Date().getFullYear();
-  return [{ startDate: new Date(y - 1, 0, 1), endDate: new Date(y + 1, 11, 31), key: "selection" }];
+
+  return [
+    {
+      startDate: new Date(y - 1, 0, 1),
+      endDate: new Date(y + 1, 11, 31),
+      key: "selection",
+    },
+  ];
 };
 
 export default function WfhManagement() {
   const { canAdd } = usePermission("wfh-management");
-  // server data
+
+  // ==========================================================
+  // Server Data
+  // ==========================================================
   const [rows, setRows] = useState([]);
   const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
   const [summary, setSummary] = useState(null);
-  const [meta, setMeta] = useState({ employees: [], shifts: [], designations: [] });
+
+  const [meta, setMeta] = useState({
+    employees: [],
+    shifts: [],
+    designations: [],
+  });
+
   const [loading, setLoading] = useState(true);
   const [refreshKey, setRefreshKey] = useState(0);
 
-  // filters
+  // ==========================================================
+  // Filters
+  // ==========================================================
   const [search, setSearch] = useState("");
   const [designation, setDesignation] = useState("");
   const [shift, setShift] = useState("");
@@ -55,33 +92,65 @@ export default function WfhManagement() {
   const [currentPage, setCurrentPage] = useState(1);
   const [dateRange, setDateRange] = useState(defaultRange);
 
-  // modals
+  // ==========================================================
+  // Modals
+  // ==========================================================
   const [modalOpen, setModalOpen] = useState(false);
   const [editItem, setEditItem] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
-  const [review, setReview] = useState({ open: false, item: null, action: "APPROVED" });
+
+  const [review, setReview] = useState({
+    open: false,
+    item: null,
+    action: "APPROVED",
+  });
 
   const debouncedSearch = useDebounced(search);
-  // search changes should jump back to page 1 (after the debounce)
-  useEffect(() => setCurrentPage(1), [debouncedSearch]);
 
-  const reload = useCallback(() => setRefreshKey((k) => k + 1), []);
+  // Search changes should jump back to page 1
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [debouncedSearch]);
+
+  const reload = useCallback(
+    () => setRefreshKey((k) => k + 1),
+    []
+  );
 
   const range = dateRange?.[0];
-  const startDate = range?.startDate ? toYMD(range.startDate) : undefined;
-  const endDate = range?.endDate ? toYMD(range.endDate) : undefined;
 
-  // dropdown data — once
+  const startDate = range?.startDate
+    ? toYMD(range.startDate)
+    : undefined;
+
+  const endDate = range?.endDate
+    ? toYMD(range.endDate)
+    : undefined;
+
+  // ==========================================================
+  // Dropdown Data
+  // ==========================================================
   useEffect(() => {
     getWfhMeta()
       .then(setMeta)
-      .catch((err) => toast.error(apiErrorMessage(err, "Could not load employees and shifts.")));
+      .catch((err) =>
+        toast.error(
+          apiErrorMessage(
+            err,
+            "Could not load employees and shifts."
+          )
+        )
+      );
   }, []);
 
-  // list
+  // ==========================================================
+  // WFH Requests
+  // ==========================================================
   useEffect(() => {
-    let cancelled = false; // ignore stale responses when filters change quickly
+    let cancelled = false;
+
     setLoading(true);
+
     getWfhRequests({
       page: currentPage,
       limit: rowsPerPage,
@@ -90,149 +159,289 @@ export default function WfhManagement() {
       endDate,
       designation: designation || undefined,
       shiftId: shift || undefined,
-      status: status === "All Status" ? undefined : status,
+      status:
+        status === "All Status"
+          ? undefined
+          : status,
       sort: sortBy,
     })
       .then((res) => {
         if (cancelled) return;
+
         setRows(res.items);
         setTotal(res.pagination.total);
         setTotalPages(res.pagination.totalPages);
-        // e.g. last row on the last page was deleted
-        if (currentPage > res.pagination.totalPages) setCurrentPage(res.pagination.totalPages);
+
+        // Last row on the last page was deleted
+        if (
+          currentPage >
+          res.pagination.totalPages
+        ) {
+          setCurrentPage(
+            res.pagination.totalPages
+          );
+        }
       })
-      .catch((err) => !cancelled && toast.error(apiErrorMessage(err, "Could not load WFH requests.")))
-      .finally(() => !cancelled && setLoading(false));
+      .catch(
+        (err) =>
+          !cancelled &&
+          toast.error(
+            apiErrorMessage(
+              err,
+              "Could not load WFH requests."
+            )
+          )
+      )
+      .finally(
+        () =>
+          !cancelled &&
+          setLoading(false)
+      );
+
     return () => {
       cancelled = true;
     };
-  }, [currentPage, rowsPerPage, debouncedSearch, startDate, endDate, designation, shift, status, sortBy, refreshKey]);
+  }, [
+    currentPage,
+    rowsPerPage,
+    debouncedSearch,
+    startDate,
+    endDate,
+    designation,
+    shift,
+    status,
+    sortBy,
+    refreshKey,
+  ]);
 
-  // stat cards follow the date range
+  // ==========================================================
+  // Summary
+  // ==========================================================
   useEffect(() => {
     let cancelled = false;
-    getWfhSummary({ startDate, endDate })
-      .then((s) => !cancelled && setSummary(s))
+
+    getWfhSummary({
+      startDate,
+      endDate,
+    })
+      .then(
+        (s) =>
+          !cancelled && setSummary(s)
+      )
       .catch(() => {});
+
     return () => {
       cancelled = true;
     };
-  }, [startDate, endDate, refreshKey]);
+  }, [
+    startDate,
+    endDate,
+    refreshKey,
+  ]);
 
-  // ── Handlers ────────────────────────────────────────────────
-  // Modal shows the error inline, so these throw a plain Error(message) on failure.
+  // ==========================================================
+  // Submit / Update WFH Request
+  // ==========================================================
   const handleSubmit = async (payload) => {
     try {
       if (editItem) {
-        await updateWfhRequest(editItem.id, payload);
+        await updateWfhRequest(
+          editItem.id,
+          payload
+        );
+
         toast.success("Request updated");
       } else {
         await createWfhRequest(payload);
+
         toast.success("Request added");
+
         setCurrentPage(1);
         setSortBy("recent");
       }
+
       setEditItem(null);
       reload();
     } catch (err) {
-      throw new Error(apiErrorMessage(err));
+      throw new Error(
+        apiErrorMessage(err)
+      );
     }
   };
 
-  const handleReview = async (id, action, comment) => {
+  // ==========================================================
+  // Review WFH Request
+  // ==========================================================
+  const handleReview = async (
+    id,
+    action,
+    comment
+  ) => {
     try {
-      await reviewWfhRequest(id, action, comment);
-      toast.success(action === "APPROVED" ? "Request approved" : "Request rejected");
-      setReview({ open: false, item: null, action });
+      await reviewWfhRequest(
+        id,
+        action,
+        comment
+      );
+
+      toast.success(
+        action === "APPROVED"
+          ? "Request approved"
+          : "Request rejected"
+      );
+
+      setReview({
+        open: false,
+        item: null,
+        action,
+      });
+
       reload();
     } catch (err) {
-      toast.error(apiErrorMessage(err));
+      toast.error(
+        apiErrorMessage(err)
+      );
     }
   };
 
+  // ==========================================================
+  // Delete WFH Request
+  // ==========================================================
   const handleDelete = async (arg) => {
-    const id = typeof arg === "object" && arg !== null ? arg.id : arg ?? deleteTarget?.id;
+    const id =
+      typeof arg === "object" &&
+      arg !== null
+        ? arg.id
+        : arg ?? deleteTarget?.id;
+
     try {
       await deleteWfhRequest(id);
+
       toast.success("Request deleted");
+
       setDeleteTarget(null);
       reload();
     } catch (err) {
-      toast.error(apiErrorMessage(err));
+      toast.error(
+        apiErrorMessage(err)
+      );
     }
+  };
+
+  // ==========================================================
+  // Close Export Dropdown
+  // ==========================================================
+  const closeDropdown = () => {
+    document.activeElement?.blur?.();
   };
 
   return (
     <div className="space-y-6">
-      {/* ── Header ── */}
-      <div className="flex items-start justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-[#0F265C]">Work From Home</h1>
-          <nav className="flex items-center gap-1.5 mt-1 text-xs text-gray-400">
-            <span>Attendance</span>
-            <ChevronRight size={12} />
-            <span className="text-orange-500 font-medium">Work From Home Management</span>
-          </nav>
-        </div>
+      {/* ========================================================
+          Common Page Header
+      ======================================================== */}
+      <PageHeader
+        icon={FileText}
+        title="Work From Home"
+        breadcrumbs={[
+          { label: "Attendance" },
+          {
+            label: "Work From Home Management",
+          },
+        ]}
+        actions={
+          <>
+            {/* ==================================================
+                Export Dropdown
+            ================================================== */}
+            <div className="dropdown dropdown-end">
+              <div
+                tabIndex={0}
+                role="button"
+                className="hr-btn hr-btn-glass"
+              >
+                <FileText size={16} />
+                Export
+                <ChevronDown size={16} />
+              </div>
 
-        <div className="flex items-center gap-2">
-          {/* Export — still UI-only, wire up when the export endpoint exists */}
-          <div className="dropdown dropdown-end">
-            <label
-              tabIndex={0}
-              className="flex items-center gap-2 px-4 py-2.5 bg-white hover:bg-gray-50 text-gray-700 border border-gray-200 text-sm font-semibold rounded-lg transition shadow-sm cursor-pointer"
-            >
-              <FileText size={16} className="text-gray-500" />
-              <span>Export</span>
-              <ChevronDown size={14} />
-            </label>
-            <ul
-              tabIndex={0}
-              className="dropdown-content menu bg-white border border-gray-100 rounded-xl shadow-xl z-50 w-48 p-1.5 mt-2"
-            >
-              <li>
-                <a className="flex items-center gap-3 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-lg">
-                  <FileText size={16} className="text-red-500 shrink-0" />
-                  <span className="font-medium">Export as PDF</span>
-                </a>
-              </li>
-              <li>
-                <a className="flex items-center gap-3 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-lg">
-                  <FileSpreadsheet size={16} className="text-green-600 shrink-0" />
-                  <span className="font-medium">Export as Excel</span>
-                </a>
-              </li>
-            </ul>
-          </div>
+              <ul
+                tabIndex={0}
+                className="dropdown-content z-50 mt-2 w-52 rounded-lg border border-border-subtle bg-surface p-1.5 shadow-lg"
+              >
+                <li>
+                  <button
+                    type="button"
+                    onClick={closeDropdown}
+                    className="flex h-10 w-full items-center gap-2.5 rounded-md px-3 text-sm text-text-primary transition-colors hover:bg-primary-50 hover:text-primary-700"
+                  >
+                    <FileText
+                      size={16}
+                      className="text-danger-500"
+                    />
 
-          {canAdd && (
-<button
-            type="button"
-            onClick={() => {
-              setEditItem(null);
-              setModalOpen(true);
-            }}
-            className="flex items-center gap-2 px-4 py-2.5 bg-orange-500 text-white text-sm font-semibold rounded-lg hover:bg-orange-600 transition shadow-sm"
-          >
-            <Plus size={15} />
-            Add New Request
-          </button>
-)}
-        </div>
-      </div>
+                    <span>
+                      Export as PDF
+                    </span>
+                  </button>
+                </li>
 
-      {/* ── Stat Cards (click to filter) ── */}
+                <li>
+                  <button
+                    type="button"
+                    onClick={closeDropdown}
+                    className="flex h-10 w-full items-center gap-2.5 rounded-md px-3 text-sm text-text-primary transition-colors hover:bg-primary-50 hover:text-primary-700"
+                  >
+                    <FileSpreadsheet
+                      size={16}
+                      className="text-success-600"
+                    />
+
+                    <span>
+                      Export as Excel
+                    </span>
+                  </button>
+                </li>
+              </ul>
+            </div>
+
+            {/* ==================================================
+                Add New Request
+                RBAC: wfh-management:add
+            ================================================== */}
+            {canAdd && (
+              <button
+                type="button"
+                onClick={() => {
+                  setEditItem(null);
+                  setModalOpen(true);
+                }}
+                className="hr-btn hr-btn-primary"
+              >
+                <Plus size={16} />
+                Add New Request
+              </button>
+            )}
+          </>
+        }
+      />
+
+      {/* ========================================================
+          Stat Cards
+      ======================================================== */}
       <WfhStatCards
         summary={summary}
         loading={loading}
         activeStatus={status}
-        onSelect={(s) => {
-          setStatus(s);
+        onSelect={(selectedStatus) => {
+          setStatus(selectedStatus);
           setCurrentPage(1);
         }}
       />
 
-      {/* ── Table ── */}
+      {/* ========================================================
+          WFH Table
+      ======================================================== */}
       <WfhTable
         rows={rows}
         loading={loading}
@@ -259,11 +468,21 @@ export default function WfhManagement() {
           setEditItem(row);
           setModalOpen(true);
         }}
-        onDelete={(row) => setDeleteTarget(row)}
-        onReview={(row, action) => setReview({ open: true, item: row, action })}
+        onDelete={(row) =>
+          setDeleteTarget(row)
+        }
+        onReview={(row, action) =>
+          setReview({
+            open: true,
+            item: row,
+            action,
+          })
+        }
       />
 
-      {/* ── Modals ── */}
+      {/* ========================================================
+          Add / Edit WFH Modal
+      ======================================================== */}
       <WfhModal
         open={modalOpen}
         onClose={() => {
@@ -275,20 +494,34 @@ export default function WfhManagement() {
         meta={meta}
       />
 
+      {/* ========================================================
+          Review Modal
+      ======================================================== */}
       <WfhReviewModal
         open={review.open}
         action={review.action}
         item={review.item}
-        onClose={() => setReview((r) => ({ ...r, open: false }))}
+        onClose={() =>
+          setReview((r) => ({
+            ...r,
+            open: false,
+          }))
+        }
         onConfirm={handleReview}
       />
 
+      {/* ========================================================
+          Delete Modal
+      ======================================================== */}
       <DeleteModal
         open={!!deleteTarget}
         item={deleteTarget}
-        onClose={() => setDeleteTarget(null)}
+        onClose={() =>
+          setDeleteTarget(null)
+        }
         onConfirm={handleDelete}
       />
     </div>
   );
 }
+

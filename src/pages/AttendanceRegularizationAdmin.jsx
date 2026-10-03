@@ -1,9 +1,26 @@
-// pages/AttendanceRegularizationAdmin.jsx (new)
+
+import React from "react";
+import { ClipboardCheck } from "lucide-react";
+
+import PageHeader from "../components/ui/PageHeader";
 import RegularizationReview from "../components/attendanceAdmin/RegularizationReview";
-const AttendanceRegularizationAdmin = () => (
-  <div className="space-y-6">
-    <h1 className="text-3xl font-bold text-[#0F265C]">Regularization Requests</h1>
-    <RegularizationReview />
-  </div>
-);
+
+const AttendanceRegularizationAdmin = () => {
+  return (
+    <div className="space-y-6">
+      <PageHeader
+        icon={ClipboardCheck}
+        title="Regularization Requests"
+        breadcrumbs={[
+          { label: "Attendance" },
+          { label: "Regularization Requests" },
+        ]}
+      />
+
+      <RegularizationReview />
+    </div>
+  );
+};
+
 export default AttendanceRegularizationAdmin;
+

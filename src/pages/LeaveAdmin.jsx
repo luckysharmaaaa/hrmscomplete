@@ -1,9 +1,16 @@
+// ```jsx
 import React, { useState, useEffect, useCallback } from "react";
-import { ChevronRight, FileText, FileSpreadsheet, ChevronDown } from "lucide-react";
+import {
+  FileText,
+  FileSpreadsheet,
+  ChevronDown,
+} from "lucide-react";
 
+import PageHeader from "../components/ui/PageHeader";
 import LeaveStatCards from "../components/leaveAdmin/LeaveStatCards";
 import LeaveTable from "../components/leaveAdmin/LeaveTable";
 import ApproveRejectModal from "../components/leaveAdmin/ApproveRejectModal";
+
 import {
   getLeaveTypes,
   getAdminApplications,
@@ -29,11 +36,14 @@ export default function LeaveAdmin() {
   const [reviewMode, setReviewMode] = useState("approve");
 
   useEffect(() => {
-    getLeaveTypes().then(setLeaveTypes).catch(() => {});
+    getLeaveTypes()
+      .then(setLeaveTypes)
+      .catch(() => {});
   }, []);
 
   const fetchApplications = useCallback(() => {
     setLoading(true);
+
     getAdminApplications({
       page: currentPage,
       limit: rowsPerPage,
@@ -55,7 +65,11 @@ export default function LeaveAdmin() {
   }, [currentPage, rowsPerPage, leaveTypeId, status, search]);
 
   useEffect(() => {
-    const timer = setTimeout(fetchApplications, search ? 350 : 0);
+    const timer = setTimeout(
+      fetchApplications,
+      search ? 350 : 0
+    );
+
     return () => clearTimeout(timer);
   }, [fetchApplications, search]);
 
@@ -65,57 +79,75 @@ export default function LeaveAdmin() {
     } else {
       await rejectApplication(id, remarks);
     }
+
     fetchApplications();
+  };
+
+  const closeDropdown = () => {
+    document.activeElement?.blur?.();
   };
 
   return (
     <div className="space-y-6">
-      {/* ── Header ── */}
-      <div className="flex items-start justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-[#0F265C]">Leaves</h1>
-          <nav className="flex items-center gap-1.5 mt-1 text-xs text-gray-400">
-            <span>Attendance</span>
-            <ChevronRight size={12} />
-            <span className="text-orange-500 font-medium">{"Leaves(Admin)"}</span>
-          </nav>
-        </div>
-        <div className="flex items-center gap-2">
-          {/* Export Dropdown */}
+      <PageHeader
+        icon={FileText}
+        title="Leaves"
+        breadcrumbs={[
+          { label: "Attendance" },
+          { label: "Leaves (Admin)" },
+        ]}
+        actions={
           <div className="dropdown dropdown-end">
-            <label
+            <div
               tabIndex={0}
-              className="flex items-center gap-2 px-4 py-2.5 bg-orange-500 hover:bg-orange-600 text-white text-sm font-semibold rounded-lg transition shadow-sm cursor-pointer"
+              role="button"
+              className="hr-btn hr-btn-glass"
             >
               <FileText size={16} />
-              <span>Export</span>
-              <ChevronDown size={14} />
-            </label>
+              Export
+              <ChevronDown size={16} />
+            </div>
+
             <ul
               tabIndex={0}
-              className="dropdown-content menu bg-white border border-gray-100 rounded-xl shadow-xl z-50 w-48 p-1.5 mt-2"
+              className="dropdown-content z-50 mt-2 w-52 rounded-lg border border-border-subtle bg-surface p-1.5 shadow-lg"
             >
               <li>
-                <a className="flex items-center gap-3 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-lg">
-                  <FileText size={16} className="text-red-500 shrink-0" />
-                  <span className="font-medium">Export as PDF</span>
-                </a>
+                <button
+                  type="button"
+                  onClick={closeDropdown}
+                  className="flex h-10 w-full items-center gap-2.5 rounded-md px-3 text-sm text-text-primary transition-colors hover:bg-primary-50 hover:text-primary-700"
+                >
+                  <FileText
+                    size={16}
+                    className="text-danger-500"
+                  />
+                  Export as PDF
+                </button>
               </li>
+
               <li>
-                <a className="flex items-center gap-3 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-lg">
-                  <FileSpreadsheet size={16} className="text-green-600 shrink-0" />
-                  <span className="font-medium">Export as Excel</span>
-                </a>
+                <button
+                  type="button"
+                  onClick={closeDropdown}
+                  className="flex h-10 w-full items-center gap-2.5 rounded-md px-3 text-sm text-text-primary transition-colors hover:bg-primary-50 hover:text-primary-700"
+                >
+                  <FileSpreadsheet
+                    size={16}
+                    className="text-success-600"
+                  />
+                  Export as Excel
+                </button>
               </li>
             </ul>
           </div>
-        </div>
-      </div>
+        }
+      />
 
-      {/* ── Stat Cards ── */}
+      {/* Stat Cards */}
       <LeaveStatCards />
 
-      {/* ── Leave Table ── */}
+      {/* Leave Table */}
       <LeaveTable
         rows={rows}
         loading={loading}
