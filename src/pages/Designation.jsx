@@ -1,13 +1,15 @@
 import usePermission from "../hooks/usePermission";
 import React, { useEffect, useState } from "react";
 import {
-  ChevronRight,
-  FileText,
-  FileSpreadsheet,
   ChevronDown,
+  Download,
+  FileSpreadsheet,
+  FileText,
+  Briefcase,
   Plus,
 } from "lucide-react";
 
+import PageHeader from "../components/ui/PageHeader";
 import DesignationTable from "../components/Designation/DesignationTable";
 import AddDesignationDrawer from "../components/Designation/AddDesignationDrawer";
 import DeleteDesignationModal from "../components/Designation/DeleteDesignationModal";
@@ -39,22 +41,11 @@ const Designation = () => {
     try {
       const response = await getDesignations();
 
-      console.log("Designation API Response:", response);
+      const data = response?.data?.data || response?.data || [];
 
-      const data =
-        response?.data?.data ||
-        response?.data ||
-        [];
-
-      setDesignations(
-        Array.isArray(data) ? data : []
-      );
+      setDesignations(Array.isArray(data) ? data : []);
     } catch (error) {
-      console.error(
-        "Failed to fetch designations:",
-        error
-      );
-
+      console.error("Failed to fetch designations:", error);
       setDesignations([]);
     }
   };
@@ -67,40 +58,14 @@ const Designation = () => {
     try {
       const response = await getDepartments();
 
-      console.log("Department API Response:", response);
+      const data = response?.data?.data || response?.data || [];
 
-      const data =
-        response?.data?.data ||
-        response?.data ||
-        [];
-
-      console.log(
-        "Raw Departments for dropdown:",
-        data
-      );
-
-      /*
-       * Normalize department data.
-       *
-       * Different APIs can return:
-       * departmentName
-       * name
-       * department_name
-       *
-       * The drawer expects:
-       * department.id
-       * department.departmentName
-       */
-
+      // Different APIs can return departmentName / name / department_name.
+      // The drawer expects department.id + department.departmentName.
       const normalizedDepartments = Array.isArray(data)
         ? data.map((department) => ({
             ...department,
-
-            id:
-              department.id ??
-              department.departmentId ??
-              department.department_id,
-
+            id: department.id ?? department.departmentId ?? department.department_id,
             departmentName:
               department.departmentName ??
               department.name ??
@@ -109,72 +74,34 @@ const Designation = () => {
           }))
         : [];
 
-      console.log(
-        "Normalized Departments for dropdown:",
-        normalizedDepartments
-      );
-
       setDepartments(normalizedDepartments);
     } catch (error) {
-      console.error(
-        "Failed to fetch departments:",
-        error
-      );
-
+      console.error("Failed to fetch departments:", error);
       setDepartments([]);
     }
   };
-
-  // ==========================================================
-  // FETCH DATA ON PAGE LOAD
-  // ==========================================================
 
   useEffect(() => {
     fetchDesignations();
     fetchDepartments();
   }, []);
 
-  // ==========================================================
-  // OPEN ADD DRAWER
-  // ==========================================================
-
   const handleAdd = () => {
     setEditData(null);
     setIsDrawerOpen(true);
   };
 
-  // ==========================================================
-  // OPEN EDIT DRAWER
-  // ==========================================================
-
   const handleEdit = (designation) => {
-    console.log(
-      "Edit Designation:",
-      designation
-    );
-
     setEditData(designation);
     setIsDrawerOpen(true);
   };
-
-  // ==========================================================
-  // ADD / UPDATE DESIGNATION
-  // ==========================================================
 
   const handleSubmit = async (formData) => {
     try {
       setLoading(true);
 
-      console.log(
-        "Designation Form Data:",
-        formData
-      );
-
       if (editData) {
-        await updateDesignation(
-          editData.id,
-          formData
-        );
+        await updateDesignation(editData.id, formData);
       } else {
         await createDesignation(formData);
       }
@@ -184,18 +111,11 @@ const Designation = () => {
       setIsDrawerOpen(false);
       setEditData(null);
     } catch (error) {
-      console.error(
-        "Failed to save designation:",
-        error
-      );
+      console.error("Failed to save designation:", error);
     } finally {
       setLoading(false);
     }
   };
-
-  // ==========================================================
-  // DELETE DESIGNATION
-  // ==========================================================
 
   const handleDelete = async (id) => {
     try {
@@ -207,135 +127,82 @@ const Designation = () => {
 
       setDeleteTarget(null);
     } catch (error) {
-      console.error(
-        "Failed to delete designation:",
-        error
-      );
+      console.error("Failed to delete designation:", error);
     } finally {
       setLoading(false);
     }
   };
 
-  // ==========================================================
-  // RENDER
-  // ==========================================================
+  const closeDropdown = () => document.activeElement?.blur?.();
 
   return (
-    <div>
-      {/* =====================================================
-          HEADER
-      ===================================================== */}
+    <div className="space-y-6">
+      <PageHeader
+        icon={Briefcase}
+        title="Designations"
+        breadcrumbs={[{ label: "Employees" }, { label: "Designations" }]}
+        actions={
+          <>
+            {/* Export */}
+            <div className="dropdown dropdown-end">
+              <div tabIndex={0} role="button" className="hr-btn hr-btn-glass">
+                <Download size={16} />
+                Export
+                <ChevronDown size={16} />
+              </div>
 
-      <div className="flex items-center justify-between mb-5">
-        <div>
-          {/* Breadcrumb */}
-
-          <div className="flex items-center gap-1 text-sm text-gray-500 mb-1">
-            <span>Employees</span>
-
-            <ChevronRight
-              size={15}
-              className="text-gray-400"
-            />
-
-            <span className="text-gray-800 font-medium">
-              Designations
-            </span>
-          </div>
-
-          <h1 className="text-2xl font-bold text-[#0F265C]">
-            Designations
-          </h1>
-        </div>
-
-        <div className="flex items-center gap-2">
-          {/* =================================================
-              EXPORT DROPDOWN
-          ================================================= */}
-
-          <div className="dropdown dropdown-end">
-            <label
-              tabIndex={0}
-              className="flex items-center gap-2 px-4 py-2.5 bg-white hover:bg-gray-50 text-gray-700 border border-gray-200 text-sm font-semibold rounded-lg transition shadow-sm cursor-pointer"
-            >
-              <FileText
-                size={16}
-                className="text-gray-500"
-              />
-
-              <span>Export</span>
-
-              <ChevronDown size={14} />
-            </label>
-
-            <ul
-              tabIndex={0}
-              className="dropdown-content menu bg-white border border-gray-100 rounded-xl shadow-xl z-50 w-48 p-1.5 mt-2"
-            >
-              <li>
-                <a className="flex items-center gap-3 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-lg">
-                  <FileText
-                    size={16}
-                    className="text-red-500 shrink-0"
-                  />
-
-                  <span className="font-medium">
+              <ul
+                tabIndex={0}
+                className="dropdown-content z-50 mt-2 w-52 rounded-lg border border-border-subtle bg-surface p-1.5 shadow-lg"
+              >
+                <li>
+                  <button
+                    type="button"
+                    onClick={closeDropdown}
+                    className="flex h-10 w-full items-center gap-2.5 rounded-md px-3 text-sm text-text-primary transition-colors hover:bg-primary-50 hover:text-primary-700"
+                  >
+                    <FileText size={16} className="text-danger-500" />
                     Export as PDF
-                  </span>
-                </a>
-              </li>
-
-              <li>
-                <a className="flex items-center gap-3 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-lg">
-                  <FileSpreadsheet
-                    size={16}
-                    className="text-green-600 shrink-0"
-                  />
-
-                  <span className="font-medium">
+                  </button>
+                </li>
+                <li>
+                  <button
+                    type="button"
+                    onClick={closeDropdown}
+                    className="flex h-10 w-full items-center gap-2.5 rounded-md px-3 text-sm text-text-primary transition-colors hover:bg-primary-50 hover:text-primary-700"
+                  >
+                    <FileSpreadsheet size={16} className="text-success-600" />
                     Export as Excel
-                  </span>
-                </a>
-              </li>
-            </ul>
-          </div>
+                  </button>
+                </li>
+              </ul>
+            </div>
 
-          {/* =================================================
-              ADD DESIGNATION
-          ================================================= */}
+            {/* Add Designation — RBAC: designations:add */}
+            {canAdd && (
+              <button
+                type="button"
+                onClick={handleAdd}
+                disabled={loading}
+                className="hr-btn hr-btn-primary"
+              >
+                <Plus size={16} />
+                Add Designation
+              </button>
+            )}
+          </>
+        }
+      />
 
-          {canAdd && (
-<button
-            type="button"
-            onClick={handleAdd}
-            disabled={loading}
-            className="flex items-center gap-2 px-4 py-2.5 bg-orange-500 text-white text-sm font-semibold rounded-lg hover:bg-orange-600 transition shadow-sm disabled:opacity-60"
-          >
-            <Plus size={15} />
-
-            Add Designation
-          </button>
-)}
-        </div>
-      </div>
-
-      {/* =====================================================
-          DESIGNATION TABLE
-      ===================================================== */}
-
+      {/* Designation Table */}
       <DesignationTable
         designations={designations}
         departments={departments}
         onEdit={handleEdit}
-        onDelete={(designation) =>
-          setDeleteTarget(designation)
-        }
+        onDelete={(designation) => setDeleteTarget(designation)}
       />
 
-      {/* =====================================================
-          ADD / EDIT DRAWER
-      ===================================================== */}
-
+      {/* Add / Edit Drawer */}
       <AddDesignationDrawer
         open={isDrawerOpen}
         onClose={() => {
@@ -347,16 +214,11 @@ const Designation = () => {
         onSubmit={handleSubmit}
       />
 
-      {/* =====================================================
-          DELETE MODAL
-      ===================================================== */}
-
+      {/* Delete Modal */}
       <DeleteDesignationModal
         open={!!deleteTarget}
         item={deleteTarget}
-        onClose={() =>
-          setDeleteTarget(null)
-        }
+        onClose={() => setDeleteTarget(null)}
         onConfirm={handleDelete}
       />
     </div>

@@ -1,8 +1,32 @@
+// ```jsx
 import usePermission from "../hooks/usePermission";
-import React, { useState, useEffect, useRef, useCallback } from "react";
-import { toast } from "react-toastify";
+import React, { useEffect, useMemo, useState } from "react";
 import {
-  Layers,
+  LayoutDashboard,
+  Users,
+  UserRound,
+  CalendarDays,
+  ClipboardList,
+  Clock,
+  Building2,
+  BriefcaseBusiness,
+  Settings,
+  ShieldCheck,
+  FileCheck,
+  WalletCards,
+  BarChart3,
+  Bell,
+  UserCog,
+  CalendarCheck,
+  ListChecks,
+  CircleDollarSign,
+  Package,
+  Truck,
+  Contact,
+  GraduationCap,
+  MessageSquare,
+  Database,
+  KeyRound,
   Plus,
   Pencil,
   Trash2,
@@ -29,63 +53,123 @@ import {
   getAllModules,
   createModule,
   updateModule,
-  deleteModule as deleteModuleApi,
+  deleteModule,
 } from "../services/moduleApi";
 
-const EMPTY_FORM = { moduleName: "", parentId: "", path: "", icon: "", status: "1" };
+const EMPTY_FORM = {
+  moduleName: "",
+  parentId: "",
+  path: "",
+  icon: "",
+  status: "1",
+};
 
-function buildTree(flatList) {
-  const byId = {};
-  flatList.forEach((item) => {
-    byId[item.id] = { ...item, children: [] };
-  });
+/* -------------------------------------------------------------------------- */
+/* Icon Options                                                               */
+/* -------------------------------------------------------------------------- */
+
+const ICON_OPTIONS = [
+  { name: "LayoutDashboard", label: "Dashboard", Icon: LayoutDashboard },
+  { name: "Users", label: "Users", Icon: Users },
+  { name: "UserRound", label: "User", Icon: UserRound },
+  { name: "CalendarDays", label: "Calendar", Icon: CalendarDays },
+  { name: "ClipboardList", label: "Clipboard", Icon: ClipboardList },
+  { name: "Clock", label: "Clock", Icon: Clock },
+  { name: "Building2", label: "Building", Icon: Building2 },
+  { name: "BriefcaseBusiness", label: "Briefcase", Icon: BriefcaseBusiness },
+  { name: "Settings", label: "Settings", Icon: Settings },
+  { name: "ShieldCheck", label: "Permissions", Icon: ShieldCheck },
+  { name: "FileCheck", label: "File Check", Icon: FileCheck },
+  { name: "WalletCards", label: "Wallet", Icon: WalletCards },
+  { name: "BarChart3", label: "Reports", Icon: BarChart3 },
+  { name: "Bell", label: "Notifications", Icon: Bell },
+  { name: "UserCog", label: "User Management", Icon: UserCog },
+  { name: "CalendarCheck", label: "Calendar Check", Icon: CalendarCheck },
+  { name: "ListChecks", label: "Task List", Icon: ListChecks },
+  { name: "CircleDollarSign", label: "Finance", Icon: CircleDollarSign },
+  { name: "Package", label: "Products", Icon: Package },
+  { name: "Truck", label: "Vendors", Icon: Truck },
+  { name: "Contact", label: "Contact", Icon: Contact },
+  { name: "GraduationCap", label: "Training", Icon: GraduationCap },
+  { name: "MessageSquare", label: "Messages", Icon: MessageSquare },
+  { name: "Database", label: "Database", Icon: Database },
+  { name: "KeyRound", label: "Security", Icon: KeyRound },
+  { name: "FolderOpen", label: "Folder", Icon: FolderOpen },
+  { name: "FileText", label: "File", Icon: FileText },
+];
+
+/* -------------------------------------------------------------------------- */
+/* Helpers                                                                    */
+/* -------------------------------------------------------------------------- */
+
+const getIconComponent = (iconName) => {
+  return (
+    ICON_OPTIONS.find((item) => item.name === iconName)?.Icon || FolderOpen
+  );
+};
+
+const ModuleIcon = ({ iconName, size = 17, className = "" }) => {
+  const Icon = getIconComponent(iconName);
+
+  return <Icon size={size} className={className} />;
+};
+
+const buildTree = (flatList = []) => {
+  const map = new Map();
   const roots = [];
+
   flatList.forEach((item) => {
-    const node = byId[item.id];
-    const parent = byId[item.parentId];
-    if (parent) {
-      parent.children.push(node);
+    map.set(item.id, {
+      ...item,
+      children: [],
+    });
+  });
+
+  flatList.forEach((item) => {
+    const current = map.get(item.id);
+
+    if (item.parentId && map.has(item.parentId)) {
+      map.get(item.parentId).children.push(current);
     } else {
-      roots.push(node); // no parent (or parent not in filtered list) = top level
+      roots.push(current);
     }
   });
 
   return roots;
-}
+};
 
-// Every descendant id of `moduleId` — used to stop a module being re-parented
-// under one of its own descendants (would create a cycle in the tree).
-function getDescendantIds(modules, moduleId) {
+const getDescendantIds = (modules, moduleId) => {
   const descendants = new Set();
-  const stack = modules.filter((m) => m.parentId === moduleId).map((m) => m.id);
 
-  while (stack.length > 0) {
-    const currentId = stack.pop();
-    if (descendants.has(currentId)) continue; // guard against pre-existing bad data
-    descendants.add(currentId);
-    modules
-      .filter((m) => m.parentId === currentId)
-      .forEach((m) => stack.push(m.id));
-  }
+  const collect = (parentId) => {
+    modules.forEach((module) => {
+      if (module.parentId === parentId) {
+        descendants.add(module.id);
+        collect(module.id);
+      }
+    });
+  };
+
+  collect(moduleId);
 
   return descendants;
-}
+};
 
-function findModuleName(modules, id) {
-  const found = modules.find((m) => m.id === id);
-  return found ? found.moduleName : "—";
-}
+const findModuleName = (modules, id) => {
+  if (!id) return "-";
 
-// Direct child count, used to warn before a delete (FK is ON DELETE SET NULL).
-function countDirectChildren(modules, id) {
-  return modules.filter((m) => m.parentId === id).length;
-}
+  return modules.find((module) => module.id === id)?.moduleName || "-";
+};
 
-// ------------------------------------------------------------
-// TABLE ROW (renders itself, then its children below it)
-// ------------------------------------------------------------
+const countDirectChildren = (modules, moduleId) => {
+  return modules.filter((module) => module.parentId === moduleId).length;
+};
 
-function ModuleRow({
+/* -------------------------------------------------------------------------- */
+/* Module Row                                                                 */
+/* -------------------------------------------------------------------------- */
+
+const ModuleRow = ({
   node,
   level,
   allModules,
@@ -93,637 +177,773 @@ function ModuleRow({
   onDelete,
   onToggleStatus,
   pendingId,
-}) {
-  const [isExpanded, setIsExpanded] = useState(true);
+}) => {
   const { canEdit, canDelete } = usePermission("modules");
-  const hasChildren = node.children.length > 0;
-  const isActive = node.status === "1";
+
+  const isActive =
+    node.status === "1" ||
+    node.status === 1 ||
+    node.status === true ||
+    node.status === "Active";
+
   const isPending = pendingId === node.id;
 
-  const nameClass =
-    level === 0
-      ? "text-sm font-semibold text-text-primary"
-      : level === 1
-        ? "text-sm font-medium text-text-primary"
-        : "text-sm text-text-secondary";
-
   return (
-    <>
-      <tr>
-        {/* Module name + expand arrow + indentation */}
-        <td className="hr-td">
-          <div className="flex items-center gap-2" style={{ paddingLeft: `${level * 24}px` }}>
-            {hasChildren ? (
-              <button
-                type="button"
-                onClick={() => setIsExpanded((prev) => !prev)}
-                className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-text-secondary transition-colors hover:bg-primary-50 hover:text-primary-700 focus-visible:outline-2 focus-visible:outline-primary-600"
-                aria-label={isExpanded ? `Collapse ${node.moduleName}` : `Expand ${node.moduleName}`}
-                aria-expanded={isExpanded}
-              >
-                <ChevronRight
-                  size={15}
-                  className={`transition-transform ${isExpanded ? "rotate-90" : ""}`}
-                />
-              </button>
-            ) : (
-              <span className="w-6 shrink-0" />
-            )}
-
-            {level === 0 ? (
-              <FolderOpen size={17} className="shrink-0 text-primary-700" />
-            ) : (
-              <FileText size={16} className="shrink-0 text-text-disabled" />
-            )}
-
-            <span className={nameClass}>{node.moduleName}</span>
-
-            {hasChildren && (
-              <span className="rounded-full border border-primary-100 bg-primary-50 px-1.5 py-0.5 text-[10px] font-semibold tabular-nums text-primary-700">
-                {node.children.length}
-              </span>
-            )}
-          </div>
-        </td>
-
-        {/* Parent */}
-        <td className="hr-td text-text-secondary">
-          {node.parentId ? findModuleName(allModules, node.parentId) : "—"}
-        </td>
-
-        {/* Path */}
-        <td className="hr-td">
-          {node.path ? (
-            <code className="rounded-md border border-border-subtle bg-background px-2 py-0.5 font-mono text-xs text-primary-700">
-              {node.path}
-            </code>
-          ) : (
-            <span className="text-text-disabled">—</span>
-          )}
-        </td>
-
-        {/* Icon */}
-        <td className="hr-td font-mono text-xs text-text-secondary">
-          {node.icon || <span className="text-text-disabled">—</span>}
-        </td>
-
-        {/* Status */}
-        <td className="hr-td">
-          <div className="flex items-center gap-2.5">
-            <Switch
-              checked={isActive}
-              disabled={isPending || !canEdit}
-              onChange={() => onToggleStatus(node.id, node.status)}
-              ariaLabel={isActive ? "Active — click to deactivate" : "Inactive — click to activate"}
+    <tr>
+      {/* Module Name */}
+      <td className="hr-td">
+        <div
+          className="flex items-center gap-2"
+          style={{ paddingLeft: `${level * 24}px` }}
+        >
+          {level > 0 && (
+            <ChevronRight
+              size={14}
+              className="shrink-0 text-text-disabled"
             />
-            <span
-              className={`text-xs font-medium ${isActive ? "text-success-600" : "text-text-secondary"}`}
-            >
-              {isActive ? "Active" : "Inactive"}
-            </span>
-          </div>
-        </td>
+          )}
 
-        {/* Actions */}
-        <td className="hr-td">
-          <div className="flex items-center justify-center gap-1">
-            {canEdit && (
-<button
+          <ModuleIcon
+            iconName={node.icon}
+            size={17}
+            className="shrink-0 text-primary-700"
+          />
+
+          <span className="font-semibold text-text-primary">
+            {node.moduleName}
+          </span>
+        </div>
+      </td>
+
+      {/* Parent */}
+      <td className="hr-td text-text-secondary">
+        {findModuleName(allModules, node.parentId)}
+      </td>
+
+      {/* Path */}
+      <td className="hr-td text-text-secondary">
+        {node.path || "-"}
+      </td>
+
+      {/* Status */}
+      <td className="hr-td">
+        <button
+          type="button"
+          onClick={() => {
+            if (!isPending && canEdit) {
+              onToggleStatus?.(node.id, node.status);
+            }
+          }}
+          disabled={isPending || !canEdit}
+          className="cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
+          title={
+            canEdit
+              ? isActive
+                ? "Click to deactivate"
+                : "Click to activate"
+              : "You do not have permission to edit"
+          }
+        >
+          <span
+            className={`text-xs font-medium ${
+              isActive
+                ? "text-success-600"
+                : "text-text-secondary"
+            }`}
+          >
+            {isPending
+              ? "Updating..."
+              : isActive
+              ? "Active"
+              : "Inactive"}
+          </span>
+        </button>
+      </td>
+
+      {/* Actions */}
+      <td className="hr-td">
+        <div className="flex items-center justify-center gap-1">
+          {canEdit && (
+            <button
               type="button"
-              onClick={() => onEdit(node)}
+              onClick={() => onEdit?.(node)}
               className="hr-icon-btn"
               title="Edit"
-              aria-label={`Edit ${node.moduleName}`}
             >
               <Pencil size={16} />
             </button>
-)}
-            {canDelete && (
-<button
+          )}
+
+          {canDelete && (
+            <button
               type="button"
-              onClick={() => onDelete(node)}
+              onClick={() => onDelete?.(node)}
               className="hr-icon-btn danger"
               title="Delete"
-              aria-label={`Delete ${node.moduleName}`}
             >
               <Trash2 size={16} />
             </button>
-)}
-          </div>
-        </td>
-      </tr>
-
-      {isExpanded &&
-        node.children.map((child) => (
-          <ModuleRow
-            key={child.id}
-            node={child}
-            level={level + 1}
-            allModules={allModules}
-            onEdit={onEdit}
-            onDelete={onDelete}
-            onToggleStatus={onToggleStatus}
-            pendingId={pendingId}
-          />
-        ))}
-    </>
+          )}
+        </div>
+      </td>
+    </tr>
   );
-}
+};
 
-function SkeletonRows() {
+/* -------------------------------------------------------------------------- */
+/* Skeleton Rows                                                              */
+/* -------------------------------------------------------------------------- */
+
+const SkeletonRows = ({ count = 6 }) => {
   return (
     <>
-      {[0, 1, 2, 3, 4].map((i) => (
-        <tr key={i}>
-          <td className="hr-td" colSpan={6}>
-            <div
-              className="h-4 animate-pulse rounded bg-primary-50"
-              style={{ width: `${70 - i * 8}%`, marginLeft: i > 2 ? 24 : 0 }}
-            />
-          </td>
+      {Array.from({ length: count }).map((_, index) => (
+        <tr key={index}>
+          {Array.from({ length: 5 }).map((__, cellIndex) => (
+            <td key={cellIndex} className="hr-td">
+              <div className="h-4 w-24 animate-pulse rounded bg-border-subtle" />
+            </td>
+          ))}
         </tr>
       ))}
     </>
   );
-}
+};
 
-// ------------------------------------------------------------
-// ADD / EDIT DRAWER (opens from the right)
-// ------------------------------------------------------------
+/* -------------------------------------------------------------------------- */
+/* Module Form Drawer                                                         */
+/* -------------------------------------------------------------------------- */
 
-function ModuleFormDrawer({ isOpen, onClose, editData, allModules, onSave }) {
-  const [form, setForm] = useState(editData ?? EMPTY_FORM);
-  const [isSaving, setIsSaving] = useState(false);
-  const [formError, setFormError] = useState(null);
-  const nameInputRef = useRef(null);
+const ModuleFormDrawer = ({
+  open,
+  onClose,
+  editData,
+  modules,
+  onSubmit,
+  saving,
+}) => {
+  const [form, setForm] = useState(EMPTY_FORM);
 
-  // Reset the form whenever the drawer opens / a different module is edited
+  const isEdit = Boolean(editData);
+
   useEffect(() => {
-    setForm(editData ?? EMPTY_FORM);
-    setFormError(null);
-    setIsSaving(false);
-  }, [editData, isOpen]);
+    if (!open) return;
 
-  // Focus the first field once the slide-in animation is done
-  useEffect(() => {
-    if (!isOpen) return;
-    const t = setTimeout(() => nameInputRef.current?.focus(), 350);
-    return () => clearTimeout(t);
-  }, [isOpen]);
-
-  // A module can't be its own parent, nor a child of its own descendants
-  const blockedIds = editData
-    ? new Set([editData.id, ...getDescendantIds(allModules, editData.id)])
-    : new Set();
-  const parentOptions = allModules.filter((m) => !blockedIds.has(m.id));
-
-  const trimmedName = form.moduleName.trim();
-  const canSubmit = trimmedName.length > 0 && !isSaving;
-
-  async function handleSubmit(e) {
-    e.preventDefault();
-    if (!canSubmit) return;
-
-    setIsSaving(true);
-    setFormError(null);
-    try {
-      await onSave({ ...form, moduleName: trimmedName });
-      // On success the parent closes the drawer.
-    } catch (err) {
-      setFormError(
-        err?.response?.data?.message || "Couldn't save this module. Please try again."
-      );
-      setIsSaving(false);
+    if (editData) {
+      setForm({
+        moduleName: editData.moduleName || "",
+        parentId: editData.parentId ? String(editData.parentId) : "",
+        path: editData.path || "",
+        icon: editData.icon || "",
+        status:
+          editData.status === 1 ||
+          editData.status === "1" ||
+          editData.status === true
+            ? "1"
+            : "0",
+      });
+    } else {
+      setForm(EMPTY_FORM);
     }
-  }
+  }, [open, editData]);
 
-  function toggleFormStatus() {
-    setForm((prev) => ({ ...prev, status: prev.status === "1" ? "0" : "1" }));
-  }
+  const blockedParentIds = useMemo(() => {
+    if (!editData) return new Set();
+
+    return getDescendantIds(modules, editData.id);
+  }, [modules, editData]);
+
+  const handleChange = (field, value) => {
+    setForm((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
+  };
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+
+    if (!form.moduleName.trim()) return;
+
+    await onSubmit({
+      ...form,
+      moduleName: form.moduleName.trim(),
+      parentId: form.parentId || null,
+      path: form.path.trim() || null,
+      icon: form.icon || null,
+    });
+  };
+
+  const toggleFormStatus = () => {
+    setForm((prev) => ({
+      ...prev,
+      status: prev.status === "1" ? "0" : "1",
+    }));
+  };
 
   return (
     <SideDrawer
-      open={isOpen}
+      open={open}
       onClose={onClose}
-      icon={Layers}
-      size="md"
-      title={editData ? "Edit Module" : "Add Module"}
-      subtitle={
-        editData
-          ? "Update configuration for this module"
-          : "Register a new feature module in the system"
-      }
-      footer={
-        <>
+      title={isEdit ? "Edit Module" : "Add Module"}
+    >
+      <form onSubmit={handleSubmit} className="flex h-full flex-col">
+        <div className="flex-1 space-y-5 overflow-y-auto p-5">
+          {/* Module Name */}
+          <div>
+            <label className="mb-1.5 block text-sm font-medium text-text-primary">
+              Module Name <span className="text-danger-500">*</span>
+            </label>
+
+            <input
+              type="text"
+              className="hr-input"
+              placeholder="Enter module name"
+              value={form.moduleName}
+              onChange={(e) =>
+                handleChange("moduleName", e.target.value)
+              }
+              required
+            />
+          </div>
+
+          {/* Parent Module */}
+          <div>
+            <label className="mb-1.5 block text-sm font-medium text-text-primary">
+              Parent Module
+            </label>
+
+            <select
+              className="hr-select"
+              value={form.parentId}
+              onChange={(e) =>
+                handleChange("parentId", e.target.value)
+              }
+            >
+              <option value="">No Parent (Top Level)</option>
+
+              {modules
+                .filter((module) => {
+                  if (!editData) return true;
+
+                  if (module.id === editData.id) return false;
+
+                  return !blockedParentIds.has(module.id);
+                })
+                .map((module) => (
+                  <option key={module.id} value={module.id}>
+                    {module.moduleName}
+                  </option>
+                ))}
+            </select>
+          </div>
+
+          {/* Path */}
+          <div>
+            <label className="mb-1.5 block text-sm font-medium text-text-primary">
+              Path
+            </label>
+
+            <input
+              type="text"
+              className="hr-input"
+              placeholder="/module-path"
+              value={form.path}
+              onChange={(e) =>
+                handleChange("path", e.target.value)
+              }
+            />
+          </div>
+
+          {/* Icon Dropdown */}
+          <div>
+            <label className="mb-1.5 block text-sm font-medium text-text-primary">
+              Icon
+            </label>
+
+            <div className="relative">
+              <select
+                className="hr-select !pl-10"
+                value={form.icon}
+                onChange={(e) =>
+                  handleChange("icon", e.target.value)
+                }
+              >
+                <option value="">Select Icon</option>
+
+                {ICON_OPTIONS.map(
+                  ({ name, label }) => (
+                    <option key={name} value={name}>
+                      {label} ({name})
+                    </option>
+                  )
+                )}
+              </select>
+
+              <div className="pointer-events-none absolute left-3 top-1/2 flex -translate-y-1/2 items-center text-primary-700">
+                <ModuleIcon
+                  iconName={form.icon}
+                  size={17}
+                />
+              </div>
+            </div>
+
+            {form.icon && (
+              <div className="mt-2 flex items-center gap-2 rounded-md border border-border-subtle bg-primary-50 px-3 py-2">
+                <ModuleIcon
+                  iconName={form.icon}
+                  size={18}
+                  className="text-primary-700"
+                />
+
+                <span className="text-sm font-medium text-text-primary">
+                  {ICON_OPTIONS.find(
+                    (item) => item.name === form.icon
+                  )?.label || form.icon}
+                </span>
+              </div>
+            )}
+          </div>
+
+          {/* Status */}
+          <div className="flex items-center justify-between rounded-lg border border-border-subtle px-4 py-3">
+            <div>
+              <p className="text-sm font-medium text-text-primary">
+                Active Status
+              </p>
+
+              <p className="mt-0.5 text-xs text-text-secondary">
+                Enable this module for active use.
+              </p>
+            </div>
+
+            <Switch
+              checked={form.status === "1"}
+              onChange={toggleFormStatus}
+            />
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="flex items-center justify-end gap-2 border-t border-border-subtle p-4">
           <button
             type="button"
             onClick={onClose}
-            disabled={isSaving}
-            className="hr-btn hr-btn-outline"
+            className="hr-btn-secondary"
+            disabled={saving}
           >
             Cancel
           </button>
+
           <button
             type="submit"
-            form="module-form"
-            disabled={!canSubmit}
-            className="hr-btn hr-btn-primary min-w-[150px]"
+            className="hr-btn-primary"
+            disabled={saving || !form.moduleName.trim()}
           >
-            {isSaving && <Loader2 size={16} className="animate-spin" />}
-            {isSaving ? "Saving…" : editData ? "Update Module" : "Add Module"}
+            {saving && (
+              <Loader2
+                size={16}
+                className="mr-2 animate-spin"
+              />
+            )}
+
+            {isEdit ? "Update Module" : "Create Module"}
           </button>
-        </>
-      }
-    >
-      <form id="module-form" onSubmit={handleSubmit} className="space-y-5">
-        {formError && (
-          <div
-            role="alert"
-            className="flex items-start gap-2 rounded-md border border-danger-500/20 bg-danger-50 px-3.5 py-2.5 text-xs text-danger-600"
-          >
-            <AlertTriangle size={14} className="mt-0.5 shrink-0" />
-            <span>{formError}</span>
-          </div>
-        )}
-
-        <div>
-          <label htmlFor="moduleName" className="hr-label">
-            Module Name <span className="text-danger-500">*</span>
-          </label>
-          <input
-            id="moduleName"
-            ref={nameInputRef}
-            required
-            value={form.moduleName}
-            onChange={(e) => setForm({ ...form, moduleName: e.target.value })}
-            placeholder="e.g. Leave Management"
-            className="hr-input"
-          />
-        </div>
-
-        <div>
-          <label htmlFor="parentId" className="hr-label">
-            Parent Module
-          </label>
-          <select
-            id="parentId"
-            value={form.parentId ?? ""}
-            onChange={(e) => setForm({ ...form, parentId: e.target.value || null })}
-            className="hr-select"
-          >
-            <option value="">— None (Top Level) —</option>
-            {parentOptions.map((m) => (
-              <option key={m.id} value={m.id}>
-                {m.moduleName}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div>
-          <label htmlFor="path" className="hr-label">
-            Route Path
-          </label>
-          <input
-            id="path"
-            value={form.path ?? ""}
-            onChange={(e) => setForm({ ...form, path: e.target.value })}
-            placeholder="e.g. /apply-leave"
-            className="hr-input font-mono"
-          />
-        </div>
-
-        <div>
-          <label htmlFor="icon" className="hr-label">
-            Icon Name
-          </label>
-          <input
-            id="icon"
-            value={form.icon ?? ""}
-            onChange={(e) => setForm({ ...form, icon: e.target.value })}
-            placeholder="e.g. LayoutDashboard"
-            className="hr-input font-mono"
-          />
-          <p className="mt-1.5 text-xs text-text-secondary">
-            Use Lucide icon component names (e.g. FileText, Users)
-          </p>
-        </div>
-
-        <div className="flex items-center justify-between gap-4 rounded-md border border-border-subtle bg-background px-4 py-3.5">
-          <div>
-            <p className="text-sm font-medium text-text-primary">Active Status</p>
-            <p className="text-xs text-text-secondary">
-              Module will appear in navigation when active
-            </p>
-          </div>
-          <Switch
-            checked={form.status === "1"}
-            onChange={toggleFormStatus}
-            ariaLabel="Toggle active status"
-          />
         </div>
       </form>
     </SideDrawer>
   );
-}
+};
 
-// ------------------------------------------------------------
-// MAIN PAGE — owns all the state, wires everything together
-// ------------------------------------------------------------
+/* -------------------------------------------------------------------------- */
+/* Modules Page                                                               */
+/* -------------------------------------------------------------------------- */
 
-export default function Modules() {
-  const { canAdd } = usePermission("modules");
+const Modules = () => {
+  const { canCreate, canEdit, canDelete } =
+    usePermission("modules");
+
   const [modules, setModules] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [loadError, setLoadError] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
-  const [searchText, setSearchText] = useState("");
-  const [isFormOpen, setIsFormOpen] = useState(false);
-  const [editingModule, setEditingModule] = useState(null); // null = "add" mode
-  const [moduleToDelete, setModuleToDelete] = useState(null);
-  const [isDeleting, setIsDeleting] = useState(false);
-  const [pendingToggleId, setPendingToggleId] = useState(null);
+  const [search, setSearch] = useState("");
 
-  // --- derived data ---
-  const matchesSearch = (m) =>
-    m.moduleName.toLowerCase().includes(searchText.toLowerCase());
-  const visibleModules = searchText ? modules.filter(matchesSearch) : modules;
-  const tree = buildTree(visibleModules);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [editData, setEditData] = useState(null);
+  const [saving, setSaving] = useState(false);
 
-  const activeCount = modules.filter((m) => m.status === "1").length;
-  const inactiveCount = modules.filter((m) => m.status === "0").length;
+  const [deleteData, setDeleteData] = useState(null);
+  const [deleting, setDeleting] = useState(false);
 
-  // --- data fetch ---
-  const fetchModules = useCallback(async ({ silent } = {}) => {
-    if (!silent) setIsLoading(true);
-    setLoadError(null);
+  const [pendingStatusId, setPendingStatusId] = useState(null);
+
+  const fetchModules = async (silent = false) => {
     try {
+      if (silent) {
+        setRefreshing(true);
+      } else {
+        setLoading(true);
+      }
+
       const response = await getAllModules();
-      setModules(response.data.data);
+
+      const data =
+        response?.data?.data ||
+        response?.data ||
+        response ||
+        [];
+
+      setModules(Array.isArray(data) ? data : []);
     } catch (error) {
-      console.error("Error fetching modules:", error);
-      setLoadError("Couldn't load modules. Check your connection and try again.");
+      console.error("Failed to fetch modules:", error);
+
+      setModules([]);
+
+      if (!silent) {
+        // Keep existing application toast/error behavior if API
+        // already handles it upstream.
+      }
     } finally {
-      if (!silent) setIsLoading(false);
+      setLoading(false);
+      setRefreshing(false);
     }
-  }, []);
+  };
 
   useEffect(() => {
     fetchModules();
-  }, [fetchModules]);
+  }, []);
 
-  // --- actions ---
-  function openAddForm() {
-    setEditingModule(null);
-    setIsFormOpen(true);
-  }
+  const filteredModules = useMemo(() => {
+    const value = search.trim().toLowerCase();
 
-  function openEditForm(module) {
-    // Strip the tree-only `children` array so it never reaches the API
+    if (!value) return modules;
+
+    return modules.filter((module) => {
+      const moduleName =
+        module.moduleName?.toString().toLowerCase() || "";
+
+      const path =
+        module.path?.toString().toLowerCase() || "";
+
+      return (
+        moduleName.includes(value) ||
+        path.includes(value)
+      );
+    });
+  }, [modules, search]);
+
+  const tree = useMemo(
+    () => buildTree(filteredModules),
+    [filteredModules]
+  );
+
+  const openCreateForm = () => {
+    setEditData(null);
+    setDrawerOpen(true);
+  };
+
+  const openEditForm = (module) => {
     const { children, ...cleanModule } = module;
-    setEditingModule(cleanModule);
-    setIsFormOpen(true);
-  }
 
-  // Throws back to the drawer on failure so it can show an inline error.
-  async function handleSaveModule(formData) {
-    if (editingModule) {
-      await updateModule(editingModule.id, formData);
-      toast.success(`"${formData.moduleName}" updated.`);
-    } else {
-      await createModule(formData);
-      toast.success(`"${formData.moduleName}" added.`);
-    }
-    await fetchModules({ silent: true });
-    setIsFormOpen(false);
-  }
+    setEditData(cleanModule);
+    setDrawerOpen(true);
+  };
 
-  async function toggleModuleStatus(id, currentStatus) {
-    setPendingToggleId(id);
+  const handleSave = async (formData) => {
     try {
+      setSaving(true);
+
+      if (editData) {
+        await updateModule(editData.id, formData);
+      } else {
+        await createModule(formData);
+      }
+
+      setDrawerOpen(false);
+      setEditData(null);
+
+      await fetchModules(true);
+    } catch (error) {
+      console.error("Failed to save module:", error);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const toggleModuleStatus = async (id, currentStatus) => {
+    if (!canEdit) return;
+
+    try {
+      setPendingStatusId(id);
+
+      const nextStatus =
+        currentStatus === "1" ||
+        currentStatus === 1 ||
+        currentStatus === true
+          ? "0"
+          : "1";
+
       await updateModule(id, {
-        status: currentStatus === "1" ? "0" : "1",
+        status: nextStatus,
       });
-      await fetchModules({ silent: true });
+
+      await fetchModules(true);
     } catch (error) {
-      console.error(error);
-      toast.error("Couldn't update status. Please try again.");
+      console.error(
+        "Failed to update module status:",
+        error
+      );
     } finally {
-      setPendingToggleId(null);
+      setPendingStatusId(null);
     }
-  }
+  };
 
-  async function deleteModule() {
-    if (!moduleToDelete || isDeleting) return;
-    const target = moduleToDelete;
+  const openDeleteModal = (module) => {
+    setDeleteData(module);
+  };
 
-    setIsDeleting(true);
+  const handleDelete = async () => {
+    if (!deleteData) return;
+
     try {
-      await deleteModuleApi(target.id);
-      await fetchModules({ silent: true });
-      setModuleToDelete(null);
-      toast.success(`"${target.moduleName ?? "Module"}" deleted.`);
+      setDeleting(true);
+
+      await deleteModule(deleteData.id);
+
+      setDeleteData(null);
+
+      await fetchModules(true);
     } catch (error) {
-      console.error(error);
-      toast.error("Couldn't delete this module. Please try again.");
+      console.error("Failed to delete module:", error);
     } finally {
-      setIsDeleting(false);
+      setDeleting(false);
     }
-  }
+  };
 
-  const deleteChildCount = moduleToDelete
-    ? countDirectChildren(modules, moduleToDelete.id)
-    : 0;
+  const totalModules = modules.length;
 
-  // --- render ---
+  const activeModules = modules.filter(
+    (module) =>
+      module.status === "1" ||
+      module.status === 1 ||
+      module.status === true
+  ).length;
+
+  const inactiveModules = totalModules - activeModules;
+
+  const parentModules = modules.filter(
+    (module) => !module.parentId
+  ).length;
+
+  const renderRows = (nodes, level = 0) => {
+    return nodes.flatMap((node) => {
+      const row = (
+        <ModuleRow
+          key={node.id}
+          node={node}
+          level={level}
+          allModules={modules}
+          onEdit={openEditForm}
+          onDelete={openDeleteModal}
+          onToggleStatus={toggleModuleStatus}
+          pendingId={pendingStatusId}
+        />
+      );
+
+      const children = node.children?.length
+        ? renderRows(node.children, level + 1)
+        : [];
+
+      return [row, ...children];
+    });
+  };
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
+      {/* Page Header */}
       <PageHeader
-        icon={Layers}
         title="Modules"
-        subtitle="Manage navigation modules and their hierarchy"
-        breadcrumbs={[{ label: "User Management" }, { label: "Modules" }]}
-        actions={
-          canAdd && (
-<button type="button" onClick={openAddForm} className="hr-btn hr-btn-primary">
-            <Plus size={16} />
-            Add Module
-          </button>
-)
+        description="Manage application modules and their hierarchy."
+        action={
+          canCreate
+            ? {
+                label: "Add Module",
+                icon: Plus,
+                onClick: openCreateForm,
+              }
+            : undefined
         }
       />
 
-      {/* Stat cards */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <StatCard icon={Layers} label="Total Modules" value={modules.length} tone="primary" />
-        <StatCard icon={CheckCircle2} label="Active" value={activeCount} tone="success" />
-        <StatCard icon={XCircle} label="Inactive" value={inactiveCount} tone="danger" />
+      {/* Stats */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <StatCard
+          title="Total Modules"
+          value={totalModules}
+          icon={FolderOpen}
+        />
+
+        <StatCard
+          title="Active Modules"
+          value={activeModules}
+          icon={CheckCircle2}
+        />
+
+        <StatCard
+          title="Inactive Modules"
+          value={inactiveModules}
+          icon={XCircle}
+        />
+
+        <StatCard
+          title="Parent Modules"
+          value={parentModules}
+          icon={FolderOpen}
+        />
       </div>
 
-      {/* Table card */}
+      {/* Main Card */}
       <div className="hr-card overflow-hidden">
-        {/* Toolbar */}
+        {/* Header */}
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border-subtle px-5 py-4">
-          <div className="flex items-center gap-2">
-            <h2 className="text-base font-semibold text-primary-700">Module Tree</h2>
-            <span className="rounded-full bg-primary-50 px-2 py-0.5 text-xs font-semibold text-primary-700">
-              {modules.length}
-            </span>
+          <div>
+            <h2 className="text-base font-semibold text-primary-700">
+              Module List
+            </h2>
+
+            <p className="mt-0.5 text-xs text-text-secondary">
+              Manage modules, hierarchy and status.
+            </p>
           </div>
 
-          <div className="relative w-full sm:w-72">
-            <Search
-              size={16}
-              className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-text-disabled"
-            />
-            <input
-              value={searchText}
-              onChange={(e) => setSearchText(e.target.value)}
-              placeholder="Search modules..."
-              aria-label="Search modules"
-              className="hr-input pl-9 pr-9"
-            />
-            {searchText && (
-              <button
-                type="button"
-                onClick={() => setSearchText("")}
-                className="absolute right-2 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-md text-text-secondary hover:bg-primary-50 hover:text-primary-700"
-                aria-label="Clear search"
-              >
-                <X size={14} />
-              </button>
-            )}
+          <div className="flex items-center gap-2">
+            <div className="relative w-60">
+              <Search
+                size={14}
+                className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-text-disabled"
+              />
+
+              <input
+                type="text"
+                placeholder="Search modules"
+                className="hr-input !h-9 pl-8"
+                value={search}
+                onChange={(e) =>
+                  setSearch(e.target.value)
+                }
+              />
+            </div>
+
+            <button
+              type="button"
+              onClick={() => fetchModules(true)}
+              disabled={refreshing}
+              className="hr-icon-btn"
+              title="Refresh"
+            >
+              <RefreshCw
+                size={16}
+                className={
+                  refreshing ? "animate-spin" : ""
+                }
+              />
+            </button>
           </div>
         </div>
 
         {/* Table */}
         <div className="overflow-x-auto">
-          <table className="hr-table min-w-[880px]">
+          <table className="hr-table min-w-[760px]">
             <thead>
               <tr>
                 <th className="hr-th">Module Name</th>
                 <th className="hr-th">Parent</th>
                 <th className="hr-th">Path</th>
-                <th className="hr-th">Icon</th>
                 <th className="hr-th">Status</th>
-                <th className="hr-th text-center">Actions</th>
+                <th className="hr-th text-center">
+                  Actions
+                </th>
               </tr>
             </thead>
+
             <tbody>
-              {isLoading ? (
+              {loading ? (
                 <SkeletonRows />
-              ) : loadError ? (
-                <tr>
-                  <td colSpan={6} className="py-14">
-                    <div className="flex flex-col items-center gap-2 text-center">
-                      <AlertTriangle size={24} className="text-danger-500" />
-                      <p className="text-sm text-text-secondary">{loadError}</p>
-                      <button
-                        type="button"
-                        onClick={() => fetchModules()}
-                        className="hr-btn hr-btn-outline hr-btn-sm mt-1"
-                      >
-                        <RefreshCw size={14} />
-                        Try again
-                      </button>
-                    </div>
-                  </td>
-                </tr>
               ) : tree.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="py-14">
-                    <div className="flex flex-col items-center gap-2 text-center">
-                      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary-50 text-primary-700">
-                        <Inbox size={22} />
-                      </div>
-                      {searchText ? (
-                        <>
-                          <p className="text-sm font-medium text-text-primary">
-                            No modules match "{searchText}"
-                          </p>
-                          <button
-                            type="button"
-                            onClick={() => setSearchText("")}
-                            className="hr-btn hr-btn-outline hr-btn-sm"
-                          >
-                            Clear search
-                          </button>
-                        </>
-                      ) : (
-                        <>
-                          <p className="text-sm font-medium text-text-primary">No modules yet</p>
-                          {canAdd && (
-<button
-                            type="button"
-                            onClick={openAddForm}
-                            className="hr-btn hr-btn-primary hr-btn-sm"
-                          >
-                            <Plus size={14} />
-                            Add your first module
-                          </button>
-)}
-                        </>
-                      )}
+                  <td
+                    colSpan={5}
+                    className="py-14 text-center"
+                  >
+                    <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-primary-50 text-primary-700">
+                      <Inbox size={22} />
                     </div>
+
+                    <p className="text-sm font-medium text-text-primary">
+                      No modules found
+                    </p>
+
+                    <p className="mt-1 text-xs text-text-secondary">
+                      {search
+                        ? "Try changing your search."
+                        : "Create a module to get started."}
+                    </p>
                   </td>
                 </tr>
               ) : (
-                tree.map((node) => (
-                  <ModuleRow
-                    key={node.id}
-                    node={node}
-                    level={0}
-                    allModules={modules}
-                    onEdit={openEditForm}
-                    onDelete={setModuleToDelete}
-                    onToggleStatus={toggleModuleStatus}
-                    pendingId={pendingToggleId}
-                  />
-                ))
+                renderRows(tree)
               )}
             </tbody>
           </table>
         </div>
-
-        {/* Footer count */}
-        <div className="flex h-12 items-center border-t border-border-subtle px-5 text-xs text-text-secondary">
-          {searchText
-            ? `Showing ${visibleModules.length} of ${modules.length} module${modules.length !== 1 ? "s" : ""}`
-            : `Showing ${modules.length} module${modules.length !== 1 ? "s" : ""}`}
-        </div>
       </div>
 
-      {/* Add / Edit drawer */}
+      {/* Add / Edit Drawer */}
       <ModuleFormDrawer
-        isOpen={isFormOpen}
-        onClose={() => setIsFormOpen(false)}
-        editData={editingModule}
-        allModules={modules}
-        onSave={handleSaveModule}
+        open={drawerOpen}
+        onClose={() => {
+          if (saving) return;
+
+          setDrawerOpen(false);
+          setEditData(null);
+        }}
+        editData={editData}
+        modules={modules}
+        onSubmit={handleSave}
+        saving={saving}
       />
 
-      {/* Delete confirmation */}
+      {/* Delete Confirmation */}
       <ConfirmModal
-        open={Boolean(moduleToDelete)}
-        title="Delete Module?"
-        loading={isDeleting}
-        confirmLabel="Yes, Delete"
-        onClose={() => !isDeleting && setModuleToDelete(null)}
-        onConfirm={deleteModule}
-      >
-        <p>
-          Are you sure you want to delete{" "}
-          <span className="font-semibold text-text-primary">"{moduleToDelete?.moduleName}"</span>?
-          This action cannot be undone.
-        </p>
-
-        {deleteChildCount > 0 && (
-          <p className="mt-3 rounded-md border border-warning-500/30 bg-warning-50 px-3 py-2 text-left text-xs text-warning-600">
-            This module has {deleteChildCount} sub-module{deleteChildCount !== 1 ? "s" : ""}. They
-            won't be deleted, but will move up to the top level of the menu.
-          </p>
-        )}
-      </ConfirmModal>
+        open={Boolean(deleteData)}
+        title="Delete Module"
+        message={
+          deleteData
+            ? `Are you sure you want to delete "${deleteData.moduleName}"?${
+                countDirectChildren(
+                  modules,
+                  deleteData.id
+                ) > 0
+                  ? " Its child modules will be moved to the top level."
+                  : ""
+              }`
+            : ""
+        }
+        confirmText="Delete"
+        cancelText="Cancel"
+        onConfirm={handleDelete}
+        onCancel={() => {
+          if (!deleting) {
+            setDeleteData(null);
+          }
+        }}
+        loading={deleting}
+        danger
+      />
     </div>
   );
-}
+};
+
+export default Modules;
+// ```
