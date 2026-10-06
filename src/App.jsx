@@ -33,7 +33,7 @@ import {
 // Auth Pages
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
-import FirstTimeAccess from "./pages/Firsttimeaccess";
+import FirstTimeAccess from "./pages/FirstTimeAccess";
 import Register from "./pages/Register";
 
 const muiTheme = createTheme({

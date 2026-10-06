@@ -13,7 +13,7 @@ const WIDTHS = {
  * - Slides in from the RIGHT, full height, above navbar + sidebar
  * - Header is h-18 (72px) = exactly the navbar height
  * - Footer is min-h-18 (72px), buttons right-aligned
- * - Esc + backdrop click close it, page scroll is locked while open
+ * - X button, Esc and backdrop click close it, page scroll is locked while open
  *
  * Put your <form id="x"> in children and a submit button with form="x" in `footer`.
  */
@@ -37,6 +37,7 @@ export default function SideDrawer({
       const t = setTimeout(() => setVisible(true), 20);
       return () => clearTimeout(t);
     }
+
     setVisible(false);
     const t = setTimeout(() => setMounted(false), 300);
     return () => clearTimeout(t);
@@ -66,7 +67,8 @@ export default function SideDrawer({
     <div className="fixed inset-0 z-[70]" role="dialog" aria-modal="true" aria-label={title}>
       {/* Backdrop */}
       <div
-        onClick={onClose}
+        onClick={() => onClose?.()}
+        aria-hidden="true"
         className={`absolute inset-0 bg-primary-900/40 transition-opacity duration-300 ease-standard ${
           visible ? "opacity-100" : "opacity-0"
         }`}
@@ -96,7 +98,13 @@ export default function SideDrawer({
             </div>
           </div>
 
-          <button type="button" onClick={onClose} className="hr-icon-btn" aria-label="Close">
+          <button
+            type="button"
+            onClick={() => onClose?.()}
+            className="hr-icon-btn shrink-0 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-600"
+            aria-label="Close"
+            title="Close"
+          >
             <X size={18} />
           </button>
         </div>

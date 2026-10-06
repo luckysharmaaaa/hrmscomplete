@@ -2,14 +2,7 @@ import React, { useEffect } from "react";
 import { createPortal } from "react-dom";
 import { AlertTriangle, Loader2, Trash2 } from "lucide-react";
 
-/**
- * ConfirmModal — one centred confirmation dialog for every delete action.
- *
- * <ConfirmModal open={!!target} title="Delete User" loading={busy}
- *   onClose={...} onConfirm={...}>
- *   Are you sure you want to delete <b>Name</b>?
- * </ConfirmModal>
- */
+
 export default function ConfirmModal({
   open,
   onClose,

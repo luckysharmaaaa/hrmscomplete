@@ -12,7 +12,7 @@ import {
 
 import PageHeader from "../components/ui/PageHeader";
 import DepartmentTable from "../components/Department/DepartmentTable";
-import AddDepartmentModal from "../components/Department/addDepartment";
+import AddDepartmentModal from "../components/Department/AddDepartment";
 import DeleteDepartmentModal from "../components/Department/DeleteDepartmentModal";
 
 import {
