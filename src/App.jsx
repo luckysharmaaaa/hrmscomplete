@@ -24,7 +24,11 @@ import Login from "./pages/Login";
 import Profile from "./pages/Profile/Profile";
 import Forbidden from "./pages/Forbidden";
 import ModulePlaceholder from "./pages/ModulePlaceholder";
-import { BUILT_IN_PAGES, BUILT_IN_PATHS, getDynamicPage } from "./pages/moduleRegistry";
+import {
+  BUILT_IN_PAGES,
+  BUILT_IN_PATHS,
+  getDynamicPage,
+} from "./pages/ModuleRegistry";
 
 // Auth Pages
 import ForgotPassword from "./pages/ForgotPassword";
