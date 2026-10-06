@@ -1,46 +1,38 @@
-// Single source of truth for holiday types (used by form, legend, filters, calendar)
+// src/constants/holidayTypes.js
+// Values match the `holidayType` enum in the DB.
+
 export const HOLIDAY_TYPES = [
-  { value: "national", label: "National Holiday", color: "#22c55e" },
-  { value: "company", label: "Company Holiday", color: "#f97316" },
-  { value: "optional", label: "Optional Holiday", color: "#3b82f6" },
-  { value: "regional", label: "Regional Holiday", color: "#a855f7" },
-  { value: "restricted", label: "Restricted Holiday", color: "#ef4444" },
+  { value: "NATIONAL", label: "National Holiday", short: "National", color: "#2563EB", hint: "Declared by the government, applies to everyone" },
+  { value: "COMPANY", label: "Company Holiday", short: "Company", color: "#F97316", hint: "Observed by the whole organization" },
+  { value: "OPTIONAL", label: "Optional Holiday", short: "Optional", color: "#10B981", hint: "Employees choose from a limited list" },
 ];
 
-export const DEFAULT_TYPE = "national";
+export const DEFAULT_TYPE = "COMPANY";
 
 export const getType = (value) =>
-  HOLIDAY_TYPES.find((t) => t.value === value) || HOLIDAY_TYPES[1];
+  HOLIDAY_TYPES.find((t) => t.value === value) ||
+  HOLIDAY_TYPES.find((t) => t.value === DEFAULT_TYPE);
 
-// ── Date helpers (local time, avoids UTC off-by-one bugs) ──
-export const toISODate = (d) => {
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${y}-${m}-${day}`;
-};
-
-export const parseLocalDate = (iso) => {
-  const [y, m, d] = iso.split("-").map(Number);
+// "YYYY-MM-DD" -> local Date (no timezone shift)
+export const parseLocalDate = (str) => {
+  const [y, m, d] = String(str).slice(0, 10).split("-").map(Number);
   return new Date(y, m - 1, d);
 };
 
-export const startOfToday = () => {
+export const daysFromToday = (str) => {
   const t = new Date();
-  t.setHours(0, 0, 0, 0);
-  return t;
+  const today = new Date(t.getFullYear(), t.getMonth(), t.getDate());
+  return Math.round((parseLocalDate(str) - today) / 86400000);
 };
 
-export const formatShort = (iso) =>
-  parseLocalDate(iso).toLocaleDateString("en-IN", { day: "numeric", month: "short" });
+export const formatShort = (str) =>
+  parseLocalDate(str).toLocaleDateString("en-IN", { day: "numeric", month: "short" });
 
-export const formatLong = (iso) =>
-  parseLocalDate(iso).toLocaleDateString("en-IN", {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  });
+export const formatWeekday = (str) =>
+  str ? parseLocalDate(str).toLocaleDateString("en-IN", { weekday: "long" }) : "";
 
-export const daysFromToday = (iso) =>
-  Math.round((parseLocalDate(iso) - startOfToday()) / 86400000);
+export const isWeekend = (str) => {
+  if (!str) return false;
+  const d = parseLocalDate(str).getDay();
+  return d === 0 || d === 6;
+};

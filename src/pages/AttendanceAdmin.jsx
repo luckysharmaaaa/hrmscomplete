@@ -1,12 +1,5 @@
-// ```jsx
 import React, { useState } from "react";
-import {
-  ChevronDown,
-  FileText,
-  FileSpreadsheet,
-  Upload,
-  ClipboardList,
-} from "lucide-react";
+import { ChevronDown, FileText, FileSpreadsheet, Upload, ClipboardList } from "lucide-react";
 
 import PageHeader from "../components/ui/PageHeader";
 
@@ -17,56 +10,50 @@ import BiometricStatusPanel from "../components/attendanceAdmin/BiometricStatusP
 import ImportAttendanceDrawer from "../components/attendanceAdmin/ImportAttendanceDrawer";
 import Can from "../components/rbac/Can";
 
+const todayLocal = () => new Date().toLocaleDateString("en-CA");
+
 const AttendanceAdmin = () => {
   const [reportOpen, setReportOpen] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
+
+  // Remounts the table (resets filters) after an import.
   const [tableKey, setTableKey] = useState(0);
 
-  /**
-   * Filters currently selected inside AttendanceAdminTable.
-   *
-   * AttendanceDetailsToday uses the same filters.
-   */
-  const [attendanceFilters, setAttendanceFilters] = useState({
-    startDate: new Date().toLocaleDateString("en-CA"),
-    endDate: new Date().toLocaleDateString("en-CA"),
+  // Bumped after an edit or import so the summary cards reload.
+  const [summaryKey, setSummaryKey] = useState(0);
+  const refreshSummary = () => setSummaryKey((key) => key + 1);
+
+  // Filters selected inside AttendanceAdminTable; the summary cards use the same ones.
+  const [attendanceFilters, setAttendanceFilters] = useState(() => ({
+    startDate: todayLocal(),
+    endDate: todayLocal(),
     departmentId: "",
     designationId: "",
     employeeId: "",
     status: "",
     search: "",
-  });
+  }));
 
-  // ==========================================================
-  // Close Export Dropdown
-  // ==========================================================
   const closeDropdown = () => {
     document.activeElement?.blur?.();
   };
 
+  const handleImported = () => {
+    setTableKey((key) => key + 1);
+    refreshSummary();
+  };
+
   return (
     <div className="space-y-6">
-      {/* ========================================================
-          Header
-      ======================================================== */}
       <PageHeader
         icon={ClipboardList}
         title="Attendance Admin"
-        breadcrumbs={[
-          { label: "Attendance" },
-          { label: "Attendance Admin" },
-        ]}
+        breadcrumbs={[{ label: "Attendance" }, { label: "Attendance Admin" }]}
         actions={
           <>
-            {/* ==================================================
-                Export Dropdown
-            ================================================== */}
+            {/* Export (wire to real export handlers when ready) */}
             <div className="dropdown dropdown-end">
-              <div
-                tabIndex={0}
-                role="button"
-                className="hr-btn hr-btn-glass"
-              >
+              <div tabIndex={0} role="button" className="hr-btn hr-btn-glass">
                 <FileText size={16} />
                 Export
                 <ChevronDown size={16} />
@@ -82,11 +69,7 @@ const AttendanceAdmin = () => {
                     onClick={closeDropdown}
                     className="flex h-10 w-full items-center gap-2.5 rounded-md px-3 text-sm text-text-primary transition-colors hover:bg-primary-50 hover:text-primary-700"
                   >
-                    <FileText
-                      size={16}
-                      className="text-danger-500"
-                    />
-
+                    <FileText size={16} className="text-danger-500" />
                     <span>Export as PDF</span>
                   </button>
                 </li>
@@ -97,21 +80,14 @@ const AttendanceAdmin = () => {
                     onClick={closeDropdown}
                     className="flex h-10 w-full items-center gap-2.5 rounded-md px-3 text-sm text-text-primary transition-colors hover:bg-primary-50 hover:text-primary-700"
                   >
-                    <FileSpreadsheet
-                      size={16}
-                      className="text-success-600"
-                    />
-
+                    <FileSpreadsheet size={16} className="text-success-600" />
                     <span>Export as Excel</span>
                   </button>
                 </li>
               </ul>
             </div>
 
-            {/* ==================================================
-                Import Attendance
-                RBAC: attendance-import:add
-            ================================================== */}
+            {/* RBAC: attendance-import:add */}
             <Can module="attendance-import" action="add">
               <button
                 type="button"
@@ -123,9 +99,6 @@ const AttendanceAdmin = () => {
               </button>
             </Can>
 
-            {/* ==================================================
-                Attendance Report
-            ================================================== */}
             <button
               type="button"
               onClick={() => setReportOpen(true)}
@@ -138,44 +111,26 @@ const AttendanceAdmin = () => {
         }
       />
 
-      {/* ========================================================
-          Biometric Availability + Policy
-          Permission handled inside component
-      ======================================================== */}
+      {/* Biometric availability (permission handled inside the component) */}
       <BiometricStatusPanel />
 
-      {/* ========================================================
-          Attendance Summary
-      ======================================================== */}
-      <AttendanceDetailsToday filters={attendanceFilters} />
+      <AttendanceDetailsToday filters={attendanceFilters} refreshKey={summaryKey} />
 
-      {/* ========================================================
-          Attendance Admin Table
-      ======================================================== */}
       <AttendanceAdminTable
         key={tableKey}
         onFiltersChange={setAttendanceFilters}
+        onDataChanged={refreshSummary}
       />
 
-      {/* ========================================================
-          Import Attendance Drawer
-      ======================================================== */}
       <ImportAttendanceDrawer
         open={importOpen}
         onClose={() => setImportOpen(false)}
-        onImported={() => setTableKey((key) => key + 1)}
+        onImported={handleImported}
       />
 
-      {/* ========================================================
-          Attendance Report Side Panel
-      ======================================================== */}
-      <AttendanceReportModal
-        open={reportOpen}
-        onClose={() => setReportOpen(false)}
-      />
+      <AttendanceReportModal open={reportOpen} onClose={() => setReportOpen(false)} />
     </div>
   );
 };
 
 export default AttendanceAdmin;
-

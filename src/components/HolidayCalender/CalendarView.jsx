@@ -8,7 +8,9 @@ import "./CalendarOverrides.css";
 
 export default function CalendarView({
   holidays,
-  canManage = false,
+  canAdd = false, // click an empty day -> add
+  canEdit = false, // drag & drop to move
+  canOpen = false, // click a holiday -> open drawer (edit / delete)
   onDateClick,
   onEventClick,
   onEventMove,
@@ -16,11 +18,12 @@ export default function CalendarView({
   const events = useMemo(
     () =>
       holidays.map((h) => ({
-        id: h.id,
+        id: String(h.id),
         title: h.title,
         start: h.date,
         allDay: true,
         color: getType(h.type).color,
+        extendedProps: { typeLabel: getType(h.type).label },
       })),
     [holidays],
   );
@@ -39,17 +42,23 @@ export default function CalendarView({
         events={events}
         dayMaxEvents={3}
         fixedWeekCount={false}
-        editable={canManage}
-        eventStartEditable={canManage}
+        editable={canEdit}
+        eventStartEditable={canEdit}
         eventDurationEditable={false}
         dayCellClassNames={(arg) =>
           arg.date.getDay() === 0 || arg.date.getDay() === 6 ? ["fc-weekend-cell"] : []
         }
-        dateClick={(info) => canManage && onDateClick?.(info.dateStr)}
-        eventClick={(info) => onEventClick?.(info.event.id)}
+        eventDidMount={(info) => {
+          // native tooltip: "Diwali · Company Holiday"
+          info.el.title = `${info.event.title} · ${info.event.extendedProps.typeLabel}`;
+        }}
+        dateClick={(info) => canAdd && onDateClick?.(info.dateStr)}
+        eventClick={(info) => canOpen && onEventClick?.(info.event.id)}
         eventDrop={(info) => {
           // startStr is "YYYY-MM-DD" for all-day events (no timezone shift)
-          onEventMove?.(info.event.id, info.event.startStr.slice(0, 10));
+          Promise.resolve(onEventMove?.(info.event.id, info.event.startStr.slice(0, 10))).catch(
+            () => info.revert(), // API failed -> snap the event back
+          );
         }}
       />
     </div>

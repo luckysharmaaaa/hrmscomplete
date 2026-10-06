@@ -1,9 +1,8 @@
-import usePermission from "../hooks/usePermission";
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 
 import {
   ChevronDown,
-  Download,
+  ChevronRight,
   FileSpreadsheet,
   FileText,
   LayoutGrid,
@@ -12,18 +11,20 @@ import {
   Users,
 } from "lucide-react";
 
-import PageHeader from "../components/ui/PageHeader";
 import EmployeeStatCards from "../components/employeeList/EmployeeStatCards";
 import EmployeeTable from "../components/employeeList/EmployeeTable";
 import EmployeeGrid from "../components/employeeList/EmployeeGrid";
 import AddEmployeeDrawer from "../components/employeeList/AddEmployeeDrawer";
-import EmployeeShiftDrawer from "../components/employeeList/EmployeeShiftDrawer";
 import DeleteModal from "../components/employeeList/DeleteModal";
 
 import {
   getEmployees,
   deleteEmployee,
 } from "../services/employee.service";
+
+/* -------------------------------------------------------------------------- */
+/* AVATAR COLORS                                                              */
+/* -------------------------------------------------------------------------- */
 
 const AVATAR_COLORS = [
   "bg-blue-500",
@@ -38,100 +39,117 @@ const AVATAR_COLORS = [
   "bg-yellow-500",
 ];
 
+/* -------------------------------------------------------------------------- */
+/* MAIN COMPONENT                                                             */
+/* -------------------------------------------------------------------------- */
+
 export default function EmployeeList() {
-  const { canAdd } = usePermission("employee-list");
-  // =========================================================
-  // Employee Data
-  // =========================================================
+  /* ------------------------------------------------------------------------ */
+  /* EMPLOYEE DATA                                                            */
+  /* ------------------------------------------------------------------------ */
 
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  // =========================================================
-  // Fetch Employees
-  // =========================================================
-
-  const fetchEmployees = useCallback(async () => {
+  const fetchEmployees = async () => {
     try {
       setLoading(true);
 
       const res = await getEmployees();
 
-      const employeeData = res?.data?.data;
+      const employees = (res?.data?.data || []).map(
+        (emp, index) => ({
+          id: emp.id,
 
-      if (!Array.isArray(employeeData)) {
-        console.warn(
-          "Employee API returned unexpected data:",
-          res?.data
-        );
+          empId: emp.employeeCode,
 
-        setData([]);
-        return;
-      }
+          name: `${emp.firstName || ""} ${
+            emp.lastName || ""
+          }`.trim(),
 
-      const employees = employeeData.map((emp, index) => ({
-        id: emp?.id,
+          avatar: `${emp.firstName?.[0] ?? ""}${
+            emp.lastName?.[0] ?? ""
+          }`,
 
-        empId: String(emp?.employeeCode ?? ""),
+          color:
+            AVATAR_COLORS[
+              index % AVATAR_COLORS.length
+            ],
 
-        name: `${emp?.firstName ?? ""} ${emp?.lastName ?? ""}`.trim(),
+          avatarUrl: emp.profileImage
+            ? `http://localhost:5000/${emp.profileImage}`
+            : null,
 
-        avatar: `${emp?.firstName?.[0] ?? ""}${emp?.lastName?.[0] ?? ""}`,
+          department:
+            emp.departmentName || "—",
 
-        color: AVATAR_COLORS[index % AVATAR_COLORS.length],
+          designation:
+            emp.designationName || "—",
 
-        avatarUrl: emp?.profileImage
-          ? `http://localhost:5000/${emp.profileImage}`
-          : null,
+          email: emp.email || "",
 
-        department: String(emp?.departmentName ?? ""),
+          phone: emp.phone || "",
 
-        designation: String(emp?.designationName ?? ""),
+          joiningDate: emp.joiningDate,
 
-        email: String(emp?.email ?? ""),
+          status: emp.status
+            ? "Active"
+            : "Inactive",
 
-        phone: String(emp?.phone ?? ""),
+          projects: 0,
 
-        joiningDate: emp?.joiningDate ?? null,
+          done: 0,
 
-        status: emp?.status ? "Active" : "Inactive",
+          progress: 0,
 
-        projects: 0,
-        done: 0,
-        progress: 0,
-        productivity: 0,
-      }));
+          productivity: 0,
+        }),
+      );
 
       setData(employees);
     } catch (error) {
-      console.error("Failed to fetch employees:", error);
-      // Keep existing data instead of unnecessarily clearing the table.
+      console.error(
+        "Failed to fetch employees:",
+        error,
+      );
     } finally {
       setLoading(false);
     }
-  }, []);
+  };
 
   useEffect(() => {
     fetchEmployees();
-  }, [fetchEmployees]);
+  }, []);
 
-  // =========================================================
-  // View
-  // =========================================================
+  /* ------------------------------------------------------------------------ */
+  /* VIEW                                                                     */
+  /* ------------------------------------------------------------------------ */
 
   const [viewMode, setViewMode] = useState("list");
 
-  // =========================================================
-  // Filters
-  // =========================================================
+  /* ------------------------------------------------------------------------ */
+  /* FILTERS                                                                  */
+  /* ------------------------------------------------------------------------ */
 
   const [search, setSearch] = useState("");
-  const [designation, setDesignation] = useState("All Designations");
-  const [status, setStatus] = useState("All Status");
-  const [sortBy, setSortBy] = useState("Recently Added");
 
-  const [rowsPerPage, setRowsPerPage] = useState(10);
-  const [currentPage, setCurrentPage] = useState(1);
+  const [designation, setDesignation] = useState(
+    "All Designations",
+  );
+
+  const [status, setStatus] = useState(
+    "All Status",
+  );
+
+  const [sortBy, setSortBy] = useState(
+    "Recently Added",
+  );
+
+  const [rowsPerPage, setRowsPerPage] =
+    useState(10);
+
+  const [currentPage, setCurrentPage] =
+    useState(1);
 
   const [dateRange, setDateRange] = useState([
     {
@@ -141,234 +159,384 @@ export default function EmployeeList() {
     },
   ]);
 
-  // =========================================================
-  // Modals / Drawers
-  // =========================================================
+  /* ------------------------------------------------------------------------ */
+  /* MODALS                                                                   */
+  /* ------------------------------------------------------------------------ */
 
-  const [drawerOpen, setDrawerOpen] = useState(false);
-  const [editItem, setEditItem] = useState(null);
-  const [deleteTarget, setDeleteTarget] = useState(null);
-  const [shiftTarget, setShiftTarget] = useState(null);
+  const [drawerOpen, setDrawerOpen] =
+    useState(false);
 
-  // =========================================================
-  // Filter Employees
-  // =========================================================
+  const [editItem, setEditItem] =
+    useState(null);
 
-  const filtered = data
-    .filter((employee) => {
-      const q = String(search ?? "").toLowerCase();
+  const [deleteTarget, setDeleteTarget] =
+    useState(null);
 
-      const matchSearch =
-        String(employee?.name ?? "").toLowerCase().includes(q) ||
-        String(employee?.empId ?? "").toLowerCase().includes(q) ||
-        String(employee?.email ?? "").toLowerCase().includes(q) ||
-        String(employee?.designation ?? "").toLowerCase().includes(q) ||
-        String(employee?.department ?? "").toLowerCase().includes(q);
+  /* ------------------------------------------------------------------------ */
+  /* FILTERED DATA                                                            */
+  /* ------------------------------------------------------------------------ */
 
-      const matchDesignation =
-        designation === "All Designations" ||
-        employee?.designation === designation;
+  const filtered = useMemo(() => {
+    const query = search.trim().toLowerCase();
 
-      const matchStatus = status === "All Status" || employee?.status === status;
+    return [...data]
+      .filter((employee) => {
+        const matchSearch =
+          !query ||
+          employee.name
+            .toLowerCase()
+            .includes(query) ||
+          employee.empId
+            .toLowerCase()
+            .includes(query) ||
+          employee.email
+            .toLowerCase()
+            .includes(query) ||
+          employee.designation
+            .toLowerCase()
+            .includes(query) ||
+          employee.department
+            .toLowerCase()
+            .includes(query);
 
-      return matchSearch && matchDesignation && matchStatus;
-    })
-    .sort((a, b) => {
-      if (sortBy === "Ascending") {
-        return String(a?.name ?? "").localeCompare(String(b?.name ?? ""));
-      }
-      if (sortBy === "Descending") {
-        return String(b?.name ?? "").localeCompare(String(a?.name ?? ""));
-      }
-      return 0;
-    });
+        const matchDesignation =
+          designation === "All Designations" ||
+          employee.designation === designation;
 
-  // =========================================================
-  // Pagination
-  // =========================================================
+        const matchStatus =
+          status === "All Status" ||
+          employee.status === status;
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / rowsPerPage));
+        return (
+          matchSearch &&
+          matchDesignation &&
+          matchStatus
+        );
+      })
+      .sort((a, b) => {
+        if (sortBy === "Ascending") {
+          return a.name.localeCompare(b.name);
+        }
+
+        if (sortBy === "Descending") {
+          return b.name.localeCompare(a.name);
+        }
+
+        return 0;
+      });
+  }, [
+    data,
+    search,
+    designation,
+    status,
+    sortBy,
+  ]);
+
+  /* ------------------------------------------------------------------------ */
+  /* PAGINATION                                                               */
+  /* ------------------------------------------------------------------------ */
+
+  const totalPages = Math.max(
+    1,
+    Math.ceil(
+      filtered.length / rowsPerPage,
+    ),
+  );
 
   const paginated = filtered.slice(
     (currentPage - 1) * rowsPerPage,
-    currentPage * rowsPerPage
+    currentPage * rowsPerPage,
   );
 
-  // =========================================================
-  // Submit Handler
-  // =========================================================
+  /* ------------------------------------------------------------------------ */
+  /* HANDLERS                                                                 */
+  /* ------------------------------------------------------------------------ */
 
   const handleSubmit = async () => {
     await fetchEmployees();
+
     setDrawerOpen(false);
     setEditItem(null);
   };
 
-  // =========================================================
-  // Delete Handler
-  // =========================================================
-
   const handleDelete = async (id) => {
-    try {
-      await deleteEmployee(id);
-      setData((prev) => prev.filter((employee) => employee.id !== id));
-      setDeleteTarget(null);
-    } catch (error) {
-      console.error("Failed to delete employee:", error);
-    }
+    await deleteEmployee(id);
+
+    setData((prev) =>
+      prev.filter(
+        (employee) => employee.id !== id,
+      ),
+    );
+
+    setDeleteTarget(null);
   };
 
-  // =========================================================
-  // Reset Page When Filters Change
-  // =========================================================
+  const openAddEmployee = () => {
+    setEditItem(null);
+    setDrawerOpen(true);
+  };
 
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [search, designation, status, rowsPerPage]);
+  const openEditEmployee = (row) => {
+    setEditItem(row);
+    setDrawerOpen(true);
+  };
 
-  // Closes the daisyUI focus-dropdown after an item is clicked
-  const closeDropdown = () => document.activeElement?.blur?.();
-
-  // =========================================================
-  // Render
-  // =========================================================
+  /* ------------------------------------------------------------------------ */
+  /* RENDER                                                                   */
+  /* ------------------------------------------------------------------------ */
 
   return (
-    <div className="space-y-6">
-      <PageHeader
-        icon={Users}
-        title="Employees List"
-        breadcrumbs={[{ label: "Employees" }, { label: "Employee List" }]}
-        actions={
-          <>
-            {/* List / Grid toggle */}
-            <div className="flex items-center overflow-hidden rounded-md border border-white/20">
+    <div className="min-h-full space-y-5">
+
+      {/* ==================================================================== */}
+      {/* PAGE HEADER                                                           */}
+      {/* ==================================================================== */}
+
+      <section className="rounded-2xl border border-slate-200/80 bg-white px-5 py-4 shadow-sm">
+
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+
+          {/* ---------------------------------------------------------------- */}
+          {/* TITLE                                                             */}
+          {/* ---------------------------------------------------------------- */}
+
+          <div className="flex items-center gap-3">
+
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#0F265C] shadow-sm">
+              <Users
+                size={19}
+                strokeWidth={2}
+                className="text-white"
+              />
+            </div>
+
+            <div>
+              <div className="flex items-center gap-1.5">
+                <h1 className="text-xl font-black tracking-tight text-[#0F265C]">
+                  Employees
+                </h1>
+
+                <ChevronRight
+                  size={14}
+                  className="text-slate-300"
+                />
+
+                <span className="text-sm font-semibold text-orange-500">
+                  Employee List
+                </span>
+              </div>
+
+              <p className="mt-0.5 text-[11px] text-slate-400">
+                Manage employee records, profiles,
+                and workforce information.
+              </p>
+            </div>
+          </div>
+
+          {/* ---------------------------------------------------------------- */}
+          {/* ACTIONS                                                           */}
+          {/* ---------------------------------------------------------------- */}
+
+          <div className="flex flex-wrap items-center gap-2">
+
+            {/* View Toggle */}
+
+            <div className="flex h-10 items-center overflow-hidden rounded-xl border border-slate-200 bg-slate-50 p-1">
+
               <button
                 type="button"
-                onClick={() => setViewMode("list")}
-                className={`flex h-10 w-10 items-center justify-center transition-colors ${
-                  viewMode === "list"
-                    ? "bg-accent-500 text-white"
-                    : "bg-white/10 text-white hover:bg-white/20"
-                }`}
+                onClick={() =>
+                  setViewMode("list")
+                }
                 title="List View"
+                className={[
+                  "flex h-8 w-9 items-center justify-center rounded-lg transition-all",
+                  viewMode === "list"
+                    ? "bg-[#0F265C] text-white shadow-sm"
+                    : "text-slate-400 hover:bg-white hover:text-[#0F265C]",
+                ].join(" ")}
               >
-                <LayoutList size={16} />
+                <LayoutList size={15} />
               </button>
 
               <button
                 type="button"
-                onClick={() => setViewMode("grid")}
-                className={`flex h-10 w-10 items-center justify-center transition-colors ${
-                  viewMode === "grid"
-                    ? "bg-accent-500 text-white"
-                    : "bg-white/10 text-white hover:bg-white/20"
-                }`}
+                onClick={() =>
+                  setViewMode("grid")
+                }
                 title="Grid View"
+                className={[
+                  "flex h-8 w-9 items-center justify-center rounded-lg transition-all",
+                  viewMode === "grid"
+                    ? "bg-[#0F265C] text-white shadow-sm"
+                    : "text-slate-400 hover:bg-white hover:text-[#0F265C]",
+                ].join(" ")}
               >
-                <LayoutGrid size={16} />
+                <LayoutGrid size={15} />
               </button>
             </div>
 
             {/* Export */}
+
             <div className="dropdown dropdown-end">
-              <div tabIndex={0} role="button" className="hr-btn hr-btn-glass">
-                <Download size={16} />
-                Export
-                <ChevronDown size={16} />
-              </div>
+
+              <label
+                tabIndex={0}
+                className="flex h-10 cursor-pointer items-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 text-xs font-bold text-[#0F265C] shadow-sm transition hover:bg-slate-50"
+              >
+                <FileText
+                  size={15}
+                  className="text-slate-500"
+                />
+
+                <span>Export</span>
+
+                <ChevronDown
+                  size={13}
+                  className="text-slate-400"
+                />
+              </label>
 
               <ul
                 tabIndex={0}
-                className="dropdown-content z-50 mt-2 w-52 rounded-lg border border-border-subtle bg-surface p-1.5 shadow-lg"
+                className="dropdown-content menu z-50 mt-2 w-48 rounded-xl border border-slate-100 bg-white p-1.5 shadow-xl"
               >
                 <li>
-                  <button
-                    type="button"
-                    onClick={closeDropdown}
-                    className="flex h-10 w-full items-center gap-2.5 rounded-md px-3 text-sm text-text-primary transition-colors hover:bg-primary-50 hover:text-primary-700"
-                  >
-                    <FileText size={16} className="text-danger-500" />
-                    Export as PDF
-                  </button>
+                  <a className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-xs text-slate-600 hover:bg-slate-50">
+                    <FileText
+                      size={15}
+                      className="text-red-500"
+                    />
+
+                    <span className="font-semibold">
+                      Export as PDF
+                    </span>
+                  </a>
                 </li>
+
                 <li>
-                  <button
-                    type="button"
-                    onClick={closeDropdown}
-                    className="flex h-10 w-full items-center gap-2.5 rounded-md px-3 text-sm text-text-primary transition-colors hover:bg-primary-50 hover:text-primary-700"
-                  >
-                    <FileSpreadsheet size={16} className="text-success-600" />
-                    Export as Excel
-                  </button>
+                  <a className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-xs text-slate-600 hover:bg-slate-50">
+                    <FileSpreadsheet
+                      size={15}
+                      className="text-emerald-600"
+                    />
+
+                    <span className="font-semibold">
+                      Export as Excel
+                    </span>
+                  </a>
                 </li>
               </ul>
             </div>
 
             {/* Add Employee */}
-            {canAdd && (
-<button
+
+            <button
               type="button"
-              onClick={() => {
-                setEditItem(null);
-                setDrawerOpen(true);
-              }}
-              className="hr-btn hr-btn-primary"
+              onClick={openAddEmployee}
+              className="flex h-10 items-center gap-2 rounded-xl bg-gradient-to-r from-orange-500 to-orange-400 px-4 text-xs font-bold text-white shadow-[0_4px_12px_rgba(249,115,22,0.20)] transition-all hover:from-orange-600 hover:to-orange-500 active:scale-[0.98]"
             >
-              <Plus size={16} />
+              <Plus size={15} />
+
               Add Employee
             </button>
-)}
-          </>
-        }
-      />
+          </div>
+        </div>
+      </section>
 
-      {/* Stat Cards */}
-      <EmployeeStatCards data={data} />
+      {/* ==================================================================== */}
+      {/* SUMMARY                                                              */}
+      {/* ==================================================================== */}
 
-      {/* Table / Grid */}
-      {viewMode === "list" ? (
-        <EmployeeTable
-          paginated={paginated}
-          filtered={filtered}
-          search={search}
-          setSearch={setSearch}
-          designation={designation}
-          setDesignation={setDesignation}
-          status={status}
-          setStatus={setStatus}
-          sortBy={sortBy}
-          setSortBy={setSortBy}
-          dateRange={dateRange}
-          setDateRange={setDateRange}
-          rowsPerPage={rowsPerPage}
-          setRowsPerPage={setRowsPerPage}
-          currentPage={currentPage}
-          setCurrentPage={setCurrentPage}
-          totalPages={totalPages}
-          onEdit={(row) => {
-            setEditItem(row);
-            setDrawerOpen(true);
-          }}
-          onDelete={(row) => setDeleteTarget(row)}
-          onViewShift={(row) => setShiftTarget(row)}
-        />
-      ) : (
-        <EmployeeGrid
-          filtered={filtered}
-          designation={designation}
-          setDesignation={setDesignation}
-          sortBy={sortBy}
-          setSortBy={setSortBy}
-          onEdit={(row) => {
-            setEditItem(row);
-            setDrawerOpen(true);
-          }}
-          onDelete={(row) => setDeleteTarget(row)}
-        />
-      )}
+      <section>
+        <EmployeeStatCards data={data} />
+      </section>
 
-      {/* Add / Edit Employee Drawer */}
+      {/* ==================================================================== */}
+      {/* CONTENT                                                              */}
+      {/* ==================================================================== */}
+
+      <section className="rounded-2xl border border-slate-200/80 bg-white shadow-sm">
+
+        {loading && data.length === 0 ? (
+          <div className="flex min-h-[280px] items-center justify-center">
+            <div className="flex flex-col items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50">
+                <Users
+                  size={18}
+                  className="animate-pulse text-[#0F265C]"
+                />
+              </div>
+
+              <p className="text-xs font-semibold text-slate-400">
+                Loading employees...
+              </p>
+            </div>
+          </div>
+        ) : viewMode === "list" ? (
+          <EmployeeTable
+            paginated={paginated}
+            filtered={filtered}
+            search={search}
+            setSearch={(value) => {
+              setSearch(value);
+              setCurrentPage(1);
+            }}
+            designation={designation}
+            setDesignation={(value) => {
+              setDesignation(value);
+              setCurrentPage(1);
+            }}
+            status={status}
+            setStatus={(value) => {
+              setStatus(value);
+              setCurrentPage(1);
+            }}
+            sortBy={sortBy}
+            setSortBy={(value) => {
+              setSortBy(value);
+              setCurrentPage(1);
+            }}
+            dateRange={dateRange}
+            setDateRange={setDateRange}
+            rowsPerPage={rowsPerPage}
+            setRowsPerPage={(value) => {
+              setRowsPerPage(value);
+              setCurrentPage(1);
+            }}
+            currentPage={currentPage}
+            setCurrentPage={setCurrentPage}
+            totalPages={totalPages}
+            onEdit={openEditEmployee}
+            onDelete={(row) =>
+              setDeleteTarget(row)
+            }
+          />
+        ) : (
+          <EmployeeGrid
+            filtered={filtered}
+            designation={designation}
+            setDesignation={(value) => {
+              setDesignation(value);
+              setCurrentPage(1);
+            }}
+            sortBy={sortBy}
+            setSortBy={(value) => {
+              setSortBy(value);
+              setCurrentPage(1);
+            }}
+            onEdit={openEditEmployee}
+            onDelete={(row) =>
+              setDeleteTarget(row)
+            }
+          />
+        )}
+      </section>
+
+      {/* ==================================================================== */}
+      {/* ADD / EDIT DRAWER                                                    */}
+      {/* ==================================================================== */}
+
       <AddEmployeeDrawer
         open={drawerOpen}
         onClose={() => {
@@ -379,19 +547,17 @@ export default function EmployeeList() {
         onSubmit={handleSubmit}
       />
 
-      {/* Delete Modal */}
+      {/* ==================================================================== */}
+      {/* DELETE MODAL                                                         */}
+      {/* ==================================================================== */}
+
       <DeleteModal
         open={!!deleteTarget}
         item={deleteTarget}
-        onClose={() => setDeleteTarget(null)}
+        onClose={() =>
+          setDeleteTarget(null)
+        }
         onConfirm={handleDelete}
-      />
-
-      {/* Employee Shift Drawer */}
-      <EmployeeShiftDrawer
-        open={!!shiftTarget}
-        employee={shiftTarget}
-        onClose={() => setShiftTarget(null)}
       />
     </div>
   );

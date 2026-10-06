@@ -14,6 +14,7 @@ export const clearAuthStorage = () => {
 
 const NO_REFRESH_PATHS = [
   "/auth/login",
+  "/auth/google",
   "/auth/refresh-token",
   "/auth/forgot-password",
   "/auth/reset-password",
@@ -23,7 +24,13 @@ const NO_REFRESH_PATHS = [
 ];
 
 // Frontend ke public pages (yahan redirect loop nahi karna)
-const PUBLIC_PAGES = ["/login", "/forgot-password", "/reset-password", "/first-time-access"];
+const PUBLIC_PAGES = [
+  "/login",
+  "/register",
+  "/forgot-password",
+  "/reset-password",
+  "/first-time-access",
+];
 
 const api = axios.create({
   baseURL: API_URL,
@@ -115,6 +122,7 @@ api.interceptors.response.use(
         status === 401 &&
         original &&
         !url.includes("/auth/login") &&
+        !url.includes("/auth/google") &&
         !url.includes("/auth/forgot-password") &&
         !url.includes("/auth/reset-password") &&
         !url.includes("/auth/first-time-access") &&

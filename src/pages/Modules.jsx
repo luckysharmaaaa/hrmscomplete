@@ -1,4 +1,3 @@
-// ```jsx
 import usePermission from "../hooks/usePermission";
 import React, { useEffect, useMemo, useState } from "react";
 import {
@@ -32,15 +31,14 @@ import {
   Trash2,
   Search,
   ChevronRight,
-  X,
   FolderOpen,
   FileText,
-  AlertTriangle,
   Loader2,
   RefreshCw,
   Inbox,
   CheckCircle2,
   XCircle,
+  Layers,
 } from "lucide-react";
 
 import PageHeader from "../components/ui/PageHeader";
@@ -102,15 +100,11 @@ const ICON_OPTIONS = [
 /* Helpers                                                                    */
 /* -------------------------------------------------------------------------- */
 
-const getIconComponent = (iconName) => {
-  return (
-    ICON_OPTIONS.find((item) => item.name === iconName)?.Icon || FolderOpen
-  );
-};
+const getIconComponent = (iconName) =>
+  ICON_OPTIONS.find((item) => item.name === iconName)?.Icon || FolderOpen;
 
 const ModuleIcon = ({ iconName, size = 17, className = "" }) => {
   const Icon = getIconComponent(iconName);
-
   return <Icon size={size} className={className} />;
 };
 
@@ -119,15 +113,11 @@ const buildTree = (flatList = []) => {
   const roots = [];
 
   flatList.forEach((item) => {
-    map.set(item.id, {
-      ...item,
-      children: [],
-    });
+    map.set(item.id, { ...item, children: [] });
   });
 
   flatList.forEach((item) => {
     const current = map.get(item.id);
-
     if (item.parentId && map.has(item.parentId)) {
       map.get(item.parentId).children.push(current);
     } else {
@@ -151,40 +141,26 @@ const getDescendantIds = (modules, moduleId) => {
   };
 
   collect(moduleId);
-
   return descendants;
 };
 
 const findModuleName = (modules, id) => {
   if (!id) return "-";
-
   return modules.find((module) => module.id === id)?.moduleName || "-";
 };
 
-const countDirectChildren = (modules, moduleId) => {
-  return modules.filter((module) => module.parentId === moduleId).length;
-};
+const countDirectChildren = (modules, moduleId) =>
+  modules.filter((module) => module.parentId === moduleId).length;
 
 /* -------------------------------------------------------------------------- */
 /* Module Row                                                                 */
 /* -------------------------------------------------------------------------- */
 
-const ModuleRow = ({
-  node,
-  level,
-  allModules,
-  onEdit,
-  onDelete,
-  onToggleStatus,
-  pendingId,
-}) => {
+const ModuleRow = ({ node, level, allModules, onEdit, onDelete, onToggleStatus, pendingId }) => {
   const { canEdit, canDelete } = usePermission("modules");
 
   const isActive =
-    node.status === "1" ||
-    node.status === 1 ||
-    node.status === true ||
-    node.status === "Active";
+    node.status === "1" || node.status === 1 || node.status === true || node.status === "Active";
 
   const isPending = pendingId === node.id;
 
@@ -192,70 +168,32 @@ const ModuleRow = ({
     <tr>
       {/* Module Name */}
       <td className="hr-td">
-        <div
-          className="flex items-center gap-2"
-          style={{ paddingLeft: `${level * 24}px` }}
-        >
-          {level > 0 && (
-            <ChevronRight
-              size={14}
-              className="shrink-0 text-text-disabled"
-            />
-          )}
-
-          <ModuleIcon
-            iconName={node.icon}
-            size={17}
-            className="shrink-0 text-primary-700"
-          />
-
-          <span className="font-semibold text-text-primary">
-            {node.moduleName}
-          </span>
+        <div className="flex items-center gap-2" style={{ paddingLeft: `${level * 24}px` }}>
+          {level > 0 && <ChevronRight size={14} className="shrink-0 text-text-disabled" />}
+          <ModuleIcon iconName={node.icon} size={17} className="shrink-0 text-primary-700" />
+          <span className="font-semibold text-text-primary">{node.moduleName}</span>
         </div>
       </td>
 
       {/* Parent */}
-      <td className="hr-td text-text-secondary">
-        {findModuleName(allModules, node.parentId)}
-      </td>
+      <td className="hr-td text-text-secondary">{findModuleName(allModules, node.parentId)}</td>
 
       {/* Path */}
-      <td className="hr-td text-text-secondary">
-        {node.path || "-"}
-      </td>
+      <td className="hr-td text-text-secondary">{node.path || "-"}</td>
 
       {/* Status */}
       <td className="hr-td">
         <button
           type="button"
           onClick={() => {
-            if (!isPending && canEdit) {
-              onToggleStatus?.(node.id, node.status);
-            }
+            if (!isPending && canEdit) onToggleStatus?.(node.id, node.status);
           }}
           disabled={isPending || !canEdit}
           className="cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
-          title={
-            canEdit
-              ? isActive
-                ? "Click to deactivate"
-                : "Click to activate"
-              : "You do not have permission to edit"
-          }
+          title={canEdit ? (isActive ? "Click to deactivate" : "Click to activate") : "You do not have permission to edit"}
         >
-          <span
-            className={`text-xs font-medium ${
-              isActive
-                ? "text-success-600"
-                : "text-text-secondary"
-            }`}
-          >
-            {isPending
-              ? "Updating..."
-              : isActive
-              ? "Active"
-              : "Inactive"}
+          <span className={`text-xs font-medium ${isActive ? "text-success-600" : "text-text-secondary"}`}>
+            {isPending ? "Updating..." : isActive ? "Active" : "Inactive"}
           </span>
         </button>
       </td>
@@ -264,26 +202,18 @@ const ModuleRow = ({
       <td className="hr-td">
         <div className="flex items-center justify-center gap-1">
           {canEdit && (
-            <button
-              type="button"
-              onClick={() => onEdit?.(node)}
-              className="hr-icon-btn"
-              title="Edit"
-            >
+            <button type="button" onClick={() => onEdit?.(node)} className="hr-icon-btn" title="Edit">
               <Pencil size={16} />
             </button>
           )}
 
           {canDelete && (
-            <button
-              type="button"
-              onClick={() => onDelete?.(node)}
-              className="hr-icon-btn danger"
-              title="Delete"
-            >
+            <button type="button" onClick={() => onDelete?.(node)} className="hr-icon-btn danger" title="Delete">
               <Trash2 size={16} />
             </button>
           )}
+
+          {!canEdit && !canDelete && <span className="text-xs text-text-disabled">—</span>}
         </div>
       </td>
     </tr>
@@ -294,36 +224,26 @@ const ModuleRow = ({
 /* Skeleton Rows                                                              */
 /* -------------------------------------------------------------------------- */
 
-const SkeletonRows = ({ count = 6 }) => {
-  return (
-    <>
-      {Array.from({ length: count }).map((_, index) => (
-        <tr key={index}>
-          {Array.from({ length: 5 }).map((__, cellIndex) => (
-            <td key={cellIndex} className="hr-td">
-              <div className="h-4 w-24 animate-pulse rounded bg-border-subtle" />
-            </td>
-          ))}
-        </tr>
-      ))}
-    </>
-  );
-};
+const SkeletonRows = ({ count = 6 }) => (
+  <>
+    {Array.from({ length: count }).map((_, index) => (
+      <tr key={index}>
+        {Array.from({ length: 5 }).map((__, cellIndex) => (
+          <td key={cellIndex} className="hr-td">
+            <div className="h-4 w-24 animate-pulse rounded bg-primary-50" />
+          </td>
+        ))}
+      </tr>
+    ))}
+  </>
+);
 
 /* -------------------------------------------------------------------------- */
 /* Module Form Drawer                                                         */
 /* -------------------------------------------------------------------------- */
 
-const ModuleFormDrawer = ({
-  open,
-  onClose,
-  editData,
-  modules,
-  onSubmit,
-  saving,
-}) => {
+const ModuleFormDrawer = ({ open, onClose, editData, modules, onSubmit, saving }) => {
   const [form, setForm] = useState(EMPTY_FORM);
-
   const isEdit = Boolean(editData);
 
   useEffect(() => {
@@ -336,11 +256,7 @@ const ModuleFormDrawer = ({
         path: editData.path || "",
         icon: editData.icon || "",
         status:
-          editData.status === 1 ||
-          editData.status === "1" ||
-          editData.status === true
-            ? "1"
-            : "0",
+          editData.status === 1 || editData.status === "1" || editData.status === true ? "1" : "0",
       });
     } else {
       setForm(EMPTY_FORM);
@@ -349,20 +265,15 @@ const ModuleFormDrawer = ({
 
   const blockedParentIds = useMemo(() => {
     if (!editData) return new Set();
-
     return getDescendantIds(modules, editData.id);
   }, [modules, editData]);
 
   const handleChange = (field, value) => {
-    setForm((prev) => ({
-      ...prev,
-      [field]: value,
-    }));
+    setForm((prev) => ({ ...prev, [field]: value }));
   };
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-
     if (!form.moduleName.trim()) return;
 
     await onSubmit({
@@ -375,180 +286,118 @@ const ModuleFormDrawer = ({
   };
 
   const toggleFormStatus = () => {
-    setForm((prev) => ({
-      ...prev,
-      status: prev.status === "1" ? "0" : "1",
-    }));
+    setForm((prev) => ({ ...prev, status: prev.status === "1" ? "0" : "1" }));
   };
+
+  const canSubmit = form.moduleName.trim().length > 0 && !saving;
 
   return (
     <SideDrawer
       open={open}
       onClose={onClose}
+      icon={Layers}
+      size="md"
       title={isEdit ? "Edit Module" : "Add Module"}
-    >
-      <form onSubmit={handleSubmit} className="flex h-full flex-col">
-        <div className="flex-1 space-y-5 overflow-y-auto p-5">
-          {/* Module Name */}
-          <div>
-            <label className="mb-1.5 block text-sm font-medium text-text-primary">
-              Module Name <span className="text-danger-500">*</span>
-            </label>
-
-            <input
-              type="text"
-              className="hr-input"
-              placeholder="Enter module name"
-              value={form.moduleName}
-              onChange={(e) =>
-                handleChange("moduleName", e.target.value)
-              }
-              required
-            />
-          </div>
-
-          {/* Parent Module */}
-          <div>
-            <label className="mb-1.5 block text-sm font-medium text-text-primary">
-              Parent Module
-            </label>
-
-            <select
-              className="hr-select"
-              value={form.parentId}
-              onChange={(e) =>
-                handleChange("parentId", e.target.value)
-              }
-            >
-              <option value="">No Parent (Top Level)</option>
-
-              {modules
-                .filter((module) => {
-                  if (!editData) return true;
-
-                  if (module.id === editData.id) return false;
-
-                  return !blockedParentIds.has(module.id);
-                })
-                .map((module) => (
-                  <option key={module.id} value={module.id}>
-                    {module.moduleName}
-                  </option>
-                ))}
-            </select>
-          </div>
-
-          {/* Path */}
-          <div>
-            <label className="mb-1.5 block text-sm font-medium text-text-primary">
-              Path
-            </label>
-
-            <input
-              type="text"
-              className="hr-input"
-              placeholder="/module-path"
-              value={form.path}
-              onChange={(e) =>
-                handleChange("path", e.target.value)
-              }
-            />
-          </div>
-
-          {/* Icon Dropdown */}
-          <div>
-            <label className="mb-1.5 block text-sm font-medium text-text-primary">
-              Icon
-            </label>
-
-            <div className="relative">
-              <select
-                className="hr-select !pl-10"
-                value={form.icon}
-                onChange={(e) =>
-                  handleChange("icon", e.target.value)
-                }
-              >
-                <option value="">Select Icon</option>
-
-                {ICON_OPTIONS.map(
-                  ({ name, label }) => (
-                    <option key={name} value={name}>
-                      {label} ({name})
-                    </option>
-                  )
-                )}
-              </select>
-
-              <div className="pointer-events-none absolute left-3 top-1/2 flex -translate-y-1/2 items-center text-primary-700">
-                <ModuleIcon
-                  iconName={form.icon}
-                  size={17}
-                />
-              </div>
-            </div>
-
-            {form.icon && (
-              <div className="mt-2 flex items-center gap-2 rounded-md border border-border-subtle bg-primary-50 px-3 py-2">
-                <ModuleIcon
-                  iconName={form.icon}
-                  size={18}
-                  className="text-primary-700"
-                />
-
-                <span className="text-sm font-medium text-text-primary">
-                  {ICON_OPTIONS.find(
-                    (item) => item.name === form.icon
-                  )?.label || form.icon}
-                </span>
-              </div>
-            )}
-          </div>
-
-          {/* Status */}
-          <div className="flex items-center justify-between rounded-lg border border-border-subtle px-4 py-3">
-            <div>
-              <p className="text-sm font-medium text-text-primary">
-                Active Status
-              </p>
-
-              <p className="mt-0.5 text-xs text-text-secondary">
-                Enable this module for active use.
-              </p>
-            </div>
-
-            <Switch
-              checked={form.status === "1"}
-              onChange={toggleFormStatus}
-            />
-          </div>
-        </div>
-
-        {/* Footer */}
-        <div className="flex items-center justify-end gap-2 border-t border-border-subtle p-4">
-          <button
-            type="button"
-            onClick={onClose}
-            className="hr-btn-secondary"
-            disabled={saving}
-          >
+      subtitle={isEdit ? "Update configuration for this module" : "Register a new feature module"}
+      footer={
+        <>
+          <button type="button" onClick={onClose} disabled={saving} className="hr-btn hr-btn-outline">
             Cancel
           </button>
-
-          <button
-            type="submit"
-            className="hr-btn-primary"
-            disabled={saving || !form.moduleName.trim()}
-          >
-            {saving && (
-              <Loader2
-                size={16}
-                className="mr-2 animate-spin"
-              />
-            )}
-
-            {isEdit ? "Update Module" : "Create Module"}
+          <button type="submit" form="module-form" disabled={!canSubmit} className="hr-btn hr-btn-primary min-w-[140px]">
+            {saving && <Loader2 size={16} className="animate-spin" />}
+            {saving ? "Saving…" : isEdit ? "Update Module" : "Create Module"}
           </button>
+        </>
+      }
+    >
+      <form id="module-form" onSubmit={handleSubmit} className="space-y-5">
+        {/* Module Name */}
+        <div>
+          <label className="hr-label">
+            Module Name <span className="text-danger-500">*</span>
+          </label>
+          <input
+            type="text"
+            className="hr-input"
+            placeholder="Enter module name"
+            value={form.moduleName}
+            onChange={(e) => handleChange("moduleName", e.target.value)}
+            required
+          />
+        </div>
+
+        {/* Parent Module */}
+        <div>
+          <label className="hr-label">Parent Module</label>
+          <select className="hr-select" value={form.parentId} onChange={(e) => handleChange("parentId", e.target.value)}>
+            <option value="">No Parent (Top Level)</option>
+            {modules
+              .filter((module) => {
+                if (!editData) return true;
+                if (module.id === editData.id) return false;
+                return !blockedParentIds.has(module.id);
+              })
+              .map((module) => (
+                <option key={module.id} value={module.id}>
+                  {module.moduleName}
+                </option>
+              ))}
+          </select>
+        </div>
+
+        {/* Path */}
+        <div>
+          <label className="hr-label">Path</label>
+          <input
+            type="text"
+            className="hr-input font-mono"
+            placeholder="/module-path"
+            value={form.path}
+            onChange={(e) => handleChange("path", e.target.value)}
+          />
+        </div>
+
+        {/* Icon Dropdown */}
+        <div>
+          <label className="hr-label">Icon</label>
+
+          <div className="relative">
+            <select
+              className="hr-select pl-10!"
+              value={form.icon}
+              onChange={(e) => handleChange("icon", e.target.value)}
+            >
+              <option value="">Select Icon</option>
+              {ICON_OPTIONS.map(({ name, label }) => (
+                <option key={name} value={name}>
+                  {label} ({name})
+                </option>
+              ))}
+            </select>
+
+            <div className="pointer-events-none absolute left-3 top-1/2 flex -translate-y-1/2 items-center text-primary-700">
+              <ModuleIcon iconName={form.icon} size={17} />
+            </div>
+          </div>
+
+          {form.icon && (
+            <div className="mt-2 flex items-center gap-2 rounded-md border border-border-subtle bg-primary-50 px-3 py-2">
+              <ModuleIcon iconName={form.icon} size={18} className="text-primary-700" />
+              <span className="text-sm font-medium text-text-primary">
+                {ICON_OPTIONS.find((item) => item.name === form.icon)?.label || form.icon}
+              </span>
+            </div>
+          )}
+        </div>
+
+        {/* Status */}
+        <div className="flex items-center justify-between gap-4 rounded-md border border-border-subtle bg-background px-4 py-3.5">
+          <div>
+            <p className="text-sm font-medium text-text-primary">Active Status</p>
+            <p className="text-xs text-text-secondary">Module will appear in navigation when active</p>
+          </div>
+          <Switch checked={form.status === "1"} onChange={toggleFormStatus} ariaLabel="Toggle active status" />
         </div>
       </form>
     </SideDrawer>
@@ -560,8 +409,7 @@ const ModuleFormDrawer = ({
 /* -------------------------------------------------------------------------- */
 
 const Modules = () => {
-  const { canCreate, canEdit, canDelete } =
-    usePermission("modules");
+  const { canCreate } = usePermission("modules");
 
   const [modules, setModules] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -580,30 +428,16 @@ const Modules = () => {
 
   const fetchModules = async (silent = false) => {
     try {
-      if (silent) {
-        setRefreshing(true);
-      } else {
-        setLoading(true);
-      }
+      if (silent) setRefreshing(true);
+      else setLoading(true);
 
       const response = await getAllModules();
-
-      const data =
-        response?.data?.data ||
-        response?.data ||
-        response ||
-        [];
+      const data = response?.data?.data || response?.data || response || [];
 
       setModules(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error("Failed to fetch modules:", error);
-
       setModules([]);
-
-      if (!silent) {
-        // Keep existing application toast/error behavior if API
-        // already handles it upstream.
-      }
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -616,27 +450,16 @@ const Modules = () => {
 
   const filteredModules = useMemo(() => {
     const value = search.trim().toLowerCase();
-
     if (!value) return modules;
 
     return modules.filter((module) => {
-      const moduleName =
-        module.moduleName?.toString().toLowerCase() || "";
-
-      const path =
-        module.path?.toString().toLowerCase() || "";
-
-      return (
-        moduleName.includes(value) ||
-        path.includes(value)
-      );
+      const moduleName = module.moduleName?.toString().toLowerCase() || "";
+      const path = module.path?.toString().toLowerCase() || "";
+      return moduleName.includes(value) || path.includes(value);
     });
   }, [modules, search]);
 
-  const tree = useMemo(
-    () => buildTree(filteredModules),
-    [filteredModules]
-  );
+  const tree = useMemo(() => buildTree(filteredModules), [filteredModules]);
 
   const openCreateForm = () => {
     setEditData(null);
@@ -645,7 +468,6 @@ const Modules = () => {
 
   const openEditForm = (module) => {
     const { children, ...cleanModule } = module;
-
     setEditData(cleanModule);
     setDrawerOpen(true);
   };
@@ -672,35 +494,20 @@ const Modules = () => {
   };
 
   const toggleModuleStatus = async (id, currentStatus) => {
-    if (!canEdit) return;
-
     try {
       setPendingStatusId(id);
 
       const nextStatus =
-        currentStatus === "1" ||
-        currentStatus === 1 ||
-        currentStatus === true
-          ? "0"
-          : "1";
+        currentStatus === "1" || currentStatus === 1 || currentStatus === true ? "0" : "1";
 
-      await updateModule(id, {
-        status: nextStatus,
-      });
+      await updateModule(id, { status: nextStatus });
 
       await fetchModules(true);
     } catch (error) {
-      console.error(
-        "Failed to update module status:",
-        error
-      );
+      console.error("Failed to update module status:", error);
     } finally {
       setPendingStatusId(null);
     }
-  };
-
-  const openDeleteModal = (module) => {
-    setDeleteData(module);
   };
 
   const handleDelete = async () => {
@@ -724,20 +531,15 @@ const Modules = () => {
   const totalModules = modules.length;
 
   const activeModules = modules.filter(
-    (module) =>
-      module.status === "1" ||
-      module.status === 1 ||
-      module.status === true
+    (module) => module.status === "1" || module.status === 1 || module.status === true
   ).length;
 
   const inactiveModules = totalModules - activeModules;
 
-  const parentModules = modules.filter(
-    (module) => !module.parentId
-  ).length;
+  const parentModules = modules.filter((module) => !module.parentId).length;
 
-  const renderRows = (nodes, level = 0) => {
-    return nodes.flatMap((node) => {
+  const renderRows = (nodes, level = 0) =>
+    nodes.flatMap((node) => {
       const row = (
         <ModuleRow
           key={node.id}
@@ -745,62 +547,41 @@ const Modules = () => {
           level={level}
           allModules={modules}
           onEdit={openEditForm}
-          onDelete={openDeleteModal}
+          onDelete={setDeleteData}
           onToggleStatus={toggleModuleStatus}
           pendingId={pendingStatusId}
         />
       );
 
-      const children = node.children?.length
-        ? renderRows(node.children, level + 1)
-        : [];
-
+      const children = node.children?.length ? renderRows(node.children, level + 1) : [];
       return [row, ...children];
     });
-  };
+
+  const childCountForDelete = deleteData ? countDirectChildren(modules, deleteData.id) : 0;
 
   return (
-    <div className="space-y-5">
-      {/* Page Header */}
+    <div className="space-y-6">
       <PageHeader
+        icon={Layers}
         title="Modules"
-        description="Manage application modules and their hierarchy."
-        action={
-          canCreate
-            ? {
-                label: "Add Module",
-                icon: Plus,
-                onClick: openCreateForm,
-              }
-            : undefined
+        subtitle="Manage navigation modules and their hierarchy"
+        breadcrumbs={[{ label: "User Management" }, { label: "Modules" }]}
+        actions={
+          canCreate && (
+            <button type="button" onClick={openCreateForm} className="hr-btn hr-btn-primary">
+              <Plus size={16} />
+              Add Module
+            </button>
+          )
         }
       />
 
       {/* Stats */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard
-          title="Total Modules"
-          value={totalModules}
-          icon={FolderOpen}
-        />
-
-        <StatCard
-          title="Active Modules"
-          value={activeModules}
-          icon={CheckCircle2}
-        />
-
-        <StatCard
-          title="Inactive Modules"
-          value={inactiveModules}
-          icon={XCircle}
-        />
-
-        <StatCard
-          title="Parent Modules"
-          value={parentModules}
-          icon={FolderOpen}
-        />
+        <StatCard icon={FolderOpen} label="Total Modules" value={totalModules} tone="primary" />
+        <StatCard icon={CheckCircle2} label="Active Modules" value={activeModules} tone="success" />
+        <StatCard icon={XCircle} label="Inactive Modules" value={inactiveModules} tone="danger" />
+        <StatCard icon={FolderOpen} label="Parent Modules" value={parentModules} tone="info" />
       </div>
 
       {/* Main Card */}
@@ -808,30 +589,19 @@ const Modules = () => {
         {/* Header */}
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border-subtle px-5 py-4">
           <div>
-            <h2 className="text-base font-semibold text-primary-700">
-              Module List
-            </h2>
-
-            <p className="mt-0.5 text-xs text-text-secondary">
-              Manage modules, hierarchy and status.
-            </p>
+            <h2 className="text-base font-semibold text-primary-700">Module List</h2>
+            <p className="mt-0.5 text-xs text-text-secondary">Manage modules, hierarchy and status.</p>
           </div>
 
           <div className="flex items-center gap-2">
             <div className="relative w-60">
-              <Search
-                size={14}
-                className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-text-disabled"
-              />
-
+              <Search size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-text-disabled" />
               <input
                 type="text"
                 placeholder="Search modules"
                 className="hr-input !h-9 pl-8"
                 value={search}
-                onChange={(e) =>
-                  setSearch(e.target.value)
-                }
+                onChange={(e) => setSearch(e.target.value)}
               />
             </div>
 
@@ -842,12 +612,7 @@ const Modules = () => {
               className="hr-icon-btn"
               title="Refresh"
             >
-              <RefreshCw
-                size={16}
-                className={
-                  refreshing ? "animate-spin" : ""
-                }
-              />
+              <RefreshCw size={16} className={refreshing ? "animate-spin" : ""} />
             </button>
           </div>
         </div>
@@ -861,9 +626,7 @@ const Modules = () => {
                 <th className="hr-th">Parent</th>
                 <th className="hr-th">Path</th>
                 <th className="hr-th">Status</th>
-                <th className="hr-th text-center">
-                  Actions
-                </th>
+                <th className="hr-th text-center">Actions</th>
               </tr>
             </thead>
 
@@ -872,22 +635,13 @@ const Modules = () => {
                 <SkeletonRows />
               ) : tree.length === 0 ? (
                 <tr>
-                  <td
-                    colSpan={5}
-                    className="py-14 text-center"
-                  >
+                  <td colSpan={5} className="py-14 text-center">
                     <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-primary-50 text-primary-700">
                       <Inbox size={22} />
                     </div>
-
-                    <p className="text-sm font-medium text-text-primary">
-                      No modules found
-                    </p>
-
+                    <p className="text-sm font-medium text-text-primary">No modules found</p>
                     <p className="mt-1 text-xs text-text-secondary">
-                      {search
-                        ? "Try changing your search."
-                        : "Create a module to get started."}
+                      {search ? "Try changing your search." : "Create a module to get started."}
                     </p>
                   </td>
                 </tr>
@@ -904,7 +658,6 @@ const Modules = () => {
         open={drawerOpen}
         onClose={() => {
           if (saving) return;
-
           setDrawerOpen(false);
           setEditData(null);
         }}
@@ -917,33 +670,27 @@ const Modules = () => {
       {/* Delete Confirmation */}
       <ConfirmModal
         open={Boolean(deleteData)}
-        title="Delete Module"
-        message={
-          deleteData
-            ? `Are you sure you want to delete "${deleteData.moduleName}"?${
-                countDirectChildren(
-                  modules,
-                  deleteData.id
-                ) > 0
-                  ? " Its child modules will be moved to the top level."
-                  : ""
-              }`
-            : ""
-        }
-        confirmText="Delete"
-        cancelText="Cancel"
-        onConfirm={handleDelete}
-        onCancel={() => {
-          if (!deleting) {
-            setDeleteData(null);
-          }
-        }}
+        title="Delete Module?"
+        confirmLabel="Yes, Delete"
         loading={deleting}
-        danger
-      />
+        onClose={() => !deleting && setDeleteData(null)}
+        onConfirm={handleDelete}
+      >
+        <p>
+          Are you sure you want to delete{" "}
+          <span className="font-semibold text-text-primary">"{deleteData?.moduleName}"</span>?
+          This action cannot be undone.
+        </p>
+
+        {childCountForDelete > 0 && (
+          <p className="mt-3 rounded-md border border-warning-500/30 bg-warning-50 px-3 py-2 text-left text-xs text-warning-600">
+            This module has {childCountForDelete} sub-module{childCountForDelete !== 1 ? "s" : ""}.
+            They won't be deleted, but will move up to the top level of the menu.
+          </p>
+        )}
+      </ConfirmModal>
     </div>
   );
 };
 
 export default Modules;
-// ```

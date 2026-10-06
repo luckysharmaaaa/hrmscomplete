@@ -11,6 +11,26 @@ export const loginUser = (email, password) => {
   });
 };
 
+// Continue with Google (sign-in + self-registration).
+// `credential` is the Google ID token; `mode` is "login" or "register".
+// The backend verifies the token and decides everything else
+// (domain, role, status) — nothing else is sent.
+export const googleAuth = (credential, mode = "login") => {
+  return api.post("/auth/google", {
+    credential,
+    mode,
+  });
+};
+
+// First password for a Google-registered user (they have no login token yet,
+// so the Google credential is the proof of identity; the backend re-verifies it).
+export const googleSetPassword = (credential, password) => {
+  return api.post("/auth/google/set-password", {
+    credential,
+    password,
+  });
+};
+
 export const getUser = () => {
   return api.get("/auth/me");
 };
@@ -83,6 +103,8 @@ export const removeProfilePhoto = () => {
 
 export default {
   loginUser,
+  googleAuth,
+  googleSetPassword,
   getUser,
   logout,
   refreshToken,

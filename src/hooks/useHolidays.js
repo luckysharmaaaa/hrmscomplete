@@ -1,60 +1,120 @@
-import { useState, useEffect, useCallback } from "react";
+// src/hooks/useHolidays.js
+import { useCallback, useEffect, useState } from "react";
+import { toast } from "react-toastify";
+import api from "../services/api"; // <- adjust if your axios instance is exported differently
+import { getType } from "../constants/holidayTypes";
 
-const STORAGE_KEY = "hrms_holidays_v1";
-
-const SEED = [
-  { id: "h1", title: "Republic Day", date: "2026-01-26", type: "national", description: "" },
-  { id: "h2", title: "Independence Day", date: "2026-08-15", type: "national", description: "" },
-  { id: "h3", title: "Gandhi Jayanti", date: "2026-10-02", type: "national", description: "" },
-  { id: "h4", title: "Diwali", date: "2026-11-08", type: "company", description: "" },
-  { id: "h5", title: "Christmas", date: "2026-12-25", type: "optional", description: "" },
-];
-
-const load = () => {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? JSON.parse(raw) : SEED;
-  } catch {
-    return SEED;
-  }
+// Works whether your axios interceptor returns the full response or only response.data
+const unwrap = (res) => {
+  const body = res && res.config ? res.data : res;
+  return body && body.data !== undefined ? body.data : body;
 };
 
-const newId = () =>
-  typeof crypto !== "undefined" && crypto.randomUUID
-    ? crypto.randomUUID()
-    : String(Date.now() + Math.random());
+const errorMessage = (e, fallback) =>
+  e?.response?.data?.message || e?.message || fallback;
 
-/**
- * Holiday state + CRUD. Persists to localStorage for now.
- * TO CONNECT YOUR BACKEND: replace the bodies of add/update/remove with API
- * calls (await api.post(...)), and load initial data in a useEffect.
- */
+const fromApi = (h) => ({
+  id: h.id,
+  title: h.holidayName,
+  date: h.holidayDate,
+  type: getType(h.holidayType).value, // old REGIONAL/RESTRICTED rows show as Company
+  description: h.description || "",
+});
+
+const toApi = (d) => {
+  const out = {};
+  if (d.title !== undefined) out.holidayName = d.title;
+  if (d.date !== undefined) out.holidayDate = d.date;
+  if (d.type !== undefined) out.holidayType = d.type;
+  if (d.description !== undefined) out.description = d.description;
+  return out;
+};
+
+const byDate = (a, b) => a.date.localeCompare(b.date);
+
 export default function useHolidays() {
-  const [holidays, setHolidays] = useState(load);
+  const [holidays, setHolidays] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  const load = useCallback(async () => {
+    try {
+      const list = unwrap(await api.get("/holidays"));
+      setHolidays((Array.isArray(list) ? list : []).map(fromApi).sort(byDate));
+    } catch (e) {
+      toast.error(errorMessage(e, "Could not load holidays."));
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
+    load();
+  }, [load]);
+
+  // All write helpers toast the error and re-throw so the drawer can stay open.
+
+  const addHoliday = useCallback(async (data) => {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(holidays));
-    } catch {
-      /* storage full / blocked — ignore */
+      const created = fromApi(unwrap(await api.post("/holidays", toApi(data))));
+      setHolidays((prev) => [...prev, created].sort(byDate));
+      toast.success("Holiday added.");
+      return created;
+    } catch (e) {
+      toast.error(errorMessage(e, "Could not add the holiday."));
+      throw e;
     }
-  }, [holidays]);
+  }, []);
 
-  const addHoliday = useCallback(
-    (data) => setHolidays((prev) => [...prev, { ...data, id: newId() }]),
-    [],
-  );
+  // rows: [{ title, date, type, description }]
+  const addHolidays = useCallback(async (rows) => {
+    try {
+      const created = unwrap(
+        await api.post("/holidays/bulk", { holidays: rows.map(toApi) }),
+      ).map(fromApi);
+      setHolidays((prev) => [...prev, ...created].sort(byDate));
+      toast.success(
+        created.length === 1 ? "Holiday added." : `${created.length} holidays added.`,
+      );
+      return created;
+    } catch (e) {
+      toast.error(errorMessage(e, "Could not add the holidays."));
+      throw e;
+    }
+  }, []);
 
-  const updateHoliday = useCallback(
-    (id, data) =>
-      setHolidays((prev) => prev.map((h) => (h.id === id ? { ...h, ...data } : h))),
-    [],
-  );
+  const updateHoliday = useCallback(async (id, data) => {
+    try {
+      const updated = fromApi(unwrap(await api.put(`/holidays/${id}`, toApi(data))));
+      setHolidays((prev) =>
+        prev.map((h) => (String(h.id) === String(id) ? updated : h)).sort(byDate),
+      );
+      toast.success("Holiday updated.");
+      return updated;
+    } catch (e) {
+      toast.error(errorMessage(e, "Could not update the holiday."));
+      load(); // resync (e.g. after a failed drag & drop)
+      throw e;
+    }
+  }, [load]);
 
-  const removeHoliday = useCallback(
-    (id) => setHolidays((prev) => prev.filter((h) => h.id !== id)),
-    [],
-  );
+  const removeHoliday = useCallback(async (id) => {
+    try {
+      await api.delete(`/holidays/${id}`);
+      setHolidays((prev) => prev.filter((h) => String(h.id) !== String(id)));
+      toast.success("Holiday deleted.");
+    } catch (e) {
+      toast.error(errorMessage(e, "Could not delete the holiday."));
+      throw e;
+    }
+  }, []);
 
-  return { holidays, addHoliday, updateHoliday, removeHoliday };
+  return {
+    holidays,
+    loading,
+    addHoliday,
+    addHolidays,
+    updateHoliday,
+    removeHoliday,
+    reload: load,
+  };
 }

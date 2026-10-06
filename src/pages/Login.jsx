@@ -6,10 +6,11 @@ import {
   Lock,
   Mail,
 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 
 import AuthLayout from "../components/auth/Authlayout";
+import GoogleAuthSection from "../components/auth/GoogleAuthSection";
 import { loginUser } from "../services/loginAPI";
 import { useAuth } from "../context/AuthContext";
 import {
@@ -231,6 +232,28 @@ const Login = () => {
           )}
         </button>
       </form>
+
+      {/* CONTINUE WITH GOOGLE (company accounts) */}
+      <GoogleAuthSection
+        mode="login"
+        onPending={(_data, message) =>
+          toast.info(
+            message || "Your account is awaiting administrator approval.",
+            { toastId: "login-pending", autoClose: 8000 }
+          )
+        }
+      />
+
+      {/* CREATE ACCOUNT */}
+      <p className="mt-6 text-center text-sm text-text-secondary">
+        New to {COMPANY_NAME}?{" "}
+        <Link
+          to="/register"
+          className="font-medium text-primary-700 hover:underline"
+        >
+          Create account
+        </Link>
+      </p>
     </AuthLayout>
   );
 };

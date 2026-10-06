@@ -1,4 +1,3 @@
-// ```jsx
 import usePermission from "../hooks/usePermission";
 import { useMemo, useState, useCallback } from "react";
 
@@ -66,12 +65,13 @@ export default function HolidayCalendar() {
     canDelete,
   } = usePermission("holiday-calendar");
 
-  const canManage =
-    canAdd || canEdit || canDelete;
+  // Can open the drawer from the calendar / upcoming list
+  const canOpen = canEdit || canDelete;
+  const canManage = canAdd || canOpen;
 
   const {
     holidays,
-    addHoliday,
+    addHolidays,
     updateHoliday,
     removeHoliday,
   } = useHolidays();
@@ -141,9 +141,10 @@ export default function HolidayCalendar() {
   // ==========================================================
   // Drawer Handlers
   // ==========================================================
+  // FullCalendar returns ids as strings, the API returns numbers -> compare as strings
   const editing = drawer.id
     ? holidays.find(
-        (holiday) => holiday.id === drawer.id
+        (holiday) => String(holiday.id) === String(drawer.id)
       ) || null
     : null;
 
@@ -176,10 +177,12 @@ export default function HolidayCalendar() {
     []
   );
 
+  // Add mode sends an array (bulk), edit mode sends one object.
+  // Must return the promise so the drawer can wait and stay open on failure.
   const save = (data) =>
     editing
       ? updateHoliday(editing.id, data)
-      : addHoliday(data);
+      : addHolidays(data);
 
   return (
     <div className="space-y-6">
@@ -273,11 +276,11 @@ export default function HolidayCalendar() {
       <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_320px] gap-5 items-start">
         <CalendarView
           holidays={visible}
-          canManage={canManage}
+          canAdd={canAdd}
+          canEdit={canEdit}
+          canOpen={canOpen}
           onDateClick={openAdd}
-          onEventClick={
-            canManage ? openEdit : undefined
-          }
+          onEventClick={openEdit}
           onEventMove={(id, date) =>
             updateHoliday(id, { date })
           }
@@ -286,7 +289,7 @@ export default function HolidayCalendar() {
         <UpcomingHolidays
           holidays={visible}
           onSelect={
-            canManage ? openEdit : () => {}
+            canOpen ? openEdit : () => {}
           }
         />
       </div>
@@ -307,9 +310,11 @@ export default function HolidayCalendar() {
           onDelete={removeHoliday}
           holiday={editing}
           defaultDate={drawer.date}
+          existing={holidays}
+          canEdit={canEdit}
+          canDelete={canDelete}
         />
       )}
     </div>
   );
 }
-// ```

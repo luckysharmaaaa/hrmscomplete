@@ -1,4 +1,3 @@
-import usePermission from "../../hooks/usePermission";
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import {
   ClipboardEdit,
@@ -12,6 +11,8 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { toast } from "react-toastify";
+
+import usePermission from "../../hooks/usePermission";
 import {
   getRegularizationsForReview,
   approveRegularization,
@@ -30,9 +31,17 @@ const STATUS_TONE = {
   REJECTED: "danger",
 };
 
+const STATUS_LABEL = {
+  PENDING: "Pending",
+  APPROVED: "Approved",
+  REJECTED: "Rejected",
+};
+
+const PAGE_SIZE = 20;
+
 // ─────────────────────────────────────────────────────────────────────────
 // REVIEW DIALOG — same shell as the shared ConfirmModal, with a remarks
-// textarea added for approve/reject notes.
+// textarea for approve / reject notes.
 // ─────────────────────────────────────────────────────────────────────────
 
 const ReviewDialog = ({ mode, onCancel, onConfirm, busy }) => {
@@ -45,6 +54,8 @@ const ReviewDialog = ({ mode, onCancel, onConfirm, busy }) => {
       setError("Rejection reason is required.");
       return;
     }
+
+    setError("");
     onConfirm(remarks.trim() || null);
   };
 
@@ -52,7 +63,11 @@ const ReviewDialog = ({ mode, onCancel, onConfirm, busy }) => {
     <div className="fixed inset-0 z-[80] flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-primary-900/40" onClick={busy ? undefined : onCancel} />
 
-      <div className="relative w-full max-w-md overflow-hidden rounded-lg bg-surface shadow-lg">
+      <div
+        role="dialog"
+        aria-modal="true"
+        className="relative w-full max-w-md overflow-hidden rounded-lg bg-surface shadow-lg"
+      >
         <div className="h-[3px] bg-gradient-brand" />
 
         <div className="space-y-4 p-6">
@@ -60,7 +75,14 @@ const ReviewDialog = ({ mode, onCancel, onConfirm, busy }) => {
             <h3 className="text-base font-semibold text-primary-700">
               {isReject ? "Reject request" : "Approve request"}
             </h3>
-            <button type="button" onClick={onCancel} disabled={busy} aria-label="Close" className="hr-icon-btn">
+
+            <button
+              type="button"
+              onClick={onCancel}
+              disabled={busy}
+              aria-label="Close"
+              className="hr-icon-btn"
+            >
               <X size={16} />
             </button>
           </div>
@@ -85,11 +107,14 @@ const ReviewDialog = ({ mode, onCancel, onConfirm, busy }) => {
             <button type="button" onClick={onCancel} disabled={busy} className="hr-btn hr-btn-outline">
               Cancel
             </button>
+
             <button
               type="button"
               onClick={handleConfirm}
               disabled={busy}
-              className={`hr-btn ${isReject ? "hr-btn-danger" : "bg-success-500 text-white hover:bg-success-600"}`}
+              className={`hr-btn ${
+                isReject ? "hr-btn-danger" : "bg-success-500 text-white hover:bg-success-600"
+              }`}
             >
               {busy ? "Saving…" : isReject ? "Confirm reject" : "Confirm approve"}
             </button>
@@ -104,10 +129,9 @@ const ReviewDialog = ({ mode, onCancel, onConfirm, busy }) => {
 // MAIN COMPONENT
 // ─────────────────────────────────────────────────────────────────────────
 
-const PAGE_SIZE = 20;
-
 const RegularizationReview = () => {
   const { canApprove } = usePermission("attendance-regularization");
+
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
@@ -136,31 +160,40 @@ const RegularizationReview = () => {
     load();
   }, [load]);
 
-  // Status filter changed -> jump back to page 1 so results aren't confusing
-  useEffect(() => {
+  // Reset the page in the handler (not in an effect) so changing the filter
+  // sends ONE request instead of a stale one for the old page plus a second one.
+  const handleStatusChange = (e) => {
+    setStatus(e.target.value);
     setPage(1);
-  }, [status]);
+  };
 
-  // Search is client-side, scoped to the currently loaded page (backend has
-  // no search param). Good enough for now; flag if you want server-side
-  // search added to getRegularizationRequestsForReview.
+  // Search is client-side and scoped to the loaded page (backend has no search param yet).
   const filteredRows = useMemo(() => {
     const query = search.trim().toLowerCase();
     if (!query) return rows;
+
     return rows.filter((r) => {
       const name = `${r.firstName || ""} ${r.lastName || ""}`.toLowerCase();
       const code = (r.employeeCode || "").toLowerCase();
       const reason = (r.reason || "").toLowerCase();
+
       return name.includes(query) || code.includes(query) || reason.includes(query);
     });
   }, [rows, search]);
 
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
+  // If the current page no longer exists (e.g. last row on the page was approved), step back.
+  useEffect(() => {
+    if (!loading && page > totalPages) setPage(totalPages);
+  }, [loading, page, totalPages]);
+
   const handleConfirmDialog = async (remarks) => {
     if (!dialogTarget) return;
+
     const { id, mode } = dialogTarget;
     setBusy(true);
+
     try {
       if (mode === "approve") {
         await approveRegularization(id, remarks);
@@ -169,6 +202,7 @@ const RegularizationReview = () => {
         await rejectRegularization(id, remarks);
         toast.success("Request rejected");
       }
+
       setDialogTarget(null);
       await load();
     } catch (error) {
@@ -186,16 +220,24 @@ const RegularizationReview = () => {
           <div className="flex h-9 w-9 items-center justify-center rounded-md bg-primary-50 text-primary-700">
             <ClipboardEdit size={16} />
           </div>
+
           <div>
             <h2 className="text-sm font-semibold text-primary-700">Regularization Requests</h2>
-            <p className="text-xs text-text-secondary">Review and approve or reject employee requests</p>
+            <p className="text-xs text-text-secondary">
+              Review and approve or reject employee requests
+            </p>
           </div>
         </div>
       </div>
 
       {/* FILTERS */}
       <div className="flex flex-wrap items-center gap-2 border-b border-border-subtle bg-background px-6 py-3">
-        <select value={status} onChange={(e) => setStatus(e.target.value)} className="hr-select !h-9 !w-40">
+        <select
+          value={status}
+          onChange={handleStatusChange}
+          aria-label="Filter by status"
+          className="hr-select !h-9 !w-40"
+        >
           <option value="">All Statuses</option>
           <option value="PENDING">Pending</option>
           <option value="APPROVED">Approved</option>
@@ -203,13 +245,19 @@ const RegularizationReview = () => {
         </select>
 
         <div className="relative ml-auto w-60">
-          <Search size={13} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-text-disabled" />
+          <Search
+            size={13}
+            className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-text-disabled"
+          />
+
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search this page…"
+            aria-label="Search requests on this page"
             className="hr-input !h-9 pl-8 pr-8"
           />
+
           {search && (
             <button
               type="button"
@@ -235,6 +283,7 @@ const RegularizationReview = () => {
               ))}
             </tr>
           </thead>
+
           <tbody>
             {loading ? (
               <tr>
@@ -249,6 +298,7 @@ const RegularizationReview = () => {
                     <div className="flex h-14 w-14 items-center justify-center rounded-full bg-primary-50 text-primary-700">
                       <Hourglass size={22} />
                     </div>
+
                     <div>
                       <p className="text-sm font-semibold text-text-primary">No requests found</p>
                       <p className="mt-0.5 text-xs text-text-secondary">
@@ -262,8 +312,10 @@ const RegularizationReview = () => {
               filteredRows.map((r) => {
                 const inTime = formatTime(r.requestedCheckIn);
                 const outTime = formatTime(r.requestedCheckOut);
+
                 const showsStatusChange =
-                  (r.requestType === "WRONG_STATUS" || r.requestType === "HALF_DAY") && r.requestedStatus;
+                  (r.requestType === "WRONG_STATUS" || r.requestType === "HALF_DAY") &&
+                  r.requestedStatus;
 
                 return (
                   <tr key={r.id}>
@@ -275,34 +327,47 @@ const RegularizationReview = () => {
                     <td className="hr-td text-text-secondary">{formatDateLabel(r.attendanceDate)}</td>
 
                     <td className="hr-td">
-                      <p className="mb-1 text-xs font-semibold text-text-secondary">{deriveRequestType(r)}</p>
+                      <p className="mb-1 text-xs font-semibold text-text-secondary">
+                        {deriveRequestType(r)}
+                      </p>
+
                       {inTime && <div className="text-xs text-text-secondary">In: {inTime}</div>}
                       {outTime && <div className="text-xs text-text-secondary">Out: {outTime}</div>}
+
                       {showsStatusChange && (
                         <div className="text-xs text-text-secondary">
-                          Status → {String(r.requestedStatus).replace("_", " ")}
+                          Status → {String(r.requestedStatus).replace(/_/g, " ")}
                         </div>
                       )}
-                      {!inTime && !outTime && !showsStatusChange && <span className="text-text-disabled">-</span>}
+
+                      {!inTime && !outTime && !showsStatusChange && (
+                        <span className="text-text-disabled">-</span>
+                      )}
                     </td>
 
                     <td className="hr-td max-w-xs text-text-secondary">{r.reason}</td>
 
                     <td className="hr-td">
                       <StatusBadge tone={STATUS_TONE[r.status] || "warning"}>
-                        {r.status === "PENDING" ? "Pending" : r.status === "APPROVED" ? "Approved" : "Rejected"}
+                        {STATUS_LABEL[r.status] || "Pending"}
                       </StatusBadge>
                     </td>
 
                     <td className="hr-td text-text-secondary">
                       <Clock size={11} className="mr-1 inline" />
-                      {r.createdAt ? new Date(Number(r.createdAt) * 1000).toLocaleDateString() : "-"}
+                      {r.createdAt
+                        ? new Date(Number(r.createdAt) * 1000).toLocaleDateString("en-IN", {
+                            day: "numeric",
+                            month: "short",
+                            year: "numeric",
+                          })
+                        : "-"}
                     </td>
 
                     <td className="hr-td">
                       {r.status === "PENDING" ? (
-                        <div className="flex gap-2">
-                          {canApprove && (
+                        canApprove ? (
+                          <div className="flex gap-2">
                             <button
                               type="button"
                               onClick={() => setDialogTarget({ id: r.id, mode: "approve" })}
@@ -310,8 +375,7 @@ const RegularizationReview = () => {
                             >
                               <CheckCircle2 size={12} /> Approve
                             </button>
-                          )}
-                          {canApprove && (
+
                             <button
                               type="button"
                               onClick={() => setDialogTarget({ id: r.id, mode: "reject" })}
@@ -319,8 +383,10 @@ const RegularizationReview = () => {
                             >
                               <XCircle size={12} /> Reject
                             </button>
-                          )}
-                        </div>
+                          </div>
+                        ) : (
+                          <span className="text-xs text-text-secondary">Awaiting review</span>
+                        )
                       ) : (
                         <span className="text-xs text-text-secondary">{r.reviewRemarks || "-"}</span>
                       )}
@@ -340,19 +406,23 @@ const RegularizationReview = () => {
           <span className="font-semibold text-text-primary">{totalPages}</span> ·{" "}
           <span className="font-semibold text-text-primary">{total}</span> total
         </span>
+
         <div className="flex gap-2">
           <button
             type="button"
             onClick={() => setPage((p) => Math.max(1, p - 1))}
             disabled={page <= 1}
+            aria-label="Previous page"
             className="hr-icon-btn border border-border-subtle"
           >
             <ChevronLeft size={14} />
           </button>
+
           <button
             type="button"
             onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
             disabled={page >= totalPages}
+            aria-label="Next page"
             className="hr-icon-btn border border-border-subtle"
           >
             <ChevronRight size={14} />

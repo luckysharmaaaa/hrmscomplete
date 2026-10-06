@@ -1,505 +1,724 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
+  AlertCircle,
+  ArrowRight,
+  Briefcase,
+  CheckCircle2,
+  Clock,
   Fingerprint,
+  Loader2,
   LogIn,
   LogOut,
-  Briefcase,
-  Wifi,
+  ShieldAlert,
 } from "lucide-react";
 
-// ── Live production-minutes target ───────────────────────────────────────
-// Keep this in sync with AttendanceStatsCards.DAILY_TARGET_MINUTES (9h/day)
-// so the ring % here always agrees with the "Hours Today" card next to it.
-const DAILY_TARGET_MINUTES = 9 * 60;
+import logo from "../../assets/images/logo.png";
+import { COMPANY_NAME } from "../../config/company";
+import { useAuth } from "../../context/AuthContext";
+import { useAttendanceGate } from "../../context/AttendanceGateContext";
+import { WorkLocationBadge } from "../attendance/AttendanceBadges";
 
-// ── Minutes helpers (mirrors the logic already used in TimelineBar /
-//    AttendanceStatsCards, so all three widgets always agree) ─────────────
+/* -------------------------------------------------------------------------- */
+/* ATTENDANCE METHOD LABELS                                                   */
+/* -------------------------------------------------------------------------- */
 
-const toMinutesSafe = (value) => {
-  const n = Number(value);
-  return Number.isFinite(n) && n > 0 ? Math.round(n) : 0;
+const METHOD_LABEL = {
+  BIOMETRIC: "Biometric device",
+  HRMS: "HRMS",
+  HRMS_FALLBACK: "HRMS (biometric fallback)",
 };
 
-const formatDuration = (minutes) => {
-  const total = Math.max(0, Math.round(minutes || 0));
-  const h = Math.floor(total / 60);
-  const m = total % 60;
-  return `${h}h ${m}m`;
+/* -------------------------------------------------------------------------- */
+/* TIME HELPERS                                                               */
+/* -------------------------------------------------------------------------- */
+
+const fmtClock = (date) =>
+  date.toLocaleTimeString("en-IN", {
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: true,
+  });
+
+const fmtDate = (date) =>
+  date.toLocaleDateString("en-IN", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+
+const fmtStored = (value) => {
+  if (!value) return "--:--";
+
+  const date = new Date(String(value).replace(" ", "T"));
+
+  if (Number.isNaN(date.getTime())) {
+    return "--:--";
+  }
+
+  return date.toLocaleTimeString("en-IN", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: true,
+  });
 };
 
-// Backend only fills `workDurationMins` in once Punch Out happens.
-// While the employee is still punched in, count up live from checkIn
-// to `now` instead of showing a frozen "0h 0m" all day.
-const getLiveProductionMinutes = (user, now) => {
-  // Completed day: trust the backend value, even a legitimate 0.
-  if (user?.checkOutRaw && user?.workDurationMins !== null && user?.workDurationMins !== undefined) {
-    return toMinutesSafe(user.workDurationMins);
+const fmtMins = (mins) => {
+  if (mins === null || mins === undefined) {
+    return "--";
   }
 
-  if (user?.checkInRaw && !user?.checkOutRaw) {
-    const checkIn = new Date(user.checkInRaw);
-
-    if (!Number.isNaN(checkIn.getTime()) && now > checkIn) {
-      return Math.max(
-        0,
-        Math.floor((now.getTime() - checkIn.getTime()) / 60000)
-      );
-    }
-  }
-
-  return 0;
-};
-
-// ── Elapsed-time helpers (for the header's main display) ──────────────────
-// This is separate from getLiveProductionMinutes (which the ring % still
-// uses, untouched). This one tracks seconds, purely for the ticking
-// "elapsed since Punch In" display in the header.
-
-const getElapsedSeconds = (user, now) => {
-  // Punched out — elapsed is the fixed Punch In → Punch Out duration.
-  if (user?.checkInRaw && user?.checkOutRaw) {
-    const checkIn = new Date(user.checkInRaw);
-    const checkOut = new Date(user.checkOutRaw);
-
-    if (
-      !Number.isNaN(checkIn.getTime()) &&
-      !Number.isNaN(checkOut.getTime())
-    ) {
-      return Math.max(
-        0,
-        Math.floor((checkOut.getTime() - checkIn.getTime()) / 1000)
-      );
-    }
-
-    return 0;
-  }
-
-  // Still punched in — count up live from checkIn to now.
-  if (user?.checkInRaw && !user?.checkOutRaw) {
-    const checkIn = new Date(user.checkInRaw);
-
-    if (!Number.isNaN(checkIn.getTime()) && now > checkIn) {
-      return Math.max(
-        0,
-        Math.floor((now.getTime() - checkIn.getTime()) / 1000)
-      );
-    }
-  }
-
-  return 0;
-};
-
-const formatElapsed = (totalSeconds) => {
-  const total = Math.max(0, Math.round(totalSeconds || 0));
-
-  const h = Math.floor(total / 3600);
-  const m = Math.floor((total % 3600) / 60);
-  const s = total % 60;
-
-  return `${String(h).padStart(2, "0")}:${String(m).padStart(
+  return `${Math.floor(mins / 60)}h ${String(mins % 60).padStart(
     2,
-    "0"
-  )}:${String(s).padStart(2, "0")}`;
+    "0",
+  )}m`;
 };
 
-// ── Animated circular ring ──────────────────────────────────────────────────
+const greeting = (date) => {
+  const hour = date.getHours();
 
-const CircularRing = ({
-  percent = 0,
-  size = 108,
-  strokeWidth = 7,
+  if (hour < 12) return "Good Morning";
+  if (hour < 17) return "Good Afternoon";
+
+  return "Good Evening";
+};
+
+/* -------------------------------------------------------------------------- */
+/* INFO ROW                                                                   */
+/* -------------------------------------------------------------------------- */
+
+const InfoRow = ({ icon: Icon, label, children }) => (
+  <div className="flex h-9 items-center justify-between gap-3 rounded-lg border border-slate-100 bg-slate-50 px-3">
+    <div className="flex min-w-0 items-center gap-1.5">
+      {Icon && (
+        <Icon
+          size={12}
+          strokeWidth={1.8}
+          className="shrink-0 text-slate-400"
+        />
+      )}
+
+      <span className="text-[10px] font-medium text-slate-500">
+        {label}
+      </span>
+    </div>
+
+    <div className="min-w-0 text-right text-[10px] font-bold text-[#0F265C]">
+      {children}
+    </div>
+  </div>
+);
+
+/* -------------------------------------------------------------------------- */
+/* ATTENDANCE TIME CARD                                                       */
+/* -------------------------------------------------------------------------- */
+
+const AttendanceTimeCard = ({
+  label,
+  value,
+  active = false,
+}) => (
+  <div
+    className={[
+      "flex h-[52px] flex-col items-center justify-center rounded-lg border",
+      active
+        ? "border-emerald-100 bg-emerald-50"
+        : "border-slate-100 bg-slate-50",
+    ].join(" ")}
+  >
+    <span
+      className={[
+        "text-[8px] font-bold uppercase tracking-[0.08em]",
+        active
+          ? "text-emerald-500"
+          : "text-slate-400",
+      ].join(" ")}
+    >
+      {label}
+    </span>
+
+    <span
+      className={[
+        "mt-1 text-xs font-black tabular-nums",
+        active
+          ? "text-emerald-700"
+          : "text-[#0F265C]",
+      ].join(" ")}
+    >
+      {value}
+    </span>
+  </div>
+);
+
+/* -------------------------------------------------------------------------- */
+/* STATUS MESSAGE                                                             */
+/* -------------------------------------------------------------------------- */
+
+const StatusMessage = ({
+  icon: Icon,
+  title,
   children,
+  variant = "info",
 }) => {
-  const safePercent = Math.min(100, Math.max(0, Number(percent) || 0));
+  const styles = {
+    warning: {
+      wrapper: "border-orange-100 bg-orange-50",
+      icon: "bg-orange-100 text-orange-600",
+      title: "text-orange-700",
+      text: "text-orange-700/80",
+    },
 
-  const r = (size - strokeWidth) / 2;
-  const circumference = 2 * Math.PI * r;
-  const strokeDash = (safePercent / 100) * circumference;
+    info: {
+      wrapper: "border-blue-100 bg-blue-50",
+      icon: "bg-blue-100 text-blue-600",
+      title: "text-blue-700",
+      text: "text-blue-700/80",
+    },
+
+    neutral: {
+      wrapper: "border-slate-100 bg-slate-50",
+      icon: "bg-white text-slate-500",
+      title: "text-slate-700",
+      text: "text-slate-600",
+    },
+  };
+
+  const style = styles[variant] || styles.info;
 
   return (
-    <div className="relative" style={{ width: size, height: size }}>
-      <svg
-        width={size}
-        height={size}
-        className="-rotate-90 absolute inset-0"
+    <div
+      className={`flex items-start gap-2.5 rounded-lg border px-3 py-2.5 ${style.wrapper}`}
+    >
+      <div
+        className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-md ${style.icon}`}
       >
-        {/* Background ring */}
-        <circle
-          cx={size / 2}
-          cy={size / 2}
-          r={r}
-          fill="none"
-          stroke="#f1f5f9"
-          strokeWidth={strokeWidth}
-        />
-
-        {/* Progress ring */}
-        <circle
-          cx={size / 2}
-          cy={size / 2}
-          r={r}
-          fill="none"
-          stroke="url(#ringGrad)"
-          strokeWidth={strokeWidth}
-          strokeDasharray={`${strokeDash} ${circumference - strokeDash}`}
-          strokeLinecap="round"
-          style={{
-            transition: "stroke-dasharray 0.8s ease-in-out",
-          }}
-        />
-
-        <defs>
-          <linearGradient id="ringGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#f97316" />
-            <stop offset="60%" stopColor="#fb923c" />
-            <stop offset="100%" stopColor="#fbbf24" />
-          </linearGradient>
-        </defs>
-      </svg>
-
-      {/* Avatar */}
-      <div className="absolute inset-0 flex items-center justify-center">
-        {children}
+        <Icon size={14} />
       </div>
 
-      {/* Percentage — pinned to the ring's own corner with a small pill
-          background so it never visually drifts from the ring. */}
-      <div
-        className="absolute text-[9px] font-bold text-orange-500 bg-white/90 rounded-full px-1.5 py-0.5 tabular-nums shadow-sm"
-        style={{
-          bottom: -2,
-          right: -2,
-        }}
-      >
-        {Math.round(safePercent)}%
+      <div className="min-w-0">
+        <p
+          className={`text-[9px] font-bold uppercase tracking-wide ${style.title}`}
+        >
+          {title}
+        </p>
+
+        <p
+          className={`mt-0.5 text-[10px] leading-relaxed ${style.text}`}
+        >
+          {children}
+        </p>
       </div>
     </div>
   );
 };
 
-// ── Main component ──────────────────────────────────────────────────────────
+/* -------------------------------------------------------------------------- */
+/* MAIN COMPONENT                                                             */
+/* -------------------------------------------------------------------------- */
 
-const PunchCard = ({ user, onPunchIn, onPunchOut }) => {
+export default function AttendanceGateScreen() {
+  const navigate = useNavigate();
+
+  const { user, logout } = useAuth();
+
+  const {
+    gate,
+    busy,
+    punchError,
+    punchIn,
+    punchOut,
+    acknowledge,
+  } = useAttendanceGate();
+
   const [now, setNow] = useState(new Date());
+  const [confirmOut, setConfirmOut] = useState(false);
 
-  /*
-   * punchedOutToday is used to distinguish:
-   *
-   * 1. Before Punch In
-   *    punchedIn = false
-   *    punchedOutToday = false
-   *    → Punch In
-   *
-   * 2. After Punch In
-   *    punchedIn = true
-   *    punchedOutToday = false
-   *    → Punch Out
-   *
-   * 3. After Punch Out
-   *    punchedOutToday = true
-   *    → Punch Out
-   */
-
-  const [punchedOutToday, setPunchedOutToday] = useState(
-    Boolean(user?.punchedOut)
-  );
-
-  // ── Live ticker ───────────────────────────────────────────────────────────
-  // Drives both the ring % (via getLiveProductionMinutes) and the header's
-  // elapsed-time display (via getElapsedSeconds) below — needs to tick
-  // every second while the employee is punched in.
+  /* ------------------------------------------------------------------------ */
+  /* LIVE CLOCK                                                               */
+  /* ------------------------------------------------------------------------ */
 
   useEffect(() => {
-    const id = setInterval(() => {
+    const timer = setInterval(() => {
       setNow(new Date());
     }, 1000);
 
-    return () => clearInterval(id);
+    return () => clearInterval(timer);
   }, []);
 
-  // ── Sync Punch Out state with backend data ────────────────────────────────
+  if (!gate) {
+    return null;
+  }
 
-  useEffect(() => {
-    if (user?.punchedOut !== undefined) {
-      setPunchedOutToday(Boolean(user.punchedOut));
-      return;
-    }
+  /* ------------------------------------------------------------------------ */
+  /* STATE                                                                    */
+  /* ------------------------------------------------------------------------ */
 
-    if (user?.checkOut || user?.punchOutTime) {
-      setPunchedOutToday(true);
-    }
-  }, [user?.punchedOut, user?.checkOut, user?.punchOutTime]);
+  const state = gate.attendanceState;
 
-  // ── Greeting ──────────────────────────────────────────────────────────────
+  const method =
+    METHOD_LABEL[gate.attendanceMethod] || "-";
 
-  const h = now.getHours();
+  const mustPunch =
+    gate.mustPunchBeforeDashboard;
 
-  const greeting =
-    h < 12 ? "Good Morning" : h < 17 ? "Good Afternoon" : "Good Evening";
+  const biometricOnly =
+    !gate.canPunch &&
+    state !== "PUNCHED_OUT" &&
+    gate.attendanceMethod === "BIOMETRIC";
 
-  // ── Current date ──────────────────────────────────────────────────────────
+  const hasCheckIn =
+    Boolean(gate.record?.checkIn);
 
-  const dateStr = now.toLocaleDateString("en-IN", {
-    weekday: "short",
-    day: "numeric",
-    month: "short",
-  });
+  const hasCheckOut =
+    Boolean(gate.record?.checkOut);
 
-  // ── Session time display (was: continuously running clock, then Punch
-  //    In time) — now shows ELAPSED TIME since Punch In. ────────────────────
-  //   - Not punched in yet        → "--:--"
-  //   - Punched in                → live ticking HH:MM:SS since Punch In
-  //   - Punched out               → fixed HH:MM:SS total (Punch In → Punch Out)
+  /* ------------------------------------------------------------------------ */
+  /* SIGN OUT                                                                 */
+  /* ------------------------------------------------------------------------ */
 
-  const hasPunchedInToday = Boolean(user?.punchedIn) || punchedOutToday;
+  const handleSignOut = async () => {
+    await logout();
 
-  const elapsedSeconds = getElapsedSeconds(user, now);
-
-  const sessionTimeValue = hasPunchedInToday
-    ? formatElapsed(elapsedSeconds)
-    : "--:--";
-
-  const sessionStatusLabel = punchedOutToday
-    ? "Total time · shift completed"
-    : user?.punchedIn
-      ? "Elapsed since punch in"
-      : "Not punched in yet";
-
-  // ── Live production minutes / ring % ───────────────────────────────────────
-  // Recomputed every render, which happens every second thanks to the
-  // clock interval above — so this always reflects "right now", not just
-  // whatever was true the last time the page fetched /attendance/today.
-
-  const liveProductionMinutes = getLiveProductionMinutes(user, now);
-
-  const liveProgressPercent =
-    DAILY_TARGET_MINUTES > 0
-      ? (liveProductionMinutes / DAILY_TARGET_MINUTES) * 100
-      : 0;
-
-  // ── Punch In ──────────────────────────────────────────────────────────────
-
-  const handlePunchIn = async () => {
-    if (user?.punchedIn) {
-      return;
-    }
-
-    if (punchedOutToday) {
-      return;
-    }
-
-    try {
-      await onPunchIn?.();
-    } catch (error) {
-      console.error("Punch In failed:", error);
-    }
+    navigate("/login", {
+      replace: true,
+    });
   };
 
-  // ── Punch Out ─────────────────────────────────────────────────────────────
+  /* ------------------------------------------------------------------------ */
+  /* PUNCH OUT                                                                */
+  /* ------------------------------------------------------------------------ */
 
   const handlePunchOut = async () => {
-    if (punchedOutToday) {
-      return;
-    }
+    const success = await punchOut();
 
-    if (!user?.punchedIn) {
-      return;
-    }
-
-    try {
-      await onPunchOut?.();
-
-      // Only mark as punched out after successful API call
-      setPunchedOutToday(true);
-    } catch (error) {
-      console.error("Punch Out failed:", error);
-    }
-  };
-
-  // ── Decide which action to perform ────────────────────────────────────────
-
-  const handlePunch = () => {
-    // Already punched out today
-    if (punchedOutToday) {
-      return;
-    }
-
-    if (user?.punchedIn) {
-      handlePunchOut();
-    } else {
-      handlePunchIn();
+    if (success) {
+      setConfirmOut(false);
     }
   };
 
   return (
-    <div className="relative overflow-hidden rounded-2xl flex flex-col bg-white border border-gray-100 shadow-sm">
-      {/* ================================================================
-          HEADER — shows elapsed time since Punch In, not a live clock
-      ================================================================= */}
+    <div className="min-h-screen bg-slate-50">
+      {/* ==================================================================== */}
+      {/* TOP ACCENT                                                            */}
+      {/* ==================================================================== */}
 
-      <div className="relative bg-gradient-to-br from-[#0F265C] via-[#1a3a7c] to-[#0f265c] px-5 pt-5 pb-10">
-        {/* Decorative circle */}
-        <div className="absolute top-0 right-0 w-16 h-16 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2" />
+      <div className="h-[3px] w-full bg-gradient-to-r from-orange-500 via-orange-400 to-yellow-400" />
 
-        {/* Decorative circle */}
-        <div className="absolute bottom-0 left-3 w-10 h-10 bg-orange-500/10 rounded-full translate-y-1/2" />
+      {/* ==================================================================== */}
+      {/* PAGE                                                                  */}
+      {/* ==================================================================== */}
 
-        {/* Session time information */}
-        <div className="relative text-center space-y-1.5">
-          <p className="text-white/60 text-[10px] font-medium tracking-wide uppercase">
-            {greeting}
+      <main className="flex min-h-[calc(100vh-3px)] items-center justify-center px-4 py-6 sm:py-8">
+        <div className="w-full max-w-[470px]">
+
+          {/* ================================================================= */}
+          {/* ATTENDANCE CARD                                                    */}
+          {/* ================================================================= */}
+
+          <section className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
+
+            {/* =============================================================== */}
+            {/* HEADER                                                            */}
+            {/* =============================================================== */}
+
+            <header className="relative overflow-hidden bg-gradient-to-br from-[#0F265C] via-[#1a3a7c] to-[#0f265c] px-5 pb-7 pt-5">
+
+              {/* Decorative elements */}
+
+              <div className="absolute -right-6 -top-8 h-20 w-20 rounded-full border border-white/10" />
+
+              <div className="absolute -right-3 -top-2 h-10 w-10 rounded-full bg-white/5" />
+
+              <div className="absolute -left-8 bottom-[-30px] h-20 w-20 rounded-full border border-white/10" />
+
+              <div className="absolute bottom-0 left-3 h-7 w-7 rounded-full bg-orange-500/10" />
+
+              {/* Logo */}
+
+              <div className="relative z-10 flex justify-center">
+                <img
+                  src={logo}
+                  alt={COMPANY_NAME}
+                  className="h-7 w-auto max-w-[150px] object-contain"
+                />
+              </div>
+
+              {/* Greeting */}
+
+              <div className="relative z-10 mt-3 text-center">
+                <p className="text-[9px] font-semibold uppercase tracking-[0.12em] text-white/60">
+                  {greeting(now)},{" "}
+                  {user?.firstName || "there"}
+                </p>
+
+                <p className="mt-1.5 text-[30px] font-black leading-none tracking-tight tabular-nums text-white">
+                  {fmtClock(now)}
+                </p>
+
+                <p className="mt-1.5 text-[9px] font-medium text-white/50">
+                  {fmtDate(now)}
+                </p>
+              </div>
+            </header>
+
+            {/* =============================================================== */}
+            {/* CONTENT                                                           */}
+            {/* =============================================================== */}
+
+            <div className="flex flex-col gap-2.5 px-4 pb-4 pt-3.5">
+
+              {/* ============================================================= */}
+              {/* BASIC ATTENDANCE INFORMATION                                  */}
+              {/* ============================================================= */}
+
+              <div className="flex flex-col gap-1.5">
+
+                <InfoRow
+                  icon={Briefcase}
+                  label="Work location"
+                >
+                  <WorkLocationBadge
+                    value={gate.workLocation}
+                  />
+                </InfoRow>
+
+                <InfoRow
+                  icon={Fingerprint}
+                  label="Attendance method"
+                >
+                  {method}
+                </InfoRow>
+
+                {gate.workLocation === "OFFICE" && (
+                  <InfoRow
+                    icon={Fingerprint}
+                    label="Biometric machine"
+                  >
+                    <span
+                      className={
+                        gate.biometricAvailable
+                          ? "text-emerald-600"
+                          : "text-red-600"
+                      }
+                    >
+                      {gate.biometricAvailable
+                        ? "Working"
+                        : "Not working today"}
+                    </span>
+                  </InfoRow>
+                )}
+
+                {gate.shift && (
+                  <InfoRow
+                    icon={Clock}
+                    label="Shift"
+                  >
+                    <span className="truncate">
+                      {gate.shift.name}
+                      {" · "}
+                      {gate.shift.startTime.slice(0, 5)}
+                      {" – "}
+                      {gate.shift.endTime.slice(0, 5)}
+                    </span>
+                  </InfoRow>
+                )}
+              </div>
+
+              {/* ============================================================= */}
+              {/* PUNCH IN / PUNCH OUT                                          */}
+              {/* ============================================================= */}
+
+              <div className="grid grid-cols-2 gap-2">
+                <AttendanceTimeCard
+                  label="Punch In"
+                  value={fmtStored(
+                    gate.record?.checkIn,
+                  )}
+                  active={hasCheckIn}
+                />
+
+                <AttendanceTimeCard
+                  label="Punch Out"
+                  value={fmtStored(
+                    gate.record?.checkOut,
+                  )}
+                  active={hasCheckOut}
+                />
+              </div>
+
+              {/* ============================================================= */}
+              {/* WORKED DURATION                                               */}
+              {/* ============================================================= */}
+
+              {state === "PUNCHED_OUT" && (
+                <div className="flex h-9 items-center justify-between rounded-lg border border-slate-100 bg-slate-50 px-3">
+                  <div className="flex items-center gap-1.5">
+                    <Clock
+                      size={12}
+                      className="text-slate-400"
+                    />
+
+                    <span className="text-[9px] font-semibold text-slate-500">
+                      Total worked
+                    </span>
+                  </div>
+
+                  <span className="text-[10px] font-black tabular-nums text-[#0F265C]">
+                    {fmtMins(
+                      gate.record?.workDurationMins,
+                    )}
+                  </span>
+                </div>
+              )}
+
+              {/* ============================================================= */}
+              {/* FALLBACK MESSAGE                                               */}
+              {/* ============================================================= */}
+
+              {gate.attendanceMethod ===
+                "HRMS_FALLBACK" && (
+                <StatusMessage
+                  icon={ShieldAlert}
+                  title="Biometric unavailable"
+                  variant="warning"
+                >
+                  The biometric machine is not working
+                  today
+                  {gate.biometricReason
+                    ? ` (${gate.biometricReason})`
+                    : ""}
+                  . You can punch from HRMS.
+                </StatusMessage>
+              )}
+
+              {/* ============================================================= */}
+              {/* BIOMETRIC ONLY                                                 */}
+              {/* ============================================================= */}
+
+              {biometricOnly && (
+                <StatusMessage
+                  icon={Fingerprint}
+                  title="Biometric attendance"
+                  variant="info"
+                >
+                  {gate.cannotPunchReason ===
+                  "NO_SHIFT"
+                    ? "No shift is assigned to you for today. Please contact HR."
+                    : "Please punch on the biometric device at the gate. Your attendance will appear here after HR imports the device data."}
+                </StatusMessage>
+              )}
+
+              {/* ============================================================= */}
+              {/* GENERAL MESSAGE                                                */}
+              {/* ============================================================= */}
+
+              {gate.reasonCode !== "OK" &&
+                gate.message && (
+                  <StatusMessage
+                    icon={Clock}
+                    title="Attendance status"
+                    variant="neutral"
+                  >
+                    {gate.message}
+                  </StatusMessage>
+                )}
+
+              {/* ============================================================= */}
+              {/* API ERROR                                                       */}
+              {/* ============================================================= */}
+
+              {punchError && (
+                <div
+                  role="alert"
+                  className="flex items-start gap-2 rounded-lg border border-red-100 bg-red-50 px-3 py-2.5"
+                >
+                  <AlertCircle
+                    size={14}
+                    className="mt-0.5 shrink-0 text-red-600"
+                  />
+
+                  <span className="text-[10px] leading-relaxed text-red-700">
+                    {punchError}
+                  </span>
+                </div>
+              )}
+
+              {/* ============================================================= */}
+              {/* ACTION                                                          */}
+              {/* ============================================================= */}
+
+              <div className="pt-0.5">
+
+                {/* ----------------------------------------------------------- */}
+                {/* NOT PUNCHED IN                                               */}
+                {/* ----------------------------------------------------------- */}
+
+                {state === "NOT_PUNCHED_IN" &&
+                  gate.canPunch && (
+                    <button
+                      type="button"
+                      onClick={punchIn}
+                      disabled={busy}
+                      className="flex h-10.5 w-full items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-orange-500 to-orange-400 text-xs font-bold text-white shadow-md shadow-orange-500/20 transition-all hover:from-orange-600 hover:to-orange-500 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-70"
+                    >
+                      {busy ? (
+                        <Loader2
+                          size={15}
+                          className="animate-spin"
+                        />
+                      ) : (
+                        <LogIn size={15} />
+                      )}
+
+                      {busy
+                        ? "Punching in..."
+                        : "Punch In"}
+                    </button>
+                  )}
+
+                {/* ----------------------------------------------------------- */}
+                {/* PUNCHED IN                                                   */}
+                {/* ----------------------------------------------------------- */}
+
+                {state === "PUNCHED_IN" &&
+                  !confirmOut && (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setConfirmOut(true)
+                      }
+                      disabled={busy}
+                      className="flex h-10.5 w-full items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-[#0F265C] to-[#1a3a7c] text-xs font-bold text-white shadow-md shadow-blue-900/20 transition-all hover:from-[#0a1d4a] hover:to-[#132e68] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-70"
+                    >
+                      <LogOut size={15} />
+
+                      Punch Out
+                    </button>
+                  )}
+
+                {/* ----------------------------------------------------------- */}
+                {/* CONFIRM PUNCH OUT                                            */}
+                {/* ----------------------------------------------------------- */}
+
+                {state === "PUNCHED_IN" &&
+                  confirmOut && (
+                    <div className="rounded-lg border border-slate-100 bg-slate-50 p-3">
+                      <div className="text-center">
+                        <p className="text-[11px] font-bold text-[#0F265C]">
+                          Confirm Punch Out
+                        </p>
+
+                        <p className="mt-0.5 text-[9px] text-slate-500">
+                          This will complete your attendance
+                          for today.
+                        </p>
+                      </div>
+
+                      <div className="mt-2.5 grid grid-cols-2 gap-2">
+                        <button
+                          type="button"
+                          disabled={busy}
+                          onClick={() =>
+                            setConfirmOut(false)
+                          }
+                          className="flex h-9 items-center justify-center rounded-lg border border-slate-200 bg-white text-[10px] font-bold text-[#0F265C] transition-colors hover:bg-slate-50 disabled:opacity-60"
+                        >
+                          Cancel
+                        </button>
+
+                        <button
+                          type="button"
+                          disabled={busy}
+                          onClick={handlePunchOut}
+                          className="flex h-9 items-center justify-center gap-1.5 rounded-lg bg-gradient-to-r from-[#0F265C] to-[#1a3a7c] text-[10px] font-bold text-white shadow-sm transition-all active:scale-[0.98] disabled:opacity-70"
+                        >
+                          {busy ? (
+                            <Loader2
+                              size={13}
+                              className="animate-spin"
+                            />
+                          ) : (
+                            <CheckCircle2 size={13} />
+                          )}
+
+                          Confirm
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                {/* ----------------------------------------------------------- */}
+                {/* PUNCHED OUT                                                  */}
+                {/* ----------------------------------------------------------- */}
+
+                {state === "PUNCHED_OUT" && (
+                  <div className="flex h-10.5 items-center justify-center gap-2 rounded-lg border border-emerald-100 bg-emerald-50">
+                    <CheckCircle2
+                      size={15}
+                      className="text-emerald-600"
+                    />
+
+                    <span className="text-xs font-bold text-emerald-700">
+                      Attendance Completed
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              {/* ============================================================= */}
+              {/* CONTINUE                                                       */}
+              {/* ============================================================= */}
+
+              {!mustPunch && (
+                <button
+                  type="button"
+                  onClick={acknowledge}
+                  disabled={busy}
+                  className="flex h-10.5 w-full items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white text-xs font-bold text-[#0F265C] shadow-sm transition-all hover:bg-slate-50 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  Continue to Dashboard
+                  <ArrowRight size={14} />
+                </button>
+              )}
+
+              {/* ============================================================= */}
+              {/* MANDATORY PUNCH MESSAGE                                        */}
+              {/* ============================================================= */}
+
+              {mustPunch && (
+                <p className="text-center text-[9px] font-medium text-slate-400">
+                  Please punch in to continue to the dashboard.
+                </p>
+              )}
+
+              {/* ============================================================= */}
+              {/* SIGN OUT                                                       */}
+              {/* ============================================================= */}
+
+              <div className="flex justify-end border-t border-slate-100 pt-2.5">
+                <button
+                  type="button"
+                  onClick={handleSignOut}
+                  disabled={busy}
+                  className="text-[9px] font-semibold text-slate-400 transition-colors hover:text-red-600 disabled:opacity-50"
+                >
+                  Sign out
+                </button>
+              </div>
+            </div>
+          </section>
+
+          {/* ================================================================= */}
+          {/* FOOTER                                                            */}
+          {/* ================================================================= */}
+
+          <p className="mt-2.5 text-center text-[9px] font-medium text-slate-400">
+            Attendance verification is managed securely by HRMS
           </p>
-
-          <p className="text-white text-[28px] font-black tracking-tight leading-none tabular-nums">
-            {sessionTimeValue}
-          </p>
-
-          <p className="text-white/50 text-[10px]">
-            {sessionStatusLabel} · {dateStr}
-          </p>
         </div>
-      </div>
-
-      {/* ================================================================
-          AVATAR RING
-      ================================================================= */}
-
-      <div className="flex justify-center -mt-8 relative z-10">
-        <CircularRing percent={liveProgressPercent}>
-          <div className="w-[52px] h-[52px] rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white text-sm font-black shadow-lg ring-4 ring-white">
-            {user?.avatar || "U"}
-          </div>
-        </CircularRing>
-      </div>
-
-      {/* ================================================================
-          CONTENT — one consistent gap-3 rhythm between every block
-      ================================================================= */}
-
-      <div className="flex flex-col px-5 pt-3 pb-5 gap-3">
-        {/* Employee Name */}
-
-        <div className="text-center">
-          <p className="text-[#0F265C] font-bold text-sm leading-tight">
-            {user?.name || "Employee"}
-          </p>
-
-          {/* <p className="text-gray-400 text-[11px] mt-0.5">
-            {user?.role || "-"}
-          </p> */}
-        </div>
-
-        {/* ================================================================
-            DEPARTMENT / LOCATION
-        ================================================================= */}
-
-        <div className="flex items-center justify-center gap-2 flex-wrap">
-          {/* Department */}
-
-          <span className="inline-flex items-center gap-1 h-6 px-2.5 bg-blue-50 border border-blue-100 text-blue-600 text-[10px] font-semibold rounded-full">
-            <Briefcase size={10} />
-            {user?.department || "-"}
-          </span>
-
-          {/* Location */}
-
-          <span className="inline-flex items-center gap-1 h-6 px-2.5 bg-emerald-50 border border-emerald-100 text-emerald-600 text-[10px] font-semibold rounded-full">
-            <Wifi size={10} />
-            {user?.location || "Office"}
-          </span>
-        </div>
-
-        {/* ================================================================
-            PUNCH IN / PUNCH OUT
-            (actual clock times from the API — unchanged)
-        ================================================================= */}
-
-        <div className="grid grid-cols-2 gap-2">
-          {/* Punch In */}
-
-          <div className="bg-emerald-50 border border-emerald-100/80 rounded-lg px-2 py-2.5 text-center">
-            <p className="text-[9px] font-semibold text-emerald-500 uppercase tracking-wide mb-1">
-              Punch In
-            </p>
-
-            <p className="text-xs font-black text-emerald-700 tabular-nums">
-              {user?.punchInTime || "--:--"}
-            </p>
-          </div>
-
-          {/* Punch Out */}
-
-          <div className="bg-slate-50 border border-slate-100 rounded-lg px-2 py-2.5 text-center">
-            <p className="text-[9px] font-semibold text-slate-400 uppercase tracking-wide mb-1">
-              Punch Out
-            </p>
-
-            <p className="text-xs font-black text-[#0F265C] tabular-nums">
-              {user?.punchOutTime || "--:--"}
-            </p>
-          </div>
-        </div>
-
-        {/* ================================================================
-            SHIFT
-        ================================================================= */}
-
-        <div className="flex items-center justify-between gap-3 h-10 px-3 bg-slate-50 border border-slate-100 rounded-lg">
-          <div className="flex items-center gap-1.5">
-            <Briefcase size={12} className="text-slate-400 shrink-0" />
-
-            <span className="text-[11px] font-semibold text-slate-500">
-              Shift
-            </span>
-          </div>
-
-          <div className="flex items-center gap-1.5 text-[11px] min-w-0">
-            <Fingerprint size={10} className="text-slate-400 shrink-0" />
-
-            <span className="font-semibold text-[#0F265C] truncate">
-              {user?.shiftStart || "-"}
-              {user?.shiftEnd && user.shiftEnd !== "-"
-                ? ` – ${user.shiftEnd}`
-                : ""}
-            </span>
-          </div>
-        </div>
-
-        {/* ================================================================
-            PUNCH BUTTON
-        ================================================================= */}
-
-        {user?.canPunch !== false && (
-          <button
-            type="button"
-            onClick={handlePunch}
-            disabled={punchedOutToday}
-            className={`w-full flex items-center justify-center gap-2 h-11 rounded-lg text-sm font-bold transition-all duration-200 active:scale-95 shadow-lg ${
-              user?.punchedIn || punchedOutToday
-                ? "bg-gradient-to-r from-[#0F265C] to-[#1a3a7c] hover:from-[#0a1d4a] text-white shadow-blue-900/25"
-                : "bg-gradient-to-r from-orange-500 to-orange-400 hover:from-orange-600 hover:to-orange-500 text-white shadow-orange-500/30"
-            } ${punchedOutToday ? "cursor-not-allowed opacity-80" : ""}`}
-          >
-            {user?.punchedIn || punchedOutToday ? (
-              <>
-                <LogOut size={15} />
-                Punch Out
-              </>
-            ) : (
-              <>
-                <LogIn size={15} />
-                Punch In
-              </>
-            )}
-          </button>
-        )}
-
-        {user?.punchHint && (
-          <p className="text-center text-[11px] text-gray-400">{user.punchHint}</p>
-        )}
-      </div>
+      </main>
     </div>
   );
-};
-
-export default PunchCard;
+}

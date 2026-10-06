@@ -30,6 +30,7 @@ import { BUILT_IN_PAGES, BUILT_IN_PATHS, getDynamicPage } from "./pages/moduleRe
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import FirstTimeAccess from "./pages/Firsttimeaccess";
+import Register from "./pages/Register";
 
 const muiTheme = createTheme({
   typography: { fontFamily: '"Inter", ui-sans-serif, system-ui, sans-serif' },
@@ -137,7 +138,7 @@ function LayoutContent() {
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/profile" element={<Profile />} />
 
-            {/* Built-in pages â€” each one guarded by its module slug */}
+            {/* Built-in pages — each one guarded by its module slug */}
             {BUILT_IN_PAGES.map(({ path, slug, Component }) => (
               <Route key={path} path={path} element={guard(slug, <Component />)} />
             ))}
@@ -179,6 +180,7 @@ function App() {
             {/* Public Authentication Pages */}
             <Route path="/" element={<Login />} />
             <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/first-time-access" element={<FirstTimeAccess />} />

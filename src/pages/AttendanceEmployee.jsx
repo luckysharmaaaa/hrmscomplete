@@ -1,35 +1,17 @@
-// ```jsx
-import React, {
-  useState,
-  useEffect,
-  useCallback,
-  useRef,
-} from "react";
-
-import {
-  ChevronDown,
-  FileText,
-  FileSpreadsheet,
-  BarChart3,
-} from "lucide-react";
-
+import React, { useState, useEffect, useCallback, useRef } from "react";
+import { ChevronDown, FileText, FileSpreadsheet, BarChart3 } from "lucide-react";
 import { toast } from "react-toastify";
 
 import PageHeader from "../components/ui/PageHeader";
 
-import PunchCard from "../components/attendanceEmployee/PunchCard";
+import AttendancePunchCard from "../components/attendanceGate/AttendancePunchCard";
 import AttendanceStatsCards from "../components/attendanceEmployee/AttendanceStatsCards";
 import TimelineBar from "../components/attendanceEmployee/TimelineBar";
 import EmployeeAttendanceTable from "../components/attendanceEmployee/EmployeeAttendanceTable";
 import EmployeeRegularization from "../components/attendanceEmployee/EmployeeRegularization";
 import AttendanceReportModal from "../components/attendanceAdmin/AttendanceReportModal";
 
-import {
-  getTodayAttendance,
-  punchIn,
-  punchOut,
-  getAttendanceHistory,
-} from "../services/attendanceApi";
+import { getTodayAttendance, getAttendanceHistory } from "../services/attendanceApi";
 
 import {
   submitRegularization,
@@ -37,35 +19,27 @@ import {
   getMyRegularizations,
 } from "../services/regularizationApi";
 
-import {
-  formatTime,
-  minsToHrsMins,
-} from "../utils/attendanceFormat";
-
+import { canShowPunchCard } from "../utils/attendancePolicy";
 import { buildMonthAttendance } from "../utils/monthAttendance";
 
-import { useAuth } from "../context/AuthContext";
 import { useAttendanceGate } from "../context/AttendanceGateContext";
 import Can from "../components/rbac/Can";
 
-const now = new Date();
+const pad2 = (n) => String(n).padStart(2, "0");
 
-// ==========================================================
-// YYYY-MM-DD for a given year/month
-// ==========================================================
+// YYYY-MM-DD bounds for a given year / month (month is 1-12)
 const monthBounds = (year, month) => {
-  const pad2 = (n) => String(n).padStart(2, "0");
   const lastDay = new Date(year, month, 0).getDate();
 
   return {
+    lastDay,
     startDate: `${year}-${pad2(month)}-01`,
     endDate: `${year}-${pad2(month)}-${pad2(lastDay)}`,
   };
 };
 
 const AttendanceEmployee = () => {
-  const { user } = useAuth();
-  const { gate, refresh: refreshGate } = useAttendanceGate();
+  const { gate } = useAttendanceGate();
 
   const regularizationRef = useRef(null);
 
@@ -73,253 +47,72 @@ const AttendanceEmployee = () => {
   const [today, setToday] = useState(null);
   const [history, setHistory] = useState([]);
   const [myRegularizations, setMyRegularizations] = useState([]);
-  const [punching, setPunching] = useState(false);
 
-  // Selected calendar month
-  const [selectedYear, setSelectedYear] = useState(
-    now.getFullYear()
-  );
+  // Lazy init: a tab left open past midnight must not reuse a stale module-level date.
+  const [selectedYear, setSelectedYear] = useState(() => new Date().getFullYear());
+  const [selectedMonth, setSelectedMonth] = useState(() => new Date().getMonth() + 1);
 
-  const [selectedMonth, setSelectedMonth] = useState(
-    now.getMonth() + 1
-  );
+  // Punch card: WFH employees, or office employees while the biometric machine is down.
+  const showPunchCard = canShowPunchCard(gate);
 
   // ==========================================================
-  // Load Attendance Data
+  // Load data
   // ==========================================================
   const loadAll = useCallback(async () => {
     try {
-      const { startDate, endDate } = monthBounds(
-        selectedYear,
-        selectedMonth
-      );
+      const { startDate, endDate, lastDay } = monthBounds(selectedYear, selectedMonth);
 
-      const lastDay = new Date(
-        selectedYear,
-        selectedMonth,
-        0
-      ).getDate();
-
-      const [
-        todayRes,
-        historyRes,
-        regularizationRes,
-      ] = await Promise.all([
+      const [todayRes, historyRes, regularizationRes] = await Promise.all([
         getTodayAttendance(),
-        getAttendanceHistory(1, lastDay, {
-          startDate,
-          endDate,
-        }),
+        getAttendanceHistory(1, lastDay, { startDate, endDate }),
         getMyRegularizations(1, 100),
       ]);
 
       setToday(todayRes?.data || null);
       setHistory(historyRes?.data?.data || []);
-      setMyRegularizations(
-        regularizationRes?.data || []
-      );
+      setMyRegularizations(regularizationRes?.data || []);
     } catch (error) {
-      toast.error(
-        error?.response?.data?.message ||
-          "Failed to load attendance"
-      );
+      toast.error(error?.response?.data?.message || "Failed to load attendance");
     }
   }, [selectedYear, selectedMonth]);
 
-  // Reload whenever selected month changes or on mount
+  // Reload on month change, and whenever the punch card changes the attendance state
+  // (NOT_PUNCHED_IN -> PUNCHED_IN -> PUNCHED_OUT) so stats, timeline and table stay in sync.
   useEffect(() => {
     loadAll();
-  }, [loadAll]);
+  }, [loadAll, gate?.attendanceState]);
 
-  // ==========================================================
-  // Month Change
-  // ==========================================================
   const handleMonthChange = (year, month) => {
     setSelectedYear(year);
     setSelectedMonth(month);
   };
 
-  // ==========================================================
-  // Scroll to Regularization
-  // ==========================================================
   const handleGoToRegularization = () => {
-    regularizationRef.current?.scrollIntoView({
-      behavior: "smooth",
-      block: "start",
-    });
+    regularizationRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
   // ==========================================================
-  // Punch In
-  // ==========================================================
-  const handlePunchIn = async () => {
-    setPunching(true);
-
-    try {
-      const res = await punchIn();
-
-      toast.success(
-        res?.message || "Punched in successfully"
-      );
-
-      await loadAll();
-      await refreshGate();
-    } catch (error) {
-      toast.error(
-        error?.response?.data?.message ||
-          "Punch in failed"
-      );
-    } finally {
-      setPunching(false);
-    }
-  };
-
-  // ==========================================================
-  // Punch Out
-  // ==========================================================
-  const handlePunchOut = async () => {
-    setPunching(true);
-
-    try {
-      const res = await punchOut();
-
-      toast.success(
-        res?.message || "Punched out successfully"
-      );
-
-      await loadAll();
-      await refreshGate();
-    } catch (error) {
-      toast.error(
-        error?.response?.data?.message ||
-          "Punch out failed"
-      );
-    } finally {
-      setPunching(false);
-    }
-  };
-
-  // ==========================================================
-  // Submit / Update Regularization
+  // Regularization
   // ==========================================================
   const handleSubmitRegularization = async (payload) => {
     try {
-      const {
-        isEdit,
-        regularizationId,
-        attendanceId,
-        ...body
-      } = payload;
+      const { isEdit, regularizationId, attendanceId, ...body } = payload;
 
       if (isEdit && regularizationId) {
-        await updateRegularization(
-          regularizationId,
-          body
-        );
-
-        toast.success(
-          "Regularization request updated"
-        );
+        await updateRegularization(regularizationId, body);
+        toast.success("Regularization request updated");
       } else {
-        await submitRegularization({
-          attendanceId,
-          ...body,
-        });
-
-        toast.success(
-          "Regularization request submitted"
-        );
+        await submitRegularization({ attendanceId, ...body });
+        toast.success("Regularization request submitted");
       }
 
       await loadAll();
     } catch (error) {
-      toast.error(
-        error?.response?.data?.message ||
-          "Failed to submit regularization request"
-      );
-
+      toast.error(error?.response?.data?.message || "Failed to submit regularization request");
       throw error;
     }
   };
 
-  // ==========================================================
-  // Punch Card User
-  // ==========================================================
-  const punchCardUser = {
-    name:
-      `${user?.firstName || ""} ${
-        user?.lastName || ""
-      }`.trim() || "Employee",
-
-    avatar:
-      `${(user?.firstName || "U")[0]}${
-        (user?.lastName || "")[0] || ""
-      }`.toUpperCase(),
-
-    department: "",
-    role: "",
-
-    punchedIn:
-      !!today?.attendance?.checkIn &&
-      !today?.attendance?.checkOut,
-
-    completed:
-      !!today?.attendance?.checkIn &&
-      !!today?.attendance?.checkOut,
-
-    punchInTime: formatTime(
-      today?.attendance?.checkIn
-    ),
-
-    punchOutTime: formatTime(
-      today?.attendance?.checkOut
-    ),
-
-    checkInRaw:
-      today?.attendance?.checkIn || null,
-
-    checkOutRaw:
-      today?.attendance?.checkOut || null,
-
-    workDurationMins:
-      today?.attendance?.workDurationMins ?? null,
-
-    productionHours: minsToHrsMins(
-      today?.attendance?.workDurationMins
-    ),
-
-    progressPercent: 0,
-
-    shiftStart:
-      today?.shift?.startTime || "-",
-
-    shiftEnd:
-      today?.shift?.endTime || "-",
-
-    location:
-      gate?.workLocation === "WFH"
-        ? "WFH"
-        : "Office",
-
-    // Policy from backend gate
-    canPunch: gate
-      ? gate.canPunch ||
-        (gate.attendanceState === "PUNCHED_IN" &&
-          gate.record?.checkInSource === "web")
-      : true,
-
-    punchHint:
-      gate &&
-      !gate.canPunch &&
-      gate.attendanceState !== "PUNCHED_OUT" &&
-      gate.attendanceMethod === "BIOMETRIC"
-        ? "Office attendance is recorded by the biometric device."
-        : null,
-  };
-
-  // ==========================================================
-  // Attendance Grid
-  // ==========================================================
   const tableRecords = buildMonthAttendance(
     history,
     selectedYear,
@@ -327,36 +120,21 @@ const AttendanceEmployee = () => {
     myRegularizations
   );
 
-  // ==========================================================
-  // Close Export Dropdown
-  // ==========================================================
   const closeDropdown = () => {
     document.activeElement?.blur?.();
   };
 
   return (
     <div className="min-w-0 space-y-6">
-      {/* ========================================================
-          Common Page Header
-      ======================================================== */}
       <PageHeader
         icon={BarChart3}
         title="Employee Attendance"
-        breadcrumbs={[
-          { label: "Attendance" },
-          { label: "Employee Attendance" },
-        ]}
+        breadcrumbs={[{ label: "Attendance" }, { label: "Employee Attendance" }]}
         actions={
           <div className="flex items-center gap-2">
-            {/* ==================================================
-                Export Dropdown
-            ================================================== */}
+            {/* Export (wire to real export handlers when ready) */}
             <div className="dropdown dropdown-end">
-              <div
-                tabIndex={0}
-                role="button"
-                className="hr-btn hr-btn-glass"
-              >
+              <div tabIndex={0} role="button" className="hr-btn hr-btn-glass">
                 <FileText size={16} />
                 Export
                 <ChevronDown size={16} />
@@ -372,11 +150,7 @@ const AttendanceEmployee = () => {
                     onClick={closeDropdown}
                     className="flex h-10 w-full items-center gap-2.5 rounded-md px-3 text-sm text-text-primary transition-colors hover:bg-primary-50 hover:text-primary-700"
                   >
-                    <FileText
-                      size={16}
-                      className="text-danger-500"
-                    />
-
+                    <FileText size={16} className="text-danger-500" />
                     <span>Export as PDF</span>
                   </button>
                 </li>
@@ -387,25 +161,15 @@ const AttendanceEmployee = () => {
                     onClick={closeDropdown}
                     className="flex h-10 w-full items-center gap-2.5 rounded-md px-3 text-sm text-text-primary transition-colors hover:bg-primary-50 hover:text-primary-700"
                   >
-                    <FileSpreadsheet
-                      size={16}
-                      className="text-success-600"
-                    />
-
+                    <FileSpreadsheet size={16} className="text-success-600" />
                     <span>Export as Excel</span>
                   </button>
                 </li>
               </ul>
             </div>
 
-            {/* ==================================================
-                Attendance Report
-                RBAC: attendance-admin:view
-            ================================================== */}
-            <Can
-              module="attendance-admin"
-              action="view"
-            >
+            {/* RBAC: attendance-admin:view */}
+            <Can module="attendance-admin" action="view">
               <button
                 type="button"
                 onClick={() => setReportOpen(true)}
@@ -419,75 +183,49 @@ const AttendanceEmployee = () => {
         }
       />
 
-      {/* ========================================================
-          Punch Card + Attendance Stats
-      ======================================================== */}
-      <div className="grid grid-cols-1 gap-4 xl:grid-cols-4 min-w-0 items-start">
-        <div className="xl:col-span-1 min-w-0 mx-auto w-full max-w-sm xl:mx-0 xl:max-w-none">
-          <PunchCard
-            user={punchCardUser}
-            onPunchIn={
-              punching
-                ? undefined
-                : handlePunchIn
-            }
-            onPunchOut={
-              punching
-                ? undefined
-                : handlePunchOut
-            }
-          />
-        </div>
+      {/* Punch card (WFH / biometric down only) + stats.
+          Without the card, stats and timeline take the full width. */}
+      <div
+        className={`grid min-w-0 grid-cols-1 items-stretch gap-4 ${
+          showPunchCard ? "xl:grid-cols-4" : ""
+        }`}
+      >
+        {/* Card sits flush at the top of its column: no wrapper padding, no accent bar. */}
+        {showPunchCard && (
+          <div className="mx-auto w-full min-w-0 max-w-sm xl:col-span-1 xl:mx-0 xl:max-w-none">
+            <AttendancePunchCard variant="page" className="h-full" />
+          </div>
+        )}
 
-        <div className="xl:col-span-3 flex min-w-0 flex-col gap-4">
-          <AttendanceStatsCards
-            history={history}
-            today={today}
-          />
+        {/* Timeline stretches to the card's height so both columns end on the same line. */}
+        <div className={`flex min-w-0 flex-col gap-4 ${showPunchCard ? "xl:col-span-3" : ""}`}>
+          <AttendanceStatsCards history={history} today={today} />
 
-          <TimelineBar today={today} />
+          <div className="min-h-0 flex-1">
+            <TimelineBar today={today} />
+          </div>
         </div>
       </div>
 
-      {/* ========================================================
-          Employee Attendance Table
-      ======================================================== */}
       <EmployeeAttendanceTable
         records={tableRecords}
         year={selectedYear}
         month={selectedMonth}
         onMonthChange={handleMonthChange}
-        onSubmitRegularization={
-          handleSubmitRegularization
-        }
-        onGoToRegularization={
-          handleGoToRegularization
-        }
+        onSubmitRegularization={handleSubmitRegularization}
+        onGoToRegularization={handleGoToRegularization}
       />
 
-      {/* ========================================================
-          Employee Regularization
-      ======================================================== */}
       <EmployeeRegularization
         requests={myRegularizations}
         regularizationRef={regularizationRef}
       />
 
-      {/* ========================================================
-          Attendance Report
-      ======================================================== */}
-      <Can
-        module="attendance-admin"
-        action="view"
-      >
-        <AttendanceReportModal
-          open={reportOpen}
-          onClose={() => setReportOpen(false)}
-        />
+      <Can module="attendance-admin" action="view">
+        <AttendanceReportModal open={reportOpen} onClose={() => setReportOpen(false)} />
       </Can>
     </div>
   );
 };
 
 export default AttendanceEmployee;
-// ```

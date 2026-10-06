@@ -1,6 +1,7 @@
 import usePermission from "../../hooks/usePermission";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
+  CheckCircle2,
   ChevronLeft,
   ChevronRight,
   Loader2,
@@ -22,6 +23,7 @@ import {
   deleteUser,
   getAllUsers,
   getUserById,
+  updateUser,
 } from "../../services/userApi";
 
 const FILE_BASE_URL = "http://localhost:5000";
@@ -32,6 +34,10 @@ const resolveImageUrl = (path) => {
 
   return `${FILE_BASE_URL}${path.startsWith("/") ? "" : "/"}${path}`;
 };
+
+// users.status: 0 = Inactive, 1 = Active, 2 = Pending approval (self-registered)
+const STATUS_LABEL = { 1: "Active", 2: "Pending" };
+const STATUS_TONE = { Active: "success", Pending: "warning", Inactive: "danger" };
 
 // 1 … 4 5 6 … 20  (keeps the pagination bar short for large lists)
 const getPageItems = (total, current) => {
@@ -60,6 +66,7 @@ const UserTable = ({ roles = [], refresh }) => {
 
   const [loading, setLoading] = useState(false);
   const [editingUserId, setEditingUserId] = useState(null);
+  const [approvingId, setApprovingId] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
   const [search, setSearch] = useState("");
@@ -98,7 +105,7 @@ const UserTable = ({ roles = [], refresh }) => {
         name: `${item.firstName || ""} ${item.lastName || ""}`.trim() || "Unnamed User",
         email: item.email,
         phone: item.phone || "—",
-        status: Number(item.status) === 1 ? "Active" : "Inactive",
+        status: STATUS_LABEL[Number(item.status)] || "Inactive",
         statusValue: Number(item.status),
         roles: Array.isArray(item.roles) ? item.roles : [],
         createdAt: item.createdAt,
@@ -169,6 +176,33 @@ const UserTable = ({ roles = [], refresh }) => {
     closeEditModal();
   };
 
+  // Approves a self-registered (Pending) user -> Active.
+  // Uses the existing PUT /users/:id (permission: users/edit). Only the
+  // status is sent; the user's role stays as assigned at registration.
+  const handleApprove = async (user) => {
+    if (!user?.id || approvingId) return;
+
+    try {
+      setApprovingId(user.id);
+
+      const response = await updateUser(user.id, { status: true });
+
+      if (response?.data?.success) {
+        toast.success(`${user.name} has been approved.`);
+        await fetchUsers();
+      } else {
+        toast.error(response?.data?.message || "Failed to approve user.");
+      }
+    } catch (error) {
+      console.error("Failed to approve user:", error);
+      toast.error(
+        error?.response?.data?.message || "Failed to approve user."
+      );
+    } finally {
+      setApprovingId(null);
+    }
+  };
+
   const handleDeleteUser = async () => {
     if (!deleteTarget?.id || isDeleting) return;
 
@@ -208,6 +242,11 @@ const UserTable = ({ roles = [], refresh }) => {
             .filter(Boolean)
         )
       )].sort((a, b) => a.localeCompare(b)),
+    [users]
+  );
+
+  const pendingCount = useMemo(
+    () => users.filter((user) => user.statusValue === 2).length,
     [users]
   );
 
@@ -296,6 +335,20 @@ const UserTable = ({ roles = [], refresh }) => {
             <span className="rounded-full bg-primary-50 px-2 py-0.5 text-xs font-semibold text-primary-700">
               {totalEntries}
             </span>
+
+            {pendingCount > 0 && (
+              <button
+                type="button"
+                onClick={() => {
+                  setStatusFilter("Pending");
+                  setCurrentPage(1);
+                }}
+                className="rounded-full bg-warning-50 px-2.5 py-0.5 text-xs font-semibold text-warning-600 transition hover:underline"
+                title="Show users awaiting approval"
+              >
+                {pendingCount} pending approval
+              </button>
+            )}
           </div>
           <p className="mt-1 text-xs text-text-secondary">
             Manage user profiles, roles, access status and account details.
@@ -340,6 +393,7 @@ const UserTable = ({ roles = [], refresh }) => {
           >
             <option value="">All Status</option>
             <option value="Active">Active</option>
+            <option value="Pending">Pending</option>
             <option value="Inactive">Inactive</option>
           </select>
 
@@ -514,7 +568,7 @@ const UserTable = ({ roles = [], refresh }) => {
 
                   {/* Status */}
                   <td className="hr-td">
-                    <StatusBadge tone={user.status === "Active" ? "success" : "danger"}>
+                    <StatusBadge tone={STATUS_TONE[user.status] || "danger"}>
                       {user.status}
                     </StatusBadge>
                   </td>
@@ -522,6 +576,27 @@ const UserTable = ({ roles = [], refresh }) => {
                   {/* Actions */}
                   <td className="hr-td">
                     <div className="flex items-center justify-center gap-1">
+                      {canEdit && user.statusValue === 2 && (
+                        <button
+                          type="button"
+                          aria-label={`Approve ${user.name}`}
+                          title={`Approve ${user.name}`}
+                          disabled={Boolean(approvingId)}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            handleApprove(user);
+                          }}
+                          className="hr-icon-btn text-success-600"
+                        >
+                          {approvingId === user.id ? (
+                            <Loader2 size={16} className="animate-spin" />
+                          ) : (
+                            <CheckCircle2 size={16} />
+                          )}
+                        </button>
+                      )}
+
                       {canEdit && (
 <button
                         type="button"
