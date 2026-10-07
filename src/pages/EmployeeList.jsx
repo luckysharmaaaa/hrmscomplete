@@ -15,12 +15,14 @@ import EmployeeStatCards from "../components/employeeList/EmployeeStatCards";
 import EmployeeTable from "../components/employeeList/EmployeeTable";
 import EmployeeGrid from "../components/employeeList/EmployeeGrid";
 import AddEmployeeDrawer from "../components/employeeList/AddEmployeeDrawer";
+import EmployeeShiftDrawer from "../components/employeeList/EmployeeShiftDrawer";
 import DeleteModal from "../components/employeeList/DeleteModal";
 
 import {
   getEmployees,
   deleteEmployee,
 } from "../services/employee.service";
+import { getFileUrl } from "../services/profileApi";
 
 /* -------------------------------------------------------------------------- */
 /* AVATAR COLORS                                                              */
@@ -76,9 +78,7 @@ export default function EmployeeList() {
               index % AVATAR_COLORS.length
             ],
 
-          avatarUrl: emp.profileImage
-            ? `http://localhost:5000/${emp.profileImage}`
-            : null,
+          avatarUrl: getFileUrl(emp.profileImage),
 
           department:
             emp.departmentName || "—",
@@ -119,6 +119,7 @@ export default function EmployeeList() {
 
   useEffect(() => {
     fetchEmployees();
+    // eslint-disable-next-line react-hooks/set-state-in-effect
   }, []);
 
   /* ------------------------------------------------------------------------ */
@@ -170,6 +171,10 @@ export default function EmployeeList() {
     useState(null);
 
   const [deleteTarget, setDeleteTarget] =
+    useState(null);
+
+  // Shift drawer (opened from the "Shift" button in the table)
+  const [shiftTarget, setShiftTarget] =
     useState(null);
 
   /* ------------------------------------------------------------------------ */
@@ -508,6 +513,7 @@ export default function EmployeeList() {
             setCurrentPage={setCurrentPage}
             totalPages={totalPages}
             onEdit={openEditEmployee}
+            onViewShift={(row) => setShiftTarget(row)}
             onDelete={(row) =>
               setDeleteTarget(row)
             }
@@ -550,6 +556,12 @@ export default function EmployeeList() {
       {/* ==================================================================== */}
       {/* DELETE MODAL                                                         */}
       {/* ==================================================================== */}
+
+      <EmployeeShiftDrawer
+        open={!!shiftTarget}
+        onClose={() => setShiftTarget(null)}
+        employee={shiftTarget}
+      />
 
       <DeleteModal
         open={!!deleteTarget}

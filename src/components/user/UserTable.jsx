@@ -19,6 +19,7 @@ import DeleteUserModal from "./DeleteUserModal";
 import DateRangePickerButton from "./DateRangePickerButton";
 import StatusBadge from "../ui/StatusBadge";
 import IconButton from "../ui/IconButton";
+import { getFileUrl } from "../../services/profileApi";
 
 import {
   deleteUser,
@@ -26,15 +27,6 @@ import {
   getUserById,
   updateUser,
 } from "../../services/userApi";
-
-const FILE_BASE_URL = "http://localhost:5000";
-
-const resolveImageUrl = (path) => {
-  if (!path) return null;
-  if (/^https?:\/\//i.test(path)) return path;
-
-  return `${FILE_BASE_URL}${path.startsWith("/") ? "" : "/"}${path}`;
-};
 
 // users.status:
 // 0 = Inactive
@@ -159,7 +151,7 @@ const UserTable = ({ roles = [], refresh }) => {
             })
           : "—",
 
-        avatar: resolveImageUrl(item.profileImage) || defaultUser,
+        avatar: getFileUrl(item.profileImage) || defaultUser,
       }));
 
       setUsers(mappedUsers);

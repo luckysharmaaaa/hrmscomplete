@@ -216,6 +216,8 @@ export default function AddEmployeeDrawer({ open, onClose, editData, onSubmit })
 
   const [importModalOpen, setImportModalOpen] = useState(false);
   const [importedFrom, setImportedFrom] = useState(false);
+  // Which imported fields already have a value (only those get locked).
+  const [importLocks, setImportLocks] = useState({ email: false, phone: false });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [apiError, setApiError] = useState(null);
@@ -277,7 +279,15 @@ export default function AddEmployeeDrawer({ open, onClose, editData, onSubmit })
         schema.required("Confirm Password is required").oneOf([Yup.ref("password")], "Passwords do not match"),
       otherwise: (schema) => schema.notRequired(),
     }),
-    phone: editData ? Yup.string() : Yup.string().required("Phone Number is required"),
+    // FIX: an imported user (self-registered / Google) often has NO phone.
+    // The phone field is locked after import, so the "required" error was
+    // invisible and the Save button silently did nothing. Phone is now only
+    // required for brand-new users; for imports it is optional.
+    phone: Yup.string().when("_importedUserId", {
+      is: (userId) => !editData && !userId,
+      then: (schema) => schema.required("Phone Number is required"),
+      otherwise: (schema) => schema.notRequired(),
+    }),
     company: Yup.string().nullable(),
     departmentId: editData ? Yup.string() : Yup.string().required("Department is required"),
     designationId: editData ? Yup.string() : Yup.string().required("Designation is required"),
@@ -346,6 +356,8 @@ export default function AddEmployeeDrawer({ open, onClose, editData, onSubmit })
                   phone: values.phone || null,
                   password: values.password,
                 }),
+            // Imported user had no phone -> send the one typed in the form.
+            ...(isImporting && values.phone ? { phone: values.phone } : {}),
             employeeCode: values.empId || null,
             departmentId: values.departmentId || null,
             designationId: values.designationId || null,
@@ -391,6 +403,7 @@ export default function AddEmployeeDrawer({ open, onClose, editData, onSubmit })
 
     setApiError(null);
     setImportedFrom(false);
+    setImportLocks({ email: false, phone: false });
     setProfileImage(null);
     setProfileImageFile(null);
 
@@ -433,6 +446,7 @@ export default function AddEmployeeDrawer({ open, onClose, editData, onSubmit })
 
     formik.setTouched({});
     formik.setErrors({});
+    setImportLocks({ email: Boolean(user.email), phone: Boolean(user.phone) });
     setImportedFrom(true);
   };
 
@@ -471,8 +485,11 @@ export default function AddEmployeeDrawer({ open, onClose, editData, onSubmit })
 
   const renderField = ({ label, name, type = "text", required = true, icon = null, onIconClick = null, locked = false }) => {
     const hasError = formik.touched[name] && formik.errors[name];
-    const isDisabled = locked && importedFrom;
-    const isRequired = editData ? false : required;
+    // Lock only fields that actually came from the imported user, so an
+    // empty phone can still be typed in.
+    const isDisabled = locked && importedFrom && Boolean(importLocks[name]);
+    const isRequired =
+      editData ? false : name === "phone" && importedFrom ? false : required;
 
     return (
       <div>

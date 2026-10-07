@@ -1,6 +1,4 @@
 import usePermission from "../../hooks/usePermission";
-import React from "react";
-import { useNavigate } from "react-router-dom";
 import {
   Search,
   X,
@@ -8,9 +6,8 @@ import {
   Trash2,
   ChevronLeft,
   ChevronRight,
-  Clock,
-  Eye,
 } from "lucide-react";
+
 import DateRangePickerButton from "../user/DateRangePickerButton";
 import {
   DESIGNATIONS,
@@ -18,7 +15,6 @@ import {
   SORT_OPTIONS,
   ROWS_OPTIONS,
 } from "./employeeData";
-const API_BASE_URL = "http://localhost:5000";
 
 
 function formatJoiningDate(rawDate) {
@@ -58,7 +54,6 @@ export default function EmployeeTable({
   onViewShift,
   onDelete,
 }) {
-  const navigate = useNavigate();
   const { canEdit, canDelete } = usePermission("employee-list");
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-100">
@@ -163,7 +158,7 @@ export default function EmployeeTable({
               <th className="px-4 py-3 font-semibold">Designation</th>
               <th className="px-4 py-3 font-semibold">Joining Date</th>
               <th className="px-4 py-3 font-semibold">Status</th>
-              <th className="px-4 py-3 font-semibold text-center">View</th>
+              <th className="px-4 py-3 font-semibold text-center">Shift</th>
               <th className="px-4 py-3 font-semibold text-right">Action</th>
             </tr>
           </thead>
@@ -258,28 +253,19 @@ export default function EmployeeTable({
                         {row.status}
                       </span>
                     </td>
-                    {/* View */}
+                    {/* Shift */}
                     <td className="px-4 py-3 text-center">
                       <button
-                        onClick={() => navigate(`/employee/${row.id}`)}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 text-xs font-semibold transition border border-blue-100"
-                        title="View Profile"
+                        type="button"
+                        onClick={() => onViewShift?.(row)}
+                        className="inline-flex items-center px-3 py-1.5 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 text-xs font-semibold transition border border-blue-100"
+                        title="Shift"
                       >
-                        <Eye size={13} />
-                        View
+                        Shift
                       </button>
                     </td>
                     <td className="px-4 py-3 text-right">
                       <div className="flex items-center justify-end gap-1">
-                        {canEdit && (
-<button
-                         onClick={() => onViewShift(row)}
-                           className="p-1.5 rounded-lg hover:bg-blue-50 text-gray-500 hover:text-blue-500 transition"
-                                                  title="Shift"
-                        >
-                                                  <Clock size={15} />
-                                                </button>
-)}
                       {canEdit && (
 <button
                         onClick={() => onEdit(row)}
@@ -315,7 +301,8 @@ export default function EmployeeTable({
       {filtered.length === 0
         ? 0
         : Math.min((currentPage - 1) * rowsPerPage + 1, filtered.length)}
-      â€“{Math.min(currentPage * rowsPerPage, filtered.length)} of{" "}
+      {" "}-{" "}
+      {Math.min(currentPage * rowsPerPage, filtered.length)} of{" "}
       {filtered.length} entries
     </span>
     <div className="flex items-center gap-1">

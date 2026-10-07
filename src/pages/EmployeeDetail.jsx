@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 
 import {
   ChevronRight,
@@ -21,6 +21,7 @@ import DeleteModal from "../components/employeeList/DeleteModal";
 // FIX: deleteEmployee was never imported, so there was nothing to
 // actually call the DELETE API with.
 import { getEmployees, deleteEmployee } from "../services/employee.service";
+import { getFileUrl } from "../services/profileApi";
 
 const AVATAR_COLORS = [
   "bg-blue-500",
@@ -63,9 +64,7 @@ export default function EmployeeList() {
         // Profile image
         // We will use the actual backend field once confirmed
         // Profile image
-        avatarUrl: emp.profileImage
-          ? `http://localhost:5000/${emp.profileImage}`
-          : null,
+        avatarUrl: getFileUrl(emp.profileImage),
         department: emp.departmentName,
 
         designation: emp.designationName,
@@ -97,6 +96,7 @@ export default function EmployeeList() {
 
   useEffect(() => {
     fetchEmployees();
+    // eslint-disable-next-line react-hooks/set-state-in-effect
   }, []);
 
   const [viewMode, setViewMode] = useState("list");

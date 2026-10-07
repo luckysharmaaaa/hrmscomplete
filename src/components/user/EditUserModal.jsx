@@ -12,18 +12,9 @@ import {
 import { uploadMedia } from "../../services/mediaApi";
 import { getMediaUsesByObject } from "../../services/mediaUsesApi";
 import { isCompanyEmail, COMPANY_EMAIL_DOMAIN } from "../../config/company";
+import { getFileUrl } from "../../services/profileApi";
 
 import UserForm from "./Userform";
-
-// Converts relative image path into complete backend URL
-const FILE_BASE_URL = "http://localhost:5000";
-
-const resolveImageUrl = (path) => {
-  if (!path) return null;
-  if (/^https?:\/\//i.test(path)) return path;
-
-  return `${FILE_BASE_URL}${path.startsWith("/") ? "" : "/"}${path}`;
-};
 
 // ========================= Validation =========================
 // Only an official company email (@bytesbrick.com) is allowed.
@@ -289,7 +280,7 @@ const EditUserModal = ({
 
         if (mapping?.fileURL) {
           loadedMediaId = mapping.mediaID;
-          loadedMediaUrl = resolveImageUrl(
+          loadedMediaUrl = getFileUrl(
             mapping.fileURL,
           );
         }
