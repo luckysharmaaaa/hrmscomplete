@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { ChevronDown, ChevronRight, Loader2 } from "lucide-react";
 import api from "../services/api";
 
@@ -16,6 +16,29 @@ const DEFAULT_LABELS = {
   edit: "Edit",
   approved: "Approved",
   delete: "Delete",
+};
+
+const buildTree = (list) => {
+  const map = {};
+
+  list.forEach((item) => {
+    map[item.id] = {
+      ...item,
+      children: [],
+    };
+  });
+
+  const roots = [];
+
+  list.forEach((item) => {
+    if (item.parentId && map[item.parentId]) {
+      map[item.parentId].children.push(map[item.id]);
+    } else {
+      roots.push(map[item.id]);
+    }
+  });
+
+  return roots;
 };
 
 const PermissionCheckbox = ({
@@ -55,7 +78,7 @@ const RolePermissionTable = ({
 }) => {
   const [modules, setModules] = useState([]);
   const [expanded, setExpanded] = useState({});
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [actionDefs, setActionDefs] = useState(null);
 
   useEffect(() => {
@@ -65,116 +88,102 @@ const RolePermissionTable = ({
   const permissionColumns = actionDefs ? actionDefs.map((a) => a.code) : DEFAULT_COLUMNS;
   const permissionLabels = actionDefs ? Object.fromEntries(actionDefs.map((a) => [a.code, a.label])) : DEFAULT_LABELS;
 
-  useEffect(() => {
-    loadModules();
+  const loadModules = useCallback(() => {
+    return api
+      .get("/modules")
+      .then((res) => {
+        const list = Array.isArray(res.data.data) ? res.data.data : [];
+        const tree = buildTree(list);
+
+        setModules(tree);
+
+        const expandState = {};
+
+        const expandAll = (items) => {
+          items.forEach((item) => {
+            expandState[item.id] = true;
+
+            if (item.children?.length) {
+              expandAll(item.children);
+            }
+          });
+        };
+
+        expandAll(tree);
+        setExpanded(expandState);
+      })
+      .catch((error) => {
+        console.error("Failed to load modules:", error);
+        setModules([]);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
   }, []);
 
+  const loadRoleData = useCallback((roleId) => {
+    return Promise.all([
+      api.get(`/role-module-mapping/${roleId}`),
+      api.get(`/role-permissions/${roleId}`),
+    ])
+      .then(([moduleRes, permissionRes]) => {
+        const moduleData = Array.isArray(moduleRes.data.data)
+          ? moduleRes.data.data
+          : [];
+
+        const moduleIds = moduleData
+          .map((item) => item.moduleId)
+          .filter(Boolean);
+
+        setSelectedModules(moduleIds);
+
+        const permissionObject = {};
+
+        const permissionData = Array.isArray(permissionRes.data.data)
+          ? permissionRes.data.data
+          : [];
+
+        permissionData.forEach((item) => {
+          if (!permissionObject[item.moduleId]) {
+            permissionObject[item.moduleId] = {};
+          }
+
+          permissionObject[item.moduleId][item.action] = true;
+        });
+
+        setPermissions(permissionObject);
+      })
+      .catch((error) => {
+        console.error("Failed to load role permissions:", error);
+        setSelectedModules([]);
+        setPermissions({});
+      })
+      .finally(() => {
+        setLoading(false);
+      });
+  }, [setSelectedModules, setPermissions]);
+
   useEffect(() => {
+    loadModules();
+  }, [loadModules]);
+
+  const [prevRole, setPrevRole] = useState(role);
+  if (role !== prevRole) {
+    setPrevRole(role);
+
     if (role?.id) {
-      loadRoleData(role.id);
+      setLoading(true);
     } else {
       setSelectedModules([]);
       setPermissions({});
     }
-  }, [role]);
+  }
 
-  const loadModules = async () => {
-    try {
-      setLoading(true);
-
-      const res = await api.get("/modules");
-      const list = Array.isArray(res.data.data) ? res.data.data : [];
-      const tree = buildTree(list);
-
-      setModules(tree);
-
-      const expandState = {};
-
-      const expandAll = (items) => {
-        items.forEach((item) => {
-          expandState[item.id] = true;
-
-          if (item.children?.length) {
-            expandAll(item.children);
-          }
-        });
-      };
-
-      expandAll(tree);
-      setExpanded(expandState);
-    } catch (error) {
-      console.error("Failed to load modules:", error);
-      setModules([]);
-    } finally {
-      setLoading(false);
+  useEffect(() => {
+    if (role?.id) {
+      loadRoleData(role.id);
     }
-  };
-
-  const loadRoleData = async (roleId) => {
-    try {
-      setLoading(true);
-
-      const [moduleRes, permissionRes] = await Promise.all([
-        api.get(`/role-module-mapping/${roleId}`),
-        api.get(`/role-permissions/${roleId}`),
-      ]);
-
-      const moduleData = Array.isArray(moduleRes.data.data)
-        ? moduleRes.data.data
-        : [];
-
-      const moduleIds = moduleData
-        .map((item) => item.moduleId)
-        .filter(Boolean);
-
-      setSelectedModules(moduleIds);
-
-      const permissionObject = {};
-
-      const permissionData = Array.isArray(permissionRes.data.data)
-        ? permissionRes.data.data
-        : [];
-
-      permissionData.forEach((item) => {
-        if (!permissionObject[item.moduleId]) {
-          permissionObject[item.moduleId] = {};
-        }
-
-        permissionObject[item.moduleId][item.action] = true;
-      });
-
-      setPermissions(permissionObject);
-    } catch (error) {
-      console.error("Failed to load role permissions:", error);
-      setSelectedModules([]);
-      setPermissions({});
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const buildTree = (list) => {
-    const map = {};
-
-    list.forEach((item) => {
-      map[item.id] = {
-        ...item,
-        children: [],
-      };
-    });
-
-    const roots = [];
-
-    list.forEach((item) => {
-      if (item.parentId && map[item.parentId]) {
-        map[item.parentId].children.push(map[item.id]);
-      } else {
-        roots.push(map[item.id]);
-      }
-    });
-
-    return roots;
-  };
+  }, [role, loadRoleData]);
 
   const toggleExpand = (id) => {
     setExpanded((prev) => ({

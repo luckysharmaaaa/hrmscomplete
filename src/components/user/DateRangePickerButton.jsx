@@ -1,5 +1,4 @@
-import React, { useState, useRef, useEffect, useLayoutEffect, useCallback } from "react";
-import { createPortal } from "react-dom";
+import { useState, useRef, useEffect, useLayoutEffect, useCallback } from 'react';import { createPortal } from "react-dom";
 import { CalendarDays } from "lucide-react";
 import { DateRangePicker } from "react-date-range";
 import "react-date-range/dist/styles.css";
@@ -21,7 +20,7 @@ const fallbackRange = () => [
 ];
 
 const VIEWPORT_MARGIN = 8;
-const BRAND_BLUE = "#041D5F";
+const BRAND_COLOR = "#FF6F28";
 
 // ── DateRangePickerButton ─────────────────────────────────────────────────────
 // Props:
@@ -110,7 +109,6 @@ const DateRangePickerButton = ({
       }
       return { top, left };
     });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [datePickerOpen, tempRange]);
 
   // Keep the panel glued to the button on scroll/resize while open
@@ -125,12 +123,13 @@ const DateRangePickerButton = ({
   }, [datePickerOpen, positionPanel]);
 
   // Sync tempRange + activePreset when parent value changes
-  useEffect(() => {
+  const [prevValue, setPrevValue] = useState(value);
+  if (value !== prevValue) {
+    setPrevValue(value);
     const next = isDefaultRange(value) ? value : fallbackRange();
     setTempRange(next);
     setActivePreset(detectPreset(next));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [value]);
+  }
 
   // Close on outside click — checks BOTH the trigger and the portaled panel
   useEffect(() => {
@@ -225,8 +224,8 @@ const DateRangePickerButton = ({
                   months={1}
                   direction="horizontal"
                   showMonthAndYearPickers
-                  rangeColors={[BRAND_BLUE]}
-                  color={BRAND_BLUE}
+                  rangeColors={[BRAND_COLOR]}
+                  color={BRAND_COLOR}
                   showDateDisplay={false}
                   staticRanges={[]}
                   inputRanges={[]}

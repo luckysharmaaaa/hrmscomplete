@@ -1,10 +1,12 @@
-import React, {
-  createContext,
-  useContext,
+import {
   useState,
   useEffect,
 } from "react";
 import { useLocation } from "react-router-dom";
+
+import SidebarContext from "./sidebarValue";
+
+const COLLAPSE_KEY = "hrms.sidebarCollapsed";
 
 /**
  * Two independent things live here:
@@ -14,17 +16,6 @@ import { useLocation } from "react-router-dom";
  *    from ~240px to ~72px and shows icons only. Persisted in
  *    localStorage so a refresh keeps the user's choice.
  */
-const SidebarContext = createContext({
-  open: false,
-  setOpen: () => {},
-  toggle: () => {},
-  close: () => {},
-  collapsed: false,
-  toggleCollapsed: () => {},
-});
-
-const COLLAPSE_KEY = "hrms.sidebarCollapsed";
-
 export const SidebarProvider = ({ children }) => {
   const [open, setOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(() => {
@@ -37,9 +28,11 @@ export const SidebarProvider = ({ children }) => {
   const location = useLocation();
 
   // Close the mobile drawer whenever the route changes.
-  useEffect(() => {
+  const [prevPath, setPrevPath] = useState(location.pathname);
+  if (location.pathname !== prevPath) {
+    setPrevPath(location.pathname);
     setOpen(false);
-  }, [location.pathname]);
+  }
 
   // Lock body scroll while the mobile drawer is open.
   useEffect(() => {
@@ -81,7 +74,3 @@ export const SidebarProvider = ({ children }) => {
     <SidebarContext.Provider value={value}>{children}</SidebarContext.Provider>
   );
 };
-
-export const useSidebar = () => useContext(SidebarContext);
-
-export default SidebarContext;

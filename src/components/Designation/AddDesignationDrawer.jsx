@@ -1,5 +1,4 @@
-import React, { useEffect, useState } from "react";
-import { Briefcase } from "lucide-react";
+import { useState } from 'react';import { Briefcase } from "lucide-react";
 
 import SideDrawer from "../ui/SideDrawer";
 import Switch from "../ui/Switch";
@@ -12,26 +11,29 @@ export default function AddDesignationDrawer({ open, onClose, editData, departme
   const [titleError, setTitleError] = useState("");
   const [departmentError, setDepartmentError] = useState("");
 
-  useEffect(() => {
-    if (!open) return;
+  const [prevKey, setPrevKey] = useState({ open, editData });
+  if (prevKey.open !== open || prevKey.editData !== editData) {
+    setPrevKey({ open, editData });
 
-    if (editData) {
-      setTitle(editData.designationName || "");
-      setDepartmentId(
-        editData.departmentId !== null && editData.departmentId !== undefined
-          ? String(editData.departmentId)
-          : ""
-      );
-      setStatus(editData.status === "Inactive" ? "Inactive" : "Active");
-    } else {
-      setTitle("");
-      setDepartmentId("");
-      setStatus("Active");
+    if (open) {
+      if (editData) {
+        setTitle(editData.designationName || "");
+        setDepartmentId(
+          editData.departmentId !== null && editData.departmentId !== undefined
+            ? String(editData.departmentId)
+            : ""
+        );
+        setStatus(editData.status === "Inactive" ? "Inactive" : "Active");
+      } else {
+        setTitle("");
+        setDepartmentId("");
+        setStatus("Active");
+      }
+
+      setTitleError("");
+      setDepartmentError("");
     }
-
-    setTitleError("");
-    setDepartmentError("");
-  }, [editData, open]);
+  }
 
   const handleSubmit = (e) => {
     e.preventDefault();

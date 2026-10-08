@@ -1,9 +1,10 @@
 import usePermission from "../hooks/usePermission";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import api from "../services/api";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import {
+  CheckCircle2,
   ChevronDown,
   Download,
   FileSpreadsheet,
@@ -11,9 +12,11 @@ import {
   Loader2,
   Plus,
   ShieldCheck,
+  XCircle,
 } from "lucide-react";
 
 import PageHeader from "../components/ui/PageHeader";
+import StatCard from "../components/ui/StatCard";
 import RolesTable from "../components/RolesTable";
 import AddRoles from "../components/AddRoles";
 
@@ -26,7 +29,7 @@ const Roles = () => {
   const { canAdd } = usePermission("roles");
   const [roles, setRoles] = useState([]);
 
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   const [openDrawer, setOpenDrawer] = useState(false);
 
@@ -83,7 +86,53 @@ const Roles = () => {
   };
 
   useEffect(() => {
-    fetchRoles();
+    let live = true;
+    (async () => {
+      try {
+        const response = await api.get("/roles");
+
+        const data = Array.isArray(response.data?.data)
+          ? response.data.data
+          : [];
+
+        const formattedRoles = data.map((item) => ({
+          id: item.id,
+          roleName: item.roleName || "",
+          roleCode: item.roleCode || "",
+          description: item.description || "",
+          status:
+            item.status === "1" || item.status === 1
+              ? "Active"
+              : "Inactive",
+          createdAt: item.createdAt
+            ? new Date(item.createdAt * 1000).toLocaleDateString(
+                "en-GB",
+                {
+                  day: "2-digit",
+                  month: "short",
+                  year: "numeric",
+                },
+              )
+            : "-",
+        }));
+
+        if (live) setRoles(formattedRoles);
+      } catch (error) {
+        console.error("Fetch Roles Error:", error);
+
+        toast.error(
+          error.response?.data?.message ||
+            "Failed to load roles.",
+        );
+
+        if (live) setRoles([]);
+      } finally {
+        if (live) setLoading(false);
+      }
+    })();
+    return () => {
+      live = false;
+    };
   }, []);
 
   // ============================================================
@@ -397,6 +446,31 @@ const Roles = () => {
           </>
         }
       />
+
+      {/* Summary — "—" while loading so a wrong 0 is never shown */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <StatCard
+          icon={ShieldCheck}
+          tone="primary"
+          label="Total Roles"
+          value={loading ? "—" : roles.length}
+          hint="All roles"
+        />
+        <StatCard
+          icon={CheckCircle2}
+          tone="success"
+          label="Active"
+          value={loading ? "—" : roles.filter((r) => r.status === "Active").length}
+          hint="Available for use"
+        />
+        <StatCard
+          icon={XCircle}
+          tone="accent"
+          label="Inactive"
+          value={loading ? "—" : roles.filter((r) => r.status === "Inactive").length}
+          hint="Not in use"
+        />
+      </div>
 
       {/* Table */}
       {loading ? (

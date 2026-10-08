@@ -1,5 +1,4 @@
-import React, { useState } from "react";
-import ConfirmModal from "../ui/ConfirmModal";
+import { useState } from 'react';import ConfirmModal from "../ui/ConfirmModal";
 
 export default function DeleteModal({ open, item, onClose, onConfirm }) {
   const [isDeleting, setIsDeleting] = useState(false);

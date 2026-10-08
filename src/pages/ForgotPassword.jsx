@@ -1,5 +1,4 @@
-import React, { useState } from "react";
-import { ArrowLeft, CheckCircle2, Loader2, Mail } from "lucide-react";
+import { useState } from 'react';import { ArrowLeft, CheckCircle2, Loader2, Mail } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 

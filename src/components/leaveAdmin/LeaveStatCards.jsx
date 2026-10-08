@@ -1,57 +1,55 @@
-import React, { useState, useEffect } from "react";
-import { Clock, CheckCircle2, XCircle, Users, Loader2 } from "lucide-react";
+import { useEffect, useState } from 'react';import { CalendarOff, CheckCircle2, Clock } from "lucide-react";
+
+import StatCard from "../ui/StatCard";
 import { getAdminSummary } from "../../services/leaveService";
 
-const CARD_CONFIG = [
-  { key: "pending", label: "Pending Requests", icon: Clock, gradient: "from-cyan-400 to-cyan-600", iconBg: "bg-cyan-300/40" },
-  { key: "approved", label: "Approved Requests", icon: CheckCircle2, gradient: "from-green-400 to-green-600", iconBg: "bg-green-300/40" },
-  { key: "rejected", label: "Rejected Requests", icon: XCircle, gradient: "from-red-400 to-red-600", iconBg: "bg-red-300/40" },
-  { key: "onLeaveToday", label: "On Leave Today", icon: Users, gradient: "from-yellow-400 to-yellow-600", iconBg: "bg-yellow-300/40" },
-];
-
-// ── Stat Cards Row (real data) ──────────────────────────────────
+/**
+ * Summary cards above the admin leave table.
+ * Same StatCard look as the Users page. Loads its own data, so it takes no props.
+ */
 export default function LeaveStatCards() {
   const [summary, setSummary] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let live = true;
+
     getAdminSummary()
-      .then(setSummary)
-      .catch(() => setSummary(null))
-      .finally(() => setLoading(false));
+      .then((data) => live && setSummary(data))
+      .catch(() => live && setSummary(null))
+      .finally(() => live && setLoading(false));
+
+    return () => {
+      live = false;
+    };
   }, []);
 
-  if (loading) {
-    return (
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {CARD_CONFIG.map(({ label }) => (
-          <div
-            key={label}
-            className="bg-gray-100 rounded-xl p-5 h-[92px] flex items-center justify-center"
-          >
-            <Loader2 size={18} className="animate-spin text-gray-300" />
-          </div>
-        ))}
-      </div>
-    );
-  }
+  // "—" while loading or if the summary could not be loaded, never a wrong 0.
+  const show = (value) => (loading || !summary ? "—" : value ?? 0);
 
   return (
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-      {CARD_CONFIG.map(({ key, label, icon: Icon, gradient, iconBg }) => (
-        <div
-          key={key}
-          className={`relative bg-gradient-to-r ${gradient} rounded-xl p-5 text-white shadow-sm overflow-hidden`}
-        >
-          <div className={`absolute -right-3 -top-3 p-5 ${iconBg} rounded-full`}>
-            <Icon size={32} className="opacity-60" />
-          </div>
-          <p className="text-sm font-medium opacity-90 mb-1">{label}</p>
-          <p className="text-3xl font-bold tracking-tight">
-            {summary ? summary[key] : "—"}
-          </p>
-        </div>
-      ))}
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+      <StatCard
+        icon={Clock}
+        tone="warning"
+        label="Pending Requests"
+        value={show(summary?.pending)}
+        hint="Waiting for approval"
+      />
+      <StatCard
+        icon={CheckCircle2}
+        tone="success"
+        label="Approved"
+        value={show(summary?.approved)}
+        hint="Approved requests"
+      />
+      <StatCard
+        icon={CalendarOff}
+        tone="info"
+        label="On Leave Today"
+        value={show(summary?.onLeaveToday)}
+        hint="Currently away"
+      />
     </div>
   );
 }

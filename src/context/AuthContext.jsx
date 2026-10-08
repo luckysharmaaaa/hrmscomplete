@@ -1,9 +1,8 @@
-import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
-import { getUser, logout as logoutApi } from "../services/loginAPI";
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';import { getUser, logout as logoutApi } from "../services/loginAPI";
 import { AUTH_EXPIRED_EVENT, FORBIDDEN_EVENT, clearAuthStorage } from "../services/api";
 import { getMyPermissions } from "../services/permissionApi";
 
-export const AuthContext = createContext(null);
+import { AuthContext } from "./authValue";
 
 const getStoredToken = () => localStorage.getItem("token") || localStorage.getItem("accessToken");
 
@@ -204,10 +203,4 @@ export const AuthProvider = ({ children }) => {
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
-};
-
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (!context) throw new Error("useAuth must be used inside AuthProvider");
-  return context;
 };

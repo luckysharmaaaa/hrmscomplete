@@ -1,5 +1,4 @@
-import React, { useEffect, useState } from "react";
-import { Clock, History, Loader2 } from "lucide-react";
+import { useEffect, useState } from 'react';import { Clock, History, Loader2 } from "lucide-react";
 import { toast } from "react-toastify";
 
 import SideDrawer from "../ui/SideDrawer";
@@ -38,9 +37,23 @@ export default function EmployeeShiftDrawer({ open, onClose, employee }) {
   const [notes, setNotes] = useState("");
   const [saving, setSaving] = useState(false);
 
+  const [prevOpen, setPrevOpen] = useState(open);
+  const [prevEmpId, setPrevEmpId] = useState(employee?.id);
+  if (open !== prevOpen || employee?.id !== prevEmpId) {
+    setPrevOpen(open);
+    setPrevEmpId(employee?.id);
+    if (open) {
+      setSelectedShiftId("");
+      setEffectiveFrom("");
+      setNotes("");
+      if (employee?.id) {
+        setLoading(true);
+      }
+    }
+  }
+
   const fetchData = async () => {
     if (!employee?.id) return;
-    setLoading(true);
     try {
       const [shiftsRes, currentRes, historyRes] = await Promise.all([
         getShifts(),
@@ -61,10 +74,9 @@ export default function EmployeeShiftDrawer({ open, onClose, employee }) {
 
   useEffect(() => {
     if (!open) return;
-    setSelectedShiftId("");
-    setEffectiveFrom("");
-    setNotes("");
-    fetchData();
+    (async () => {
+      await fetchData();
+    })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, employee?.id]);
 
@@ -90,6 +102,9 @@ export default function EmployeeShiftDrawer({ open, onClose, employee }) {
       setEffectiveFrom("");
       setNotes("");
 
+      if (employee?.id) {
+        setLoading(true);
+      }
       await fetchData();
     } catch (error) {
       console.error("ASSIGN SHIFT ERROR:", error);

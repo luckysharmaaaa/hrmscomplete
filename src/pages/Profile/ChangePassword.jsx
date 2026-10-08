@@ -1,9 +1,9 @@
-import React, { useState } from "react";
-import { useFormik } from "formik";
+import { useState } from 'react';import { useFormik } from "formik";
 import { Check, Circle, Eye, EyeOff, Loader2 } from "lucide-react";
 import { toast } from "react-toastify";
 
-import { Field, SettingsSection, inputClass } from "./ProfileUi";
+import { Field, SettingsSection } from "./ProfileUi";
+import { inputClass } from "./inputClass";
 import { PASSWORD_RULES, passwordSchema } from "./profileValidation";
 import { changePassword } from "../../services/profileApi";
 

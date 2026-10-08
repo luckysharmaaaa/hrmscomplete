@@ -39,14 +39,9 @@ const AVATAR_COLORS = [
 export default function EmployeeList() {
   // Employee Data
   const [data, setData] = useState([]);
-  const [loading, setLoading] = useState(false);
 
-  const fetchEmployees = async () => {
-    try {
-      setLoading(true);
-
-      const res = await getEmployees();
-
+  const fetchEmployees = () => {
+    getEmployees().then((res) => {
       const employees = res.data.data.map((emp, index) => ({
         id: emp.id,
 
@@ -87,16 +82,13 @@ export default function EmployeeList() {
       }));
 
       setData(employees);
-    } catch (error) {
+    }).catch((error) => {
       console.error("Failed to fetch employees:", error);
-    } finally {
-      setLoading(false);
-    }
+    });
   };
 
   useEffect(() => {
     fetchEmployees();
-    // eslint-disable-next-line react-hooks/set-state-in-effect
   }, []);
 
   const [viewMode, setViewMode] = useState("list");

@@ -1,5 +1,4 @@
-import React, { useEffect, useState } from "react";
-import { createPortal } from "react-dom";
+import { useEffect, useState } from 'react';import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 
 const WIDTHS = {
@@ -29,16 +28,24 @@ export default function SideDrawer({
 }) {
   const [mounted, setMounted] = useState(open);
   const [visible, setVisible] = useState(false);
+  const [prevOpen, setPrevOpen] = useState(open);
+
+  if (open !== prevOpen) {
+    setPrevOpen(open);
+    if (open) {
+      setMounted(true);
+    } else {
+      setVisible(false);
+    }
+  }
 
   // mount -> next tick slide in / slide out -> unmount after animation
   useEffect(() => {
     if (open) {
-      setMounted(true);
       const t = setTimeout(() => setVisible(true), 20);
       return () => clearTimeout(t);
     }
 
-    setVisible(false);
     const t = setTimeout(() => setMounted(false), 300);
     return () => clearTimeout(t);
   }, [open]);

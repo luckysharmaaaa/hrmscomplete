@@ -5,8 +5,10 @@ import "react-toastify/dist/ReactToastify.css";
 import { ThemeProvider, createTheme } from "@mui/material/styles";
 import { Loader2 } from "lucide-react";
 
-import { AuthProvider, useAuth } from "./context/AuthContext";
-import { SidebarProvider, useSidebar } from "./context/SidebarContext";
+import { AuthProvider } from "./context/AuthContext";
+import { useAuth } from "./context/authValue";
+import { SidebarProvider } from "./context/SidebarContext";
+import { useSidebar } from "./context/sidebarValue";
 import { AttendanceGateProvider } from "./context/AttendanceGateContext";
 import AttendanceGate from "./components/attendanceGate/AttendanceGate";
 import { FORBIDDEN_EVENT } from "./services/api";
@@ -111,11 +113,12 @@ function LayoutContent() {
     [menu],
   );
 
+  // 72px navbar + 20px gap above the page banner; 24px side gutters like the design
   const mainMarginClass = `
     ${collapsed ? "lg:ml-20" : "lg:ml-72"}
-    pt-18 lg:pt-20
-    px-4 sm:px-6 lg:px-8
-    py-4 lg:py-5
+    pt-[92px]
+    px-4 sm:px-6
+    pb-8
   `;
 
   return (
@@ -142,7 +145,7 @@ function LayoutContent() {
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/profile" element={<Profile />} />
 
-            {/* Built-in pages — each one guarded by its module slug */}
+            {/* Built-in pages - each one guarded by its module slug */}
             {BUILT_IN_PAGES.map(({ path, slug, Component }) => (
               <Route key={path} path={path} element={guard(slug, <Component />)} />
             ))}

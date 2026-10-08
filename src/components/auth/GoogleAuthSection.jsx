@@ -1,10 +1,9 @@
-import React, { useEffect, useRef, useState } from "react";
-import { AlertCircle, Loader2 } from "lucide-react";
+import { useEffect, useRef, useState } from 'react';import { AlertCircle, Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 
 import { googleAuth } from "../../services/loginAPI";
-import { useAuth } from "../../context/AuthContext";
+import { useAuth } from "../../context/authValue";
 
 /**
  * "or" divider + Google button + the whole Google flow.
@@ -50,7 +49,11 @@ const GoogleAuthSection = ({ mode = "login", onPending }) => {
   const handlerRef = useRef(null);
 
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState("");
+  const [error, setError] = useState(() =>
+    import.meta.env.VITE_GOOGLE_CLIENT_ID
+      ? ""
+      : "Google sign-in is not available right now."
+  );
 
   const handleCredential = async (credential) => {
     if (busy) return;
@@ -89,13 +92,14 @@ const GoogleAuthSection = ({ mode = "login", onPending }) => {
   };
 
   // GIS keeps the first callback it was given, so always call the latest one.
-  handlerRef.current = handleCredential;
+  useEffect(() => {
+    handlerRef.current = handleCredential;
+  });
 
   useEffect(() => {
     const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
     if (!clientId) {
-      setError("Google sign-in is not available right now.");
       return undefined;
     }
 

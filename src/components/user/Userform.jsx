@@ -1,5 +1,4 @@
-import React, { useState } from "react";
-import { toast } from "react-toastify";
+import { useState } from 'react';import { toast } from "react-toastify";
 import { Eye, EyeOff, User, X } from "lucide-react";
 
 import SideDrawer from "../ui/SideDrawer";

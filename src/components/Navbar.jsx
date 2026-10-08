@@ -1,9 +1,7 @@
-import React, { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect } from "react";
 import {
   Bell,
-  Mail,
   Search,
-  Settings,
   User,
   Lock,
   LogOut,
@@ -15,9 +13,15 @@ import { useNavigate } from "react-router-dom";
 
 import { logout as logoutApi } from "../services/loginAPI";
 import { getFileUrl } from "../services/profileApi";
-import { getInitials, getAvatarColor } from "../utils/avatar";
-import { useAuth } from "../context/AuthContext";
-import { useSidebar } from "../context/SidebarContext";
+import { getInitials } from "../utils/avatar";
+import { useAuth } from "../context/authValue";
+import { useSidebar } from "../context/sidebarValue";
+
+// Wire this to your notifications API. The orange badge only shows when it is above 0.
+const UNREAD_NOTIFICATIONS = 0;
+
+const searchInputCls =
+  "hr-input pl-10";
 
 function Navbar() {
   const navigate = useNavigate();
@@ -26,7 +30,7 @@ function Navbar() {
   const roles = profile?.roles;
   const profileImage = profile?.profileImage;
 
-  const { toggle, collapsed } = useSidebar();
+  const { toggle, toggleCollapsed, collapsed } = useSidebar();
 
   const [open, setOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
@@ -54,6 +58,15 @@ function Navbar() {
     navigate("/");
   };
 
+  // Desktop: collapse / expand the sidebar. Mobile: open the slide-in menu.
+  const handleMenuClick = () => {
+    if (window.matchMedia("(min-width: 1024px)").matches) {
+      toggleCollapsed();
+    } else {
+      toggle();
+    }
+  };
+
   const firstName = user?.firstName || "";
   const lastName = user?.lastName || "";
   const fullName = `${firstName} ${lastName}`.trim() || "User";
@@ -64,82 +77,89 @@ function Navbar() {
 
   const avatarUrl = getFileUrl(profileImage?.fileURL);
   const initials = getInitials(firstName, lastName);
-  const avatarColor = getAvatarColor(email);
 
-  const Avatar = ({ size }) =>
+  // Brand-orange avatar (photo when the user has one)
+  const renderAvatar = (size) =>
     avatarUrl ? (
       <img
         src={avatarUrl}
         alt={fullName}
-        className="rounded-full border border-border-subtle object-cover shrink-0"
+        className="shrink-0 rounded-full object-cover ring-2 ring-border-subtle"
         style={{ width: size, height: size }}
       />
     ) : (
       <div
-        className="rounded-full border border-border-subtle flex items-center justify-center text-white font-semibold shrink-0"
-        style={{ width: size, height: size, backgroundColor: avatarColor }}
+        className="flex shrink-0 items-center justify-center rounded-full bg-accent-500 font-semibold text-white ring-2 ring-border-subtle"
+        style={{ width: size, height: size, fontSize: size * 0.36 }}
       >
         {initials}
       </div>
     );
 
+  const iconBtn =
+    "flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-text-secondary transition-colors duration-fast ease-standard hover:bg-gray-100 hover:text-text-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary-600";
+
   return (
     // left offset kept in sync with Sidebar.jsx: 288px expanded (lg:left-72) / 80px collapsed (lg:left-20)
     <nav
-      className={`fixed top-0 left-0 right-0 h-18 bg-surface border-b border-border-subtle px-4 sm:px-6 lg:px-8 flex items-center justify-between gap-3 z-30 transition-all duration-base ease-standard ${
+      className={`fixed left-0 right-0 top-0 z-30 flex h-18 items-center justify-between gap-3 border-b border-border-subtle bg-surface px-4 text-text-primary transition-all duration-base ease-standard sm:px-6 lg:px-8 ${
         collapsed ? "lg:left-20" : "lg:left-72"
       }`}
     >
-      <div className="flex items-center gap-3 min-w-0 flex-1">
+      <div className="flex min-w-0 flex-1 items-center gap-3">
         <button
           type="button"
-          onClick={toggle}
-          className="lg:hidden w-10 h-10 shrink-0 flex items-center justify-center rounded-lg text-text-secondary hover:bg-primary-50 hover:text-primary-700 transition-colors duration-fast ease-standard"
-          aria-label="Open menu"
+          onClick={handleMenuClick}
+          className={iconBtn}
+          aria-label="Toggle menu"
         >
-          <Menu size={20} />
+          <Menu size={22} />
         </button>
 
-        <div className="relative hidden sm:block w-full max-w-[320px]">
+        <span className="hidden h-7 w-px bg-border-strong sm:block" aria-hidden="true" />
+
+        <div className="relative hidden w-full max-w-[420px] sm:block">
           <Search
             size={18}
-            className="absolute left-4 top-1/2 -translate-y-1/2 text-text-disabled"
+            className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-text-disabled"
           />
           <input
             type="text"
-            placeholder="Search in HRMS"
-            className="w-full h-11 pl-12 pr-4 rounded-md border border-border-subtle bg-background text-sm text-text-primary outline-none focus:border-accent-500 transition-colors duration-fast ease-standard"
+            placeholder="Search in HRMS..."
+            aria-label="Search in HRMS"
+            className={searchInputCls}
           />
         </div>
 
         <button
           type="button"
           onClick={() => setSearchOpen(true)}
-          className="sm:hidden w-10 h-10 shrink-0 flex items-center justify-center rounded-lg text-text-secondary hover:bg-primary-50 hover:text-primary-700 transition-colors duration-fast ease-standard"
+          className={`${iconBtn} sm:hidden`}
           aria-label="Search"
         >
           <Search size={19} />
         </button>
 
         {searchOpen && (
-          <div className="sm:hidden absolute inset-x-0 top-0 h-18 bg-surface px-4 flex items-center gap-2 z-40">
+          <div className="absolute inset-x-0 top-0 z-40 flex h-18 items-center gap-2 border-b border-border-subtle bg-surface px-4 sm:hidden">
             <div className="relative flex-1">
               <Search
                 size={18}
-                className="absolute left-4 top-1/2 -translate-y-1/2 text-text-disabled"
+                className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-text-disabled"
               />
               <input
                 autoFocus
                 type="text"
-                placeholder="Search in HRMS"
-                className="w-full h-11 pl-12 pr-4 rounded-md border border-border-subtle bg-background text-sm text-text-primary outline-none focus:border-accent-500 transition-colors duration-fast ease-standard"
+                placeholder="Search in HRMS..."
+                aria-label="Search in HRMS"
+                className={searchInputCls}
               />
             </div>
 
             <button
               type="button"
               onClick={() => setSearchOpen(false)}
-              className="w-10 h-10 shrink-0 flex items-center justify-center rounded-lg text-text-secondary hover:bg-background"
+              className={iconBtn}
               aria-label="Close search"
             >
               <X size={18} />
@@ -148,76 +168,87 @@ function Navbar() {
         )}
       </div>
 
-      <div className="flex items-center gap-1 sm:gap-3 lg:gap-4 shrink-0">
-            <div
-          className="relative sm:pl-4 sm:ml-1 sm:border-l border-border-subtle"
-          ref={dropdownRef}
+      <div className="flex shrink-0 items-center gap-2 sm:gap-4">
+        {/* Notifications */}
+        <button
+          type="button"
+          className={`${iconBtn} relative`}
+          aria-label={
+            UNREAD_NOTIFICATIONS > 0
+              ? `Notifications, ${UNREAD_NOTIFICATIONS} unread`
+              : "Notifications"
+          }
         >
-          <button
-            onClick={() => setOpen(!open)}
-            className="flex items-center gap-2 lg:gap-3 py-1.5 pr-1 rounded-lg hover:bg-background transition-colors duration-fast ease-standard"
-          >
-            <Avatar size={38} />
+          <Bell size={22} />
 
-            <div className="hidden lg:block text-left leading-tight max-w-[140px]">
-              <h3 className="text-sm font-semibold text-text-primary truncate">
-                {fullName}
-              </h3>
-              <p className="text-xs text-text-secondary truncate">{roleName}</p>
+          {UNREAD_NOTIFICATIONS > 0 && (
+            <span className="absolute right-1 top-1 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-accent-500 px-1 text-[10px] font-bold leading-none text-white ring-2 ring-white">
+              {UNREAD_NOTIFICATIONS}
+            </span>
+          )}
+        </button>
+
+        {/* Profile menu */}
+        <div className="relative" ref={dropdownRef}>
+          <button
+            type="button"
+            onClick={() => setOpen(!open)}
+            aria-haspopup="menu"
+            aria-expanded={open}
+            className="flex items-center gap-3 rounded-lg py-1.5 pl-1.5 pr-2 transition-colors duration-fast ease-standard hover:bg-gray-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary-600"
+          >
+            {renderAvatar(42)}
+
+            <div className="hidden max-w-[150px] text-left leading-tight lg:block">
+              <h3 className="truncate text-sm font-semibold text-text-primary">{fullName}</h3>
+              <p className="truncate text-xs text-text-secondary">{roleName}</p>
             </div>
 
             <ChevronDown
-              size={16}
-              className={`hidden sm:block text-text-disabled transition-transform duration-fast ease-standard ${
+              size={18}
+              className={`hidden text-text-secondary transition-transform duration-fast ease-standard sm:block ${
                 open ? "rotate-180" : ""
               }`}
             />
           </button>
 
           {open && (
-            <div className="absolute right-0 mt-3 w-[min(20rem,calc(100vw-2rem))] bg-surface rounded-lg shadow-lg border border-border-subtle overflow-hidden">
-              <div className="px-5 py-4 border-b border-border-subtle bg-background">
+            <div
+              role="menu"
+              className="absolute right-0 mt-3 w-[min(20rem,calc(100vw-2rem))] overflow-hidden rounded-xl border border-border-subtle bg-surface text-text-primary shadow-lg"
+            >
+              <div className="border-b border-border-subtle bg-background px-5 py-4">
                 <div className="flex items-center gap-3">
-                  <Avatar size={52} />
+                  {renderAvatar(52)}
 
                   <div className="min-w-0">
-                    <p className="font-semibold text-primary-700 text-base truncate">
-                      {fullName}
-                    </p>
-                    <p className="text-sm text-text-secondary truncate">{email}</p>
-                    <p className="text-xs text-accent-500 mt-1 font-medium">
-                      {roleName}
-                    </p>
+                    <p className="truncate text-base font-semibold text-primary-700">{fullName}</p>
+                    <p className="truncate text-sm text-text-secondary">{email}</p>
+                    <p className="mt-1 text-xs font-medium text-accent-600">{roleName}</p>
                   </div>
                 </div>
               </div>
 
-              <div className="px-5 py-4 space-y-3">
-                <div className="flex justify-between items-center gap-4">
-                  <span className="text-xs text-text-secondary shrink-0">Email</span>
-                  <span className="text-sm font-medium text-text-primary text-right break-all">
-                    {email}
-                  </span>
+              <div className="space-y-3 px-5 py-4">
+                <div className="flex items-center justify-between gap-4">
+                  <span className="shrink-0 text-xs text-text-secondary">Email</span>
+                  <span className="break-all text-right text-sm font-medium">{email}</span>
                 </div>
 
-                <div className="flex justify-between items-center gap-4">
-                  <span className="text-xs text-text-secondary shrink-0">Phone</span>
-                  <span className="text-sm font-medium text-text-primary text-right">
-                    {phone}
-                  </span>
+                <div className="flex items-center justify-between gap-4">
+                  <span className="shrink-0 text-xs text-text-secondary">Phone</span>
+                  <span className="text-right text-sm font-medium">{phone}</span>
                 </div>
 
-                <div className="flex justify-between items-center gap-4">
-                  <span className="text-xs text-text-secondary shrink-0">Role</span>
-                  <span className="text-sm font-medium text-text-primary text-right">
-                    {roleName}
-                  </span>
+                <div className="flex items-center justify-between gap-4">
+                  <span className="shrink-0 text-xs text-text-secondary">Role</span>
+                  <span className="text-right text-sm font-medium">{roleName}</span>
                 </div>
 
-                <div className="flex justify-between items-center gap-4">
-                  <span className="text-xs text-text-secondary shrink-0">Status</span>
+                <div className="flex items-center justify-between gap-4">
+                  <span className="shrink-0 text-xs text-text-secondary">Status</span>
                   <span
-                    className={`px-2.5 py-1 text-xs font-medium rounded-full ${
+                    className={`rounded-full px-2.5 py-1 text-xs font-medium ${
                       status === "Active"
                         ? "bg-success-50 text-success-600"
                         : "bg-background text-text-secondary"
@@ -230,30 +261,36 @@ function Navbar() {
 
               <div className="border-t border-border-subtle">
                 <button
+                  type="button"
+                  role="menuitem"
                   onClick={() => {
                     navigate("/profile");
                     setOpen(false);
                   }}
-                  className="w-full px-5 py-3 flex items-center gap-3 text-sm hover:bg-primary-50 text-text-primary transition-colors duration-fast ease-standard"
+                  className="flex w-full items-center gap-3 px-5 py-3 text-sm transition-colors duration-fast ease-standard hover:bg-primary-50"
                 >
                   <User size={18} className="shrink-0" />
                   My Profile
                 </button>
 
                 <button
+                  type="button"
+                  role="menuitem"
                   onClick={() => {
                     navigate("/profile?tab=password");
                     setOpen(false);
                   }}
-                  className="w-full px-5 py-3 flex items-center gap-3 text-sm hover:bg-primary-50 text-text-primary transition-colors duration-fast ease-standard"
+                  className="flex w-full items-center gap-3 px-5 py-3 text-sm transition-colors duration-fast ease-standard hover:bg-primary-50"
                 >
                   <Lock size={18} className="shrink-0" />
                   Update Password
                 </button>
 
                 <button
+                  type="button"
+                  role="menuitem"
                   onClick={handleLogout}
-                  className="w-full px-5 py-3 flex items-center gap-3 text-sm text-danger-500 hover:bg-danger-50 transition-colors duration-fast ease-standard"
+                  className="flex w-full items-center gap-3 px-5 py-3 text-sm text-danger-500 transition-colors duration-fast ease-standard hover:bg-danger-50"
                 >
                   <LogOut size={18} className="shrink-0" />
                   Logout

@@ -1,4 +1,3 @@
-import React from "react";
 
 import logo from "../../assets/images/logo.png";
 import loginBg from "../../assets/images/Login_bg.png";

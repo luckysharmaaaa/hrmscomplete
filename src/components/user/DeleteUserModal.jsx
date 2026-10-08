@@ -1,4 +1,3 @@
-import React from "react";
 import ConfirmModal from "../ui/ConfirmModal";
 
 const DeleteUserModal = ({

@@ -1,4 +1,3 @@
-import React from "react";
 import { MoreVertical, Pencil, Trash2 } from "lucide-react";
 import { DESIGNATIONS, SORT_OPTIONS, getProductivityStyle } from "./employeeData";
 

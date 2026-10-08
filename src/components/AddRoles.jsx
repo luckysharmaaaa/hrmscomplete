@@ -1,5 +1,4 @@
-import React, { useEffect, useState } from "react";
-import { BadgeCheck, Loader2 } from "lucide-react";
+import { useState } from 'react';import { BadgeCheck, Loader2 } from "lucide-react";
 
 import SideDrawer from "./ui/SideDrawer";
 import Switch from "./ui/Switch";
@@ -45,7 +44,10 @@ const AddRoles = ({
   // INITIALIZE FORM
   // ============================================================
 
-  useEffect(() => {
+  const [prevForm, setPrevForm] = useState({ editRole, open });
+  if (prevForm.editRole !== editRole || prevForm.open !== open) {
+    setPrevForm({ editRole, open });
+
     if (editRole) {
       setRoleData({
         roleName: editRole.roleName || "",
@@ -61,7 +63,7 @@ const AddRoles = ({
 
     setErrors({});
     setIsSaving(false);
-  }, [editRole, open]);
+  }
 
   // ============================================================
   // FORM CHANGE

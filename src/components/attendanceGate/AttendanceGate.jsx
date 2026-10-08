@@ -1,7 +1,6 @@
-import React from "react";
 import { Fingerprint, Loader2, RefreshCw, ShieldAlert } from "lucide-react";
 
-import { useAttendanceGate } from "../../context/AttendanceGateContext";
+import { useAttendanceGate } from "../../context/attendanceGateValue";
 import AttendanceGateScreen from "./AttendanceGateScreen";
 import { PunchInButton } from "../attendance/PunchButtons";
 import { BIOMETRIC_LABEL } from "../../utils/attendanceTime";

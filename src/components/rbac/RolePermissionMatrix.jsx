@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AlertCircle, Check, Loader2, RotateCcw, Save, Search, ShieldCheck, X } from "lucide-react";
 
-import { useAuth } from "../../context/AuthContext";
+import { useAuth } from "../../context/authValue";
 import usePermission from "../../hooks/usePermission";
 import {
   extractList,
@@ -76,7 +76,7 @@ export default function RolePermissionMatrix({ roleId: fixedRoleId, onSaved }) {
   const [query, setQuery] = useState("");
 
   const [loadingMeta, setLoadingMeta] = useState(true);
-  const [loadingPerms, setLoadingPerms] = useState(false);
+  const [loadingPerms, setLoadingPerms] = useState(Boolean(fixedRoleId));
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
@@ -84,11 +84,20 @@ export default function RolePermissionMatrix({ roleId: fixedRoleId, onSaved }) {
   const dirty = isDirty(saved, draft);
   const readOnly = !canEdit;
 
+  const [prevFixedRoleId, setPrevFixedRoleId] = useState(fixedRoleId);
+  if (fixedRoleId !== prevFixedRoleId) {
+    setPrevFixedRoleId(fixedRoleId);
+    if (fixedRoleId) {
+      setLoadingPerms(true);
+      setError("");
+      setRoleId(fixedRoleId);
+    }
+  }
+
   /* ----------------------------- data loading ---------------------------- */
 
   useEffect(() => {
     let active = true;
-    setLoadingMeta(true);
 
     Promise.all([fetchRoles(), fetchModules(), fetchActions().catch(() => null)])
       .then(([rolesRes, modulesRes, actionsRes]) => {
@@ -101,7 +110,9 @@ export default function RolePermissionMatrix({ roleId: fixedRoleId, onSaved }) {
           setActions(actionList.map((a) => a.code));
           setLabels(Object.fromEntries(actionList.map((a) => [a.code, a.label])));
         }
-        setRoleId((current) => current || (roleList[0]?.id ?? ""));
+        const nextId = roleList[0]?.id ?? "";
+        setRoleId((current) => current || nextId);
+        if (nextId) setLoadingPerms(true);
       })
       .catch((err) => active && setError(errorMessage(err, "Couldn't load roles and modules.")))
       .finally(() => active && setLoadingMeta(false));
@@ -112,15 +123,8 @@ export default function RolePermissionMatrix({ roleId: fixedRoleId, onSaved }) {
   }, []);
 
   useEffect(() => {
-    if (fixedRoleId) setRoleId(fixedRoleId);
-  }, [fixedRoleId]);
-
-  useEffect(() => {
     if (!roleId || loadingMeta) return undefined;
     let active = true;
-
-    setLoadingPerms(true);
-    setError("");
 
     fetchRolePermissions(roleId)
       .then((res) => {
@@ -160,6 +164,8 @@ export default function RolePermissionMatrix({ roleId: fixedRoleId, onSaved }) {
     if (dirty && !window.confirm("You have unsaved changes. Switch role and discard them?")) {
       return;
     }
+    setLoadingPerms(true);
+    setError("");
     setRoleId(nextId);
   };
 

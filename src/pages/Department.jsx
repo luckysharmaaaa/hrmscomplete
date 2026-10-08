@@ -1,16 +1,19 @@
 import usePermission from "../hooks/usePermission";
 
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   ChevronDown,
   Download,
   FileSpreadsheet,
   FileText,
   Building2,
+  CheckCircle2,
   Plus,
+  XCircle,
 } from "lucide-react";
 
 import PageHeader from "../components/ui/PageHeader";
+import StatCard from "../components/ui/StatCard";
 import DepartmentTable from "../components/Department/DepartmentTable";
 import AddDepartmentModal from "../components/Department/AddDepartment";
 import DeleteDepartmentModal from "../components/Department/DeleteDepartmentModal";
@@ -28,26 +31,24 @@ const Department = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editData, setEditData] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   // ==========================================================
   // Fetch Departments
   // ==========================================================
-  const fetchDepartments = async () => {
-    try {
-      setLoading(true);
+  const fetchDepartments = () =>
+    getDepartments()
+      .then((response) => {
+        const data = response?.data?.data || response?.data || [];
 
-      const response = await getDepartments();
-
-      const data = response?.data?.data || response?.data || [];
-
-      setDepartments(Array.isArray(data) ? data : []);
-    } catch (error) {
-      console.error("Failed to fetch departments:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+        setDepartments(Array.isArray(data) ? data : []);
+      })
+      .catch((error) => {
+        console.error("Failed to fetch departments:", error);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
 
   useEffect(() => {
     fetchDepartments();
@@ -181,10 +182,35 @@ const Department = () => {
         }
       />
 
+      {/* Summary */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <StatCard
+          icon={Building2}
+          tone="primary"
+          label="Total Departments"
+          value={departments.length}
+          hint="All departments"
+        />
+        <StatCard
+          icon={CheckCircle2}
+          tone="success"
+          label="Active"
+          value={departments.filter((d) => d.status === "Active").length}
+          hint="Available for use"
+        />
+        <StatCard
+          icon={XCircle}
+          tone="accent"
+          label="Inactive"
+          value={departments.filter((d) => d.status === "Inactive").length}
+          hint="Not in use"
+        />
+      </div>
+
       {/* Department Table */}
       <DepartmentTable
         departments={departments}
-        setDepartments={setDepartments}
+        loading={loading}
         onEditDepartment={handleEdit}
         onDeleteDepartment={handleDeleteRequest}
       />
@@ -195,22 +221,20 @@ const Department = () => {
         onClose={handleCloseModal}
         editData={editData}
         onSubmit={handleSubmit}
+        submitting={loading}
       />
 
       {/* Delete Department Modal */}
       <DeleteDepartmentModal
         open={!!deleteTarget}
         item={deleteTarget}
-        onClose={() => setDeleteTarget(null)}
+        loading={loading}
+        onClose={() => {
+          if (!loading) setDeleteTarget(null);
+        }}
         onConfirm={handleDelete}
       />
 
-      {/* Loading Indicator */}
-      {loading && (
-        <div className="fixed bottom-5 right-5 z-[60] rounded-md border border-border-subtle bg-surface px-4 py-2 text-sm text-text-secondary shadow-lg">
-          Processing...
-        </div>
-      )}
     </div>
   );
 };

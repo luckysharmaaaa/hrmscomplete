@@ -1,5 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
-import { Clock, Coffee, Zap, Activity, Target } from "lucide-react";
+import { useEffect, useMemo, useState } from 'react';import { Clock, Coffee, Zap, Activity, Target } from "lucide-react";
 
 import {
   DAILY_TARGET_MINUTES,

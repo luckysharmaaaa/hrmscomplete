@@ -1,5 +1,4 @@
-import React, { useCallback, useEffect, useState } from "react";
-import { Fingerprint, Loader2, Save, ShieldCheck } from "lucide-react";
+import { useCallback, useEffect, useState } from 'react';import { Fingerprint, Loader2, Save, ShieldCheck } from "lucide-react";
 import { toast } from "react-toastify";
 
 import usePermission from "../../hooks/usePermission";
@@ -51,20 +50,29 @@ export default function BiometricStatusPanel() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
-  const load = useCallback(async (d) => {
-    setLoading(true);
-    try {
-      const res = await getBiometricStatus(d);
-      setData(res);
-      setUnavailable(res.selected.status === "UNAVAILABLE");
-      setReason(res.selected.reason || "");
-      setError("");
-    } catch (e) {
-      toast.error(e?.response?.data?.message || "Failed to load biometric status");
-    } finally {
-      setLoading(false);
-    }
+  const load = useCallback((d) => {
+    return getBiometricStatus(d)
+      .then((res) => {
+        setData(res);
+        setUnavailable(res.selected.status === "UNAVAILABLE");
+        setReason(res.selected.reason || "");
+        setError("");
+      })
+      .catch((e) => {
+        toast.error(e?.response?.data?.message || "Failed to load biometric status");
+      })
+      .finally(() => {
+        setLoading(false);
+      });
   }, []);
+
+  // Show the spinner as soon as a new date (or permission) triggers a load.
+  const loadKey = loaded && canView && date ? date : null;
+  const [prevLoadKey, setPrevLoadKey] = useState(loadKey);
+  if (loadKey !== prevLoadKey) {
+    setPrevLoadKey(loadKey);
+    if (loadKey) setLoading(true);
+  }
 
   useEffect(() => {
     // The date input can be cleared by the user; never call the API with an empty date.
@@ -92,6 +100,7 @@ export default function BiometricStatusPanel() {
       toast.success(
         unavailable ? "Biometric marked NOT working for the selected date" : "Biometric marked working"
       );
+      setLoading(true);
       await load(date);
     } catch (e) {
       setError(e?.response?.data?.message || "Could not save the status.");

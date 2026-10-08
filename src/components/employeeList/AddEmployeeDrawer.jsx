@@ -1,5 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
-import {
+import { useEffect, useRef, useState } from 'react';import {
   Calendar,
   Download,
   Eye,
@@ -58,14 +57,20 @@ function ImportEmployeeModal({ open, onClose, onSelect }) {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    if (!open) {
+  const [prevOpen, setPrevOpen] = useState(open);
+  if (open !== prevOpen) {
+    setPrevOpen(open);
+    if (open) {
+      setLoading(true);
+    } else {
       setSearch("");
-      return;
     }
+  }
+
+  useEffect(() => {
+    if (!open) return;
 
     const fetchUsers = async () => {
-      setLoading(true);
       try {
         const response = await getImportableUsers();
         setUsers(response.data?.data ?? []);
@@ -223,6 +228,20 @@ export default function AddEmployeeDrawer({ open, onClose, editData, onSubmit })
   const [apiError, setApiError] = useState(null);
 
   const fileInputRef = useRef(null);
+
+  const [prevOpen, setPrevOpen] = useState(open);
+  const [prevEditData, setPrevEditData] = useState(editData);
+  if (open !== prevOpen || editData !== prevEditData) {
+    setPrevOpen(open);
+    setPrevEditData(editData);
+    if (open) {
+      setApiError(null);
+      setImportedFrom(false);
+      setImportLocks({ email: false, phone: false });
+      setProfileImage(null);
+      setProfileImageFile(null);
+    }
+  }
 
   useEffect(() => {
     const fetchDropdownData = async () => {
@@ -400,12 +419,6 @@ export default function AddEmployeeDrawer({ open, onClose, editData, onSubmit })
 
   useEffect(() => {
     if (!open) return;
-
-    setApiError(null);
-    setImportedFrom(false);
-    setImportLocks({ email: false, phone: false });
-    setProfileImage(null);
-    setProfileImageFile(null);
 
     if (fileInputRef.current) fileInputRef.current.value = "";
 

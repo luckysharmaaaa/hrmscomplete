@@ -58,23 +58,34 @@ export default function AddHolidayModal({
   const bodyRef = useRef(null);
 
   // Reset every time the drawer opens
-  useEffect(() => {
-    if (!isOpen) return;
-    const first = holiday
-      ? newRow({
-          title: holiday.title,
-          date: holiday.date,
-          type: holiday.type,
-          description: holiday.description || "",
-        })
-      : newRow({ date: defaultDate });
-    setRows([first]);
-    setNoteOpen(first.description ? { [first.key]: true } : {});
-    setErrors({});
-    setSaving(false);
-    setConfirmDelete(false);
-    setFocusKey(holiday ? null : first.key);
-  }, [isOpen, holiday, defaultDate]);
+  const [prevIsOpen, setPrevIsOpen] = useState(isOpen);
+  const [prevHoliday, setPrevHoliday] = useState(holiday);
+  const [prevDefaultDate, setPrevDefaultDate] = useState(defaultDate);
+  if (
+    isOpen !== prevIsOpen ||
+    holiday !== prevHoliday ||
+    defaultDate !== prevDefaultDate
+  ) {
+    setPrevIsOpen(isOpen);
+    setPrevHoliday(holiday);
+    setPrevDefaultDate(defaultDate);
+    if (isOpen) {
+      const first = holiday
+        ? newRow({
+            title: holiday.title,
+            date: holiday.date,
+            type: holiday.type,
+            description: holiday.description || "",
+          })
+        : newRow({ date: defaultDate });
+      setRows([first]);
+      setNoteOpen(first.description ? { [first.key]: true } : {});
+      setErrors({});
+      setSaving(false);
+      setConfirmDelete(false);
+      setFocusKey(holiday ? null : first.key);
+    }
+  }
 
   // Focus the name field of a freshly added row
   useEffect(() => {

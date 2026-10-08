@@ -1,5 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
-import {
+import { useEffect, useMemo, useState } from 'react';import {
   X,
   Pencil,
   Clock,
@@ -69,23 +68,25 @@ const EditAttendanceModal = ({ open, onClose, employee, onSave }) => {
   const [saving, setSaving] = useState(false);
 
   // Pre-fill whenever a different employee/record is opened.
-  useEffect(() => {
+  const [prevEmployee, setPrevEmployee] = useState(employee);
+  if (employee !== prevEmployee) {
+    setPrevEmployee(employee);
+
     if (!employee) {
       setForm(EMPTY_FORM);
       setInitial(EMPTY_FORM);
-      return;
+    } else {
+      const next = {
+        checkIn: employee.checkIn || "",
+        checkOut: employee.checkOut || "",
+        status: employee.status || "Present",
+        notes: employee.notes || "",
+      };
+
+      setForm(next);
+      setInitial(next);
     }
-
-    const next = {
-      checkIn: employee.checkIn || "",
-      checkOut: employee.checkOut || "",
-      status: employee.status || "Present",
-      notes: employee.notes || "",
-    };
-
-    setForm(next);
-    setInitial(next);
-  }, [employee]);
+  }
 
   // Escape closes the drawer (unless a save is running).
   useEffect(() => {

@@ -1,5 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
-import { Camera, Loader2, Trash2, ImageOff } from "lucide-react";
+import { useRef, useState } from 'react';import { Camera, Loader2, Trash2, ImageOff } from "lucide-react";
 import { toast } from "react-toastify";
 
 import ConfirmModal from "../../components/ui/ConfirmModal";
@@ -32,9 +31,12 @@ const ProfileImage = ({ user, roles = [], profileImage, onChange }) => {
   const currentImageUrl = previewUrl || (imageFailed ? null : storedImageUrl);
 
   // A new photo gets a fresh chance to load.
-  useEffect(() => {
+  const [prevStoredImageUrl, setPrevStoredImageUrl] = useState(storedImageUrl);
+
+  if (storedImageUrl !== prevStoredImageUrl) {
+    setPrevStoredImageUrl(storedImageUrl);
     setImageFailed(false);
-  }, [storedImageUrl]);
+  }
 
   const validateFile = (file) => {
     if (!ALLOWED_TYPES.includes(file.type)) {

@@ -1,11 +1,11 @@
-import React, { useEffect, useMemo, useRef } from "react";
-import { useFormik } from "formik";
+import { useEffect, useMemo, useRef } from 'react';import { useFormik } from "formik";
 import { Loader2, Lock } from "lucide-react";
 import { toast } from "react-toastify";
 
 import ProfileImage from "./ProfileImage";
 import StatusBadge from "../../components/ui/StatusBadge";
-import { Field, SettingsSection, TextField, inputClass } from "./ProfileUi";
+import { Field, SettingsSection, TextField } from "./ProfileUi";
+import { inputClass } from "./inputClass";
 import { profileSchema } from "./profileValidation";
 import { updateMyProfile } from "../../services/profileApi";
 

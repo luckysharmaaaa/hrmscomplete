@@ -1,15 +1,23 @@
-import { CalendarIcon } from "lucide-react";
-import React, { useEffect, useMemo, useState } from "react";
+import {
+  CalendarIcon,
+  CalendarOff,
+  Clock,
+  Hourglass,
+  UserCheck,
+  UserX,
+} from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "react-toastify";
 
+import StatCard from "../ui/StatCard";
 import { getAdminAttendanceSummary } from "../../services/attendanceAdminApi";
 
 const STAT_DEFS = [
-  { key: "present", label: "Present" },
-  { key: "lateLogin", label: "Late Login" },
-  { key: "onLeave", label: "On Leave" },
-  { key: "halfDay", label: "Half Day" },
-  { key: "absent", label: "Absent" },
+  { key: "present", label: "Present", icon: UserCheck, tone: "success" },
+  { key: "lateLogin", label: "Late Login", icon: Clock, tone: "warning" },
+  { key: "onLeave", label: "On Leave", icon: CalendarOff, tone: "info" },
+  { key: "halfDay", label: "Half Day", icon: Hourglass, tone: "accent" },
+  { key: "absent", label: "Absent", icon: UserX, tone: "danger" },
 ];
 
 const formatChange = (changePct) => {
@@ -32,6 +40,16 @@ const formatDate = (dateString) => {
     month: "long",
     year: "numeric",
   });
+};
+
+// Small coloured "+5%" line under the number (green up / red down, as before).
+const changeHint = (stat) => {
+  const label = stat ? formatChange(stat.changePct) : null;
+  if (!label) return undefined;
+
+  return (
+    <span className={stat.changePct >= 0 ? "text-success-600" : "text-danger-600"}>{label}</span>
+  );
 };
 
 /**
@@ -105,13 +123,13 @@ const AttendanceDetailsToday = ({ filters = {}, refreshKey = 0 }) => {
   }, [filters.startDate, filters.endDate, selectedDate]);
 
   return (
-    <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+    <section className="space-y-4" aria-label="Attendance details">
       {/* HEADER */}
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <h2 className="text-xl font-semibold text-[#0F265C]">Attendance Details</h2>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="min-w-0">
+          <h2 className="text-lg font-semibold tracking-tight text-primary-700">Attendance Details</h2>
 
-          <p className="mt-1 text-sm text-gray-500">
+          <p className="mt-1 text-xs leading-5 text-text-secondary">
             {loading
               ? "Loading employee data…"
               : summary
@@ -120,48 +138,30 @@ const AttendanceDetailsToday = ({ filters = {}, refreshKey = 0 }) => {
           </p>
         </div>
 
-        <div className="flex items-center gap-2 rounded-lg bg-orange-50 px-3 py-2 text-sm font-semibold text-orange-500">
-          <CalendarIcon size={14} />
+        <div className="inline-flex items-center gap-2 rounded-lg bg-orange-50 px-3 py-2 text-sm font-semibold text-accent-600">
+          <CalendarIcon size={14} aria-hidden="true" />
           <span>{dateLabel}</span>
         </div>
       </div>
 
       {/* STATS */}
-      <div className="mt-6 grid grid-cols-2 overflow-hidden rounded-md border border-gray-200 sm:grid-cols-3 xl:grid-cols-5">
-        {STAT_DEFS.map(({ key, label }) => {
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-5">
+        {STAT_DEFS.map(({ key, label, icon, tone }) => {
           const stat = summary?.[key];
-          const changeLabel = stat ? formatChange(stat.changePct) : null;
-
-          const positive =
-            stat?.changePct !== null && stat?.changePct !== undefined && stat.changePct >= 0;
 
           return (
-            <div
+            <StatCard
               key={key}
-              className="flex items-end justify-between border-b border-r border-gray-200 px-4 py-5"
-            >
-              <div>
-                <p className="text-sm text-gray-500">{label}</p>
-
-                <h3 className="mt-1 text-2xl font-semibold text-[#0F265C]">
-                  {loading ? "—" : stat?.count ?? 0}
-                </h3>
-              </div>
-
-              {changeLabel && (
-                <span
-                  className={`rounded px-2 py-[2px] text-[11px] font-semibold text-white ${
-                    positive ? "bg-green-500" : "bg-red-500"
-                  }`}
-                >
-                  {changeLabel}
-                </span>
-              )}
-            </div>
+              icon={icon}
+              tone={tone}
+              label={label}
+              value={loading ? "—" : stat?.count ?? 0}
+              hint={loading ? undefined : changeHint(stat)}
+            />
           );
         })}
       </div>
-    </div>
+    </section>
   );
 };
 

@@ -1,5 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
-import {
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';import {
   Search,
   X,
   Pencil,
@@ -264,6 +263,14 @@ const AttendanceAdminTable = ({ onFiltersChange, onDataChanged }) => {
 
   const filtersKey = JSON.stringify(filters);
 
+  // Show the loading state as soon as the request inputs change (render phase, not an effect).
+  const loadKey = `${currentPage}:${rowsPerPage}:${filtersKey}`;
+  const [prevLoadKey, setPrevLoadKey] = useState(loadKey);
+  if (loadKey !== prevLoadKey) {
+    setPrevLoadKey(loadKey);
+    setLoading(true);
+  }
+
   useEffect(() => {
     if (typeof onFiltersChangeRef.current === "function") {
       onFiltersChangeRef.current(JSON.parse(filtersKey));
@@ -273,28 +280,28 @@ const AttendanceAdminTable = ({ onFiltersChange, onDataChanged }) => {
   // ---------------- load (ignores stale responses) ----------------
   const requestIdRef = useRef(0);
 
-  const load = useCallback(async () => {
+  const load = useCallback(() => {
     const requestId = ++requestIdRef.current;
-    setLoading(true);
 
-    try {
-      const res = await getAdminAttendance({
-        page: currentPage,
-        limit: rowsPerPage,
-        ...filters,
+    return getAdminAttendance({
+      page: currentPage,
+      limit: rowsPerPage,
+      ...filters,
+    })
+      .then((res) => {
+        if (requestId !== requestIdRef.current) return;
+
+        setRows(Array.isArray(res?.data) ? res.data : []);
+        setTotal(Number(res?.pagination?.total || 0));
+        setResolvedDate(res?.date ?? null);
+      })
+      .catch((error) => {
+        if (requestId !== requestIdRef.current) return;
+        toast.error(error?.response?.data?.message || "Failed to load attendance");
+      })
+      .finally(() => {
+        if (requestId === requestIdRef.current) setLoading(false);
       });
-
-      if (requestId !== requestIdRef.current) return;
-
-      setRows(Array.isArray(res?.data) ? res.data : []);
-      setTotal(Number(res?.pagination?.total || 0));
-      setResolvedDate(res?.date ?? null);
-    } catch (error) {
-      if (requestId !== requestIdRef.current) return;
-      toast.error(error?.response?.data?.message || "Failed to load attendance");
-    } finally {
-      if (requestId === requestIdRef.current) setLoading(false);
-    }
   }, [currentPage, rowsPerPage, filters]);
 
   useEffect(() => {
@@ -304,9 +311,7 @@ const AttendanceAdminTable = ({ onFiltersChange, onDataChanged }) => {
   const totalPages = Math.max(1, Math.ceil(total / rowsPerPage));
 
   // If rows were removed and the current page no longer exists, step back.
-  useEffect(() => {
-    if (!loading && currentPage > totalPages) setCurrentPage(totalPages);
-  }, [loading, currentPage, totalPages]);
+  if (!loading && currentPage > totalPages) setCurrentPage(totalPages);
 
   // ---------------- filter handlers (reset page here, not in an effect) ----------------
   const handleDateRange = (next) => {
@@ -426,6 +431,7 @@ const AttendanceAdminTable = ({ onFiltersChange, onDataChanged }) => {
       setRecentlyEditedIds((prev) => new Set(prev).add(editEmployee.id));
       setEditEmployee(null);
 
+      setLoading(true);
       await load();
       onDataChanged?.(); // refresh the summary cards on the page
 

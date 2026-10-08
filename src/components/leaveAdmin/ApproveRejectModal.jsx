@@ -1,5 +1,4 @@
-import React, { useState, useEffect } from "react";
-import { CheckCircle2, XCircle } from "lucide-react";
+import { useState } from 'react';import { CheckCircle2, XCircle } from "lucide-react";
 
 // ── Approve / Reject Confirm Modal ─────────────────────────────
 export default function ApproveRejectModal({ open, mode, item, onClose, onConfirm }) {
@@ -7,12 +6,16 @@ export default function ApproveRejectModal({ open, mode, item, onClose, onConfir
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
-  useEffect(() => {
+  const [prevOpen, setPrevOpen] = useState(open);
+  const [prevItem, setPrevItem] = useState(item);
+  if (open !== prevOpen || item !== prevItem) {
+    setPrevOpen(open);
+    setPrevItem(item);
     if (open) {
       setRemarks("");
       setError("");
     }
-  }, [open, item]);
+  }
 
   if (!open || !item) return null;
 

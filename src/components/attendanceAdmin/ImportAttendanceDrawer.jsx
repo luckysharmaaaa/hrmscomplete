@@ -1,5 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
-import {
+import { useCallback, useEffect, useRef, useState } from 'react';import {
   X,
   Upload,
   FileSpreadsheet,
@@ -111,21 +110,32 @@ const ImportAttendanceDrawer = ({ open, onClose, onImported }) => {
     setErrorsView(null);
   }, []);
 
-  useEffect(() => {
+  const [prevOpen, setPrevOpen] = useState(open);
+  if (open !== prevOpen) {
+    setPrevOpen(open);
     if (!open) reset();
-  }, [open, reset]);
+  }
 
-  const loadHistory = useCallback(async () => {
-    setHistoryLoading(true);
-    try {
-      const res = await getImportHistory(1, 20);
-      setHistory(res?.data || []);
-    } catch (e) {
-      toast.error(e?.response?.data?.message || "Failed to load import history");
-    } finally {
-      setHistoryLoading(false);
-    }
+  const loadHistory = useCallback(() => {
+    return getImportHistory(1, 20)
+      .then((res) => {
+        setHistory(res?.data || []);
+      })
+      .catch((e) => {
+        toast.error(e?.response?.data?.message || "Failed to load import history");
+      })
+      .finally(() => {
+        setHistoryLoading(false);
+      });
   }, []);
+
+  // Show the spinner as soon as the history tab becomes visible.
+  const historyKey = open && tab === "history";
+  const [prevHistoryKey, setPrevHistoryKey] = useState(historyKey);
+  if (historyKey !== prevHistoryKey) {
+    setPrevHistoryKey(historyKey);
+    if (historyKey) setHistoryLoading(true);
+  }
 
   useEffect(() => {
     if (open && tab === "history") loadHistory();

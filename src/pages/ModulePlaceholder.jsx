@@ -1,4 +1,3 @@
-import React from "react";
 import { Layers, Plus } from "lucide-react";
 import PageHeader from "../components/ui/PageHeader";
 import Can from "../components/rbac/Can";

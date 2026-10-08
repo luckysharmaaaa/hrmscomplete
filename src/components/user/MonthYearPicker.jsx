@@ -1,4 +1,3 @@
-import React from "react";
 import { ChevronLeft, ChevronRight, CalendarDays } from "lucide-react";
 
 const MONTH_NAMES = [

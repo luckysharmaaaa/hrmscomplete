@@ -1,5 +1,4 @@
-import React, { useState, useEffect } from "react";
-import { CalendarPlus, X, Info, Loader2 } from "lucide-react";
+import { useState, useEffect } from 'react';import { CalendarPlus, X, Info, Loader2 } from "lucide-react";
 import {
   getLeaveTypes,
   getMyBalance,
@@ -50,26 +49,33 @@ export default function AddLeaveModal({ open, onClose, onSubmit, editData }) {
   const [submitting, setSubmitting] = useState(false);
   const [apiError, setApiError] = useState("");
 
+  const [prevOpen, setPrevOpen] = useState(open);
+  const [prevEditData, setPrevEditData] = useState(editData);
+  if (open !== prevOpen || editData !== prevEditData) {
+    setPrevOpen(open);
+    setPrevEditData(editData);
+    if (open) {
+      setApiError("");
+      setErrors({});
+      setForm(
+        editData
+          ? {
+              leaveTypeId: String(editData.leaveTypeId ?? ""),
+              from: toInputDate(editData.startDate),
+              to: toInputDate(editData.endDate),
+              dayType: editData.dayType ?? "FULL_DAY",
+              reason: editData.reason ?? "",
+            }
+          : EMPTY_FORM,
+      );
+      setLoading(true);
+    }
+  }
+
   // Load leave types + balance whenever the drawer opens
   useEffect(() => {
     if (!open) return;
 
-    setApiError("");
-    setErrors({});
-
-    if (editData) {
-      setForm({
-        leaveTypeId: String(editData.leaveTypeId ?? ""),
-        from: toInputDate(editData.startDate),
-        to: toInputDate(editData.endDate),
-        dayType: editData.dayType ?? "FULL_DAY",
-        reason: editData.reason ?? "",
-      });
-    } else {
-      setForm(EMPTY_FORM);
-    }
-
-    setLoading(true);
     Promise.all([getLeaveTypes(), getMyBalance()])
       .then(([types, balance]) => {
         setLeaveTypes(types);
@@ -95,6 +101,11 @@ export default function AddLeaveModal({ open, onClose, onSubmit, editData }) {
   const balanceVal = selectedBalance ? Number(selectedBalance.balanceLeave) : null;
   const remaining =
     balanceVal !== null && days !== "" ? Math.max(0, balanceVal - Number(days)) : "";
+
+  // Force Full Day if the selected type doesn't allow half days
+  if (selectedType && !selectedType.allowHalfDay && form.dayType !== "FULL_DAY") {
+    setForm((prev) => ({ ...prev, dayType: "FULL_DAY" }));
+  }
 
   // ── Validation ─────────────────────────────────────────────
   const validate = () => {
@@ -146,13 +157,6 @@ export default function AddLeaveModal({ open, onClose, onSubmit, editData }) {
     setForm((prev) => ({ ...prev, [field]: e.target.value }));
     setErrors((prev) => ({ ...prev, [field]: undefined }));
   };
-
-  // Force Full Day if the selected type doesn't allow half days
-  useEffect(() => {
-    if (selectedType && !selectedType.allowHalfDay && form.dayType !== "FULL_DAY") {
-      setForm((prev) => ({ ...prev, dayType: "FULL_DAY" }));
-    }
-  }, [selectedType]);
 
   const badgeColour =
     balanceVal === null

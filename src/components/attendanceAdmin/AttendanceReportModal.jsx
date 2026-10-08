@@ -1,5 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
-import {
+import { useEffect, useMemo, useState } from 'react';import {
   X,
   FileText,
   BarChart3,
@@ -85,7 +84,7 @@ const Empty = ({ text }) => <p className="py-6 text-center text-xs text-gray-400
 // ── CSV export (no extra library) ─────────────────────────────────────────────
 const csvCell = (v) => `"${String(v ?? "").replace(/"/g, '""')}"`;
 
-const exportCsv = (report, period) => {
+const exportCsv = (report) => {
   const lines = [];
   const add = (...cols) => lines.push(cols.map(csvCell).join(","));
 
@@ -131,12 +130,21 @@ const AttendanceReportModal = ({ open, onClose, departmentId }) => {
   const range = useMemo(() => rangeFor(period, custom), [period, custom]);
   const rangeValid = range.startDate && range.endDate && range.startDate <= range.endDate;
 
+  // Loading/error are reset the moment a new range is requested (render phase, not an effect).
+  const fetchKey = open && rangeValid ? `${range.startDate}|${range.endDate}|${departmentId ?? ""}` : null;
+  const [prevFetchKey, setPrevFetchKey] = useState(null);
+  if (fetchKey !== prevFetchKey) {
+    setPrevFetchKey(fetchKey);
+    if (fetchKey) {
+      setLoading(true);
+      setError("");
+    }
+  }
+
   useEffect(() => {
     if (!open || !rangeValid) return undefined;
 
     let cancelled = false;
-    setLoading(true);
-    setError("");
 
     getAttendanceReport({ ...range, departmentId })
       .then((data) => !cancelled && setReport(data))
@@ -226,7 +234,7 @@ const AttendanceReportModal = ({ open, onClose, departmentId }) => {
             <button
               type="button"
               disabled={!hasData}
-              onClick={() => exportCsv(report, period)}
+              onClick={() => exportCsv(report)}
               className="flex items-center gap-2 px-3.5 py-2 bg-orange-500 hover:bg-orange-600 disabled:bg-orange-300 disabled:cursor-not-allowed text-white text-sm font-semibold rounded-lg transition shadow-sm shadow-orange-200"
             >
               <Download size={14} />

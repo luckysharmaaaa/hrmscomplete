@@ -19,22 +19,27 @@ export default function WfhModal({ open, onClose, editData, onSubmit, meta }) {
   const [saving, setSaving] = React.useState(false);
   const [error, setError] = React.useState("");
 
-  React.useEffect(() => {
-    if (!open) return;
-    setError("");
-    setSaving(false);
-    setForm(
-      editData
-        ? {
-            employeeId: String(editData.employeeId),
-            shiftId: editData.shiftId ? String(editData.shiftId) : "",
-            startDate: editData.startDate,
-            endDate: editData.endDate,
-            reason: editData.reason,
-          }
-        : EMPTY_FORM
-    );
-  }, [editData, open]);
+  const [prevOpen, setPrevOpen] = React.useState(open);
+  const [prevEditData, setPrevEditData] = React.useState(editData);
+  if (open !== prevOpen || editData !== prevEditData) {
+    setPrevOpen(open);
+    setPrevEditData(editData);
+    if (open) {
+      setError("");
+      setSaving(false);
+      setForm(
+        editData
+          ? {
+              employeeId: String(editData.employeeId),
+              shiftId: editData.shiftId ? String(editData.shiftId) : "",
+              startDate: editData.startDate,
+              endDate: editData.endDate,
+              reason: editData.reason,
+            }
+          : EMPTY_FORM
+      );
+    }
+  }
 
   React.useEffect(() => {
     if (!open) return;

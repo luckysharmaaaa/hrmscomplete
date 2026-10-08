@@ -1,9 +1,8 @@
-import React from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowRight } from "lucide-react";
 
-import { useAuth } from "../../context/AuthContext";
-import { useAttendanceGate } from "../../context/AttendanceGateContext";
+import { useAuth } from "../../context/authValue";
+import { useAttendanceGate } from "../../context/attendanceGateValue";
 import AttendancePunchCard from "./AttendancePunchCard"; // adjust the path if the card lives elsewhere
 
 /**

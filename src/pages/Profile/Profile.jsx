@@ -1,5 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useCallback, useEffect, useRef, useState } from 'react';import { useSearchParams } from "react-router-dom";
 import { Lock, RefreshCw, User, UserCircle } from "lucide-react";
 
 import PageHeader from "../../components/ui/PageHeader";
@@ -7,7 +6,7 @@ import ProfileForm from "./ProfileForm";
 import ChangePassword from "./ChangePassword";
 import ProfileSkeleton from "./ProfileSkeleton";
 
-import { useAuth } from "../../context/AuthContext";
+import { useAuth } from "../../context/authValue";
 
 const TABS = [
   { id: "profile", label: "Profile", icon: User },

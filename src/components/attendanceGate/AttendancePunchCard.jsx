@@ -1,5 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
-import {
+import { useEffect, useMemo, useState } from 'react';import {
   AlertCircle,
   Briefcase,
   CheckCircle2,
@@ -11,8 +10,8 @@ import {
 
 import logo from "../../assets/images/logo.png";
 import { COMPANY_NAME } from "../../config/company";
-import { useAuth } from "../../context/AuthContext";
-import { useAttendanceGate } from "../../context/AttendanceGateContext";
+import { useAuth } from "../../context/authValue";
+import { useAttendanceGate } from "../../context/attendanceGateValue";
 import { WorkLocationBadge } from "../attendance/AttendanceBadges";
 import { PunchInButton, PunchOutButton } from "../attendance/PunchButtons";
 import { canShowPunchCard } from "../../utils/attendancePolicy";

@@ -1,12 +1,12 @@
-// ```jsx
 import usePermission from "../hooks/usePermission";
-import React, { useState, useEffect, useCallback } from "react";
-import {
+import { useState, useEffect, useCallback } from 'react';import {
+  Download,
   FileText,
   FileSpreadsheet,
   ChevronDown,
   Plus,
 } from "lucide-react";
+import { toast } from "react-toastify";
 
 import PageHeader from "../components/ui/PageHeader";
 import AddLeaveModal from "../components/leaveEmployee/AddLeaveModal";
@@ -27,7 +27,7 @@ const LeaveEmployee = () => {
   const [rows, setRows] = useState([]);
   const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [leaveTypes, setLeaveTypes] = useState([]);
 
   const [search, setSearch] = useState("");
@@ -46,8 +46,6 @@ const LeaveEmployee = () => {
   }, []);
 
   const fetchApplications = useCallback(() => {
-    setLoading(true);
-
     getMyApplications({
       page: currentPage,
       limit: rowsPerPage,
@@ -67,20 +65,29 @@ const LeaveEmployee = () => {
       .finally(() => setLoading(false));
   }, [currentPage, rowsPerPage, leaveTypeId, status]);
 
+  // Show the loading spinner whenever a filter/page change re-triggers the fetch.
+  const [prevFetch, setPrevFetch] = useState(fetchApplications);
+  if (fetchApplications !== prevFetch) {
+    setPrevFetch(fetchApplications);
+    setLoading(true);
+  }
+
   useEffect(() => {
     fetchApplications();
   }, [fetchApplications]);
 
   const handleModalSubmit = () => {
+    setLoading(true);
     fetchApplications();
   };
 
   const handleCancel = async (id) => {
     try {
       await cancelApplication(id);
+      setLoading(true);
       fetchApplications();
     } catch (err) {
-      alert(
+      toast.error(
         err?.response?.data?.message ||
           "Failed to cancel leave request."
       );
@@ -96,6 +103,7 @@ const LeaveEmployee = () => {
       <PageHeader
         icon={FileText}
         title="Leaves"
+        subtitle="Apply for leave and track the status of your requests."
         breadcrumbs={[
           { label: "Attendance" },
           { label: "Leaves (Employee)" },
@@ -109,7 +117,7 @@ const LeaveEmployee = () => {
                 role="button"
                 className="hr-btn hr-btn-glass"
               >
-                <FileText size={16} />
+                <Download size={16} />
                 Export
                 <ChevronDown size={16} />
               </div>
@@ -225,4 +233,3 @@ const LeaveEmployee = () => {
 };
 
 export default LeaveEmployee;
-

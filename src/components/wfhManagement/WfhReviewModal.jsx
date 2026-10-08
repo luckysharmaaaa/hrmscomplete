@@ -7,12 +7,16 @@ export default function WfhReviewModal({ open, action, item, onClose, onConfirm 
   const [comment, setComment] = React.useState("");
   const [saving, setSaving] = React.useState(false);
 
-  React.useEffect(() => {
+  const [prevOpen, setPrevOpen] = React.useState(open);
+  const [prevItem, setPrevItem] = React.useState(item);
+  if (open !== prevOpen || item !== prevItem) {
+    setPrevOpen(open);
+    setPrevItem(item);
     if (open) {
       setComment("");
       setSaving(false);
     }
-  }, [open, item]);
+  }
 
   if (!open || !item) return null;
   const approving = action === "APPROVED";

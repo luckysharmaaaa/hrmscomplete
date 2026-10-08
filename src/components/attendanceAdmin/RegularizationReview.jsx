@@ -1,5 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from "react";
-import {
+import { useState, useEffect, useCallback, useMemo } from 'react';import {
   ClipboardEdit,
   CheckCircle2,
   XCircle,
@@ -143,18 +142,27 @@ const RegularizationReview = () => {
   const [dialogTarget, setDialogTarget] = useState(null);
   const [busy, setBusy] = useState(false);
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await getRegularizationsForReview(page, PAGE_SIZE, status || undefined);
-      setRows(res?.data || []);
-      setTotal(res?.total || 0);
-    } catch (error) {
-      toast.error(error?.response?.data?.message || "Failed to load requests");
-    } finally {
-      setLoading(false);
-    }
+  const load = useCallback(() => {
+    return getRegularizationsForReview(page, PAGE_SIZE, status || undefined)
+      .then((res) => {
+        setRows(res?.data || []);
+        setTotal(res?.total || 0);
+      })
+      .catch((error) => {
+        toast.error(error?.response?.data?.message || "Failed to load requests");
+      })
+      .finally(() => {
+        setLoading(false);
+      });
   }, [page, status]);
+
+  // Show the loading state as soon as the page or status filter changes.
+  const loadKey = `${page}:${status}`;
+  const [prevLoadKey, setPrevLoadKey] = useState(loadKey);
+  if (loadKey !== prevLoadKey) {
+    setPrevLoadKey(loadKey);
+    setLoading(true);
+  }
 
   useEffect(() => {
     load();
@@ -184,9 +192,7 @@ const RegularizationReview = () => {
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   // If the current page no longer exists (e.g. last row on the page was approved), step back.
-  useEffect(() => {
-    if (!loading && page > totalPages) setPage(totalPages);
-  }, [loading, page, totalPages]);
+  if (!loading && page > totalPages) setPage(totalPages);
 
   const handleConfirmDialog = async (remarks) => {
     if (!dialogTarget) return;
@@ -204,6 +210,7 @@ const RegularizationReview = () => {
       }
 
       setDialogTarget(null);
+      setLoading(true);
       await load();
     } catch (error) {
       toast.error(error?.response?.data?.message || "Action failed");

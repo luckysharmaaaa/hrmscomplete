@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   AlertCircle, ArrowRight, CalendarCheck, CalendarDays, CalendarOff, Clock, Home,
@@ -8,9 +8,12 @@ import {
 import { toast } from "react-toastify";
 
 import PageHeader from "../components/ui/PageHeader";
+import StatCard from "../components/ui/StatCard";
 import StatusBadge from "../components/ui/StatusBadge";
-import { useAuth } from "../context/AuthContext";
-import { useAttendanceGate } from "../context/AttendanceGateContext";
+import EmptyState from "../components/ui/EmptyState";
+import Avatar from "../components/ui/Avatar";
+import { useAuth } from "../context/authValue";
+import { useAttendanceGate } from "../context/attendanceGateValue";
 import api from "../services/api";
 import { getTodayAttendance, punchIn, punchOut, getAttendanceHistory } from "../services/attendanceApi";
 import { getAdminAttendanceSummary } from "../services/attendanceAdminApi";
@@ -19,7 +22,17 @@ import { getWfhSummary, getMyWfh } from "../services/wfhApi";
 import { getEmployees } from "../services/employee.service";
 
 /* ───────────────────────── helpers ───────────────────────── */
-const COLORS = { primary: "#041D5F", accent: "#F97316", success: "#22C55E", warning: "#F59E0B", danger: "#EF4444", info: "#3B82F6", muted: "#E5E7EB" };
+// Chart / calendar colours come from the theme tokens in index.css (no hardcoded hex).
+const COLORS = {
+  primary: "var(--color-primary-700)",
+  accent: "var(--color-accent-500)",
+  success: "var(--color-success-500)",
+  warning: "var(--color-warning-500)",
+  danger: "var(--color-danger-500)",
+  info: "var(--color-info-500)",
+  muted: "var(--color-border-subtle)",
+  off: "var(--color-border-strong)",
+};
 const pad = (n) => String(n).padStart(2, "0");
 const ymd = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 const parseYmd = (s) => { const [y, m, d] = String(s).slice(0, 10).split("-").map(Number); return new Date(y, m - 1, d); };
@@ -29,78 +42,88 @@ const fmtHM = (mins) => `${Math.floor((mins || 0) / 60)}h ${(mins || 0) % 60}m`;
 const fmtShort = (s) => parseYmd(s).toLocaleDateString("en-GB", { day: "2-digit", month: "short" });
 const daysFromToday = (s) => Math.round((parseYmd(s) - parseYmd(ymd(new Date()))) / 86400000);
 const greeting = () => { const h = new Date().getHours(); return h < 12 ? "Good morning" : h < 17 ? "Good afternoon" : "Good evening"; };
-const initials = (a = "", b = "") => `${a[0] || "?"}${b[0] || ""}`.toUpperCase();
-const HOLIDAY_COLOR = { NATIONAL: COLORS.info, COMPANY: COLORS.accent, OPTIONAL: COLORS.success, REGIONAL: "#A855F7", RESTRICTED: "#6B7280" };
+const HOLIDAY_COLOR = { NATIONAL: COLORS.info, COMPANY: COLORS.accent, OPTIONAL: COLORS.success, REGIONAL: "#7C3AED", RESTRICTED: "var(--color-text-secondary)" };
 const WFH_TONE = { Pending: "warning", Approved: "success", Rejected: "danger", Completed: "info" };
+
+// KPI helpers: "—" while loading (same as the Users page), coloured % change as the card hint.
+const kpiValue = (value, loading) => (loading ? "—" : value ?? 0);
+const kpiChange = (change, loading) =>
+  change === null || change === undefined || loading ? undefined : (
+    <span className="font-semibold">
+      {change > 0 ? "+" : ""}{change}%
+    </span>
+  );
 
 function useLoad(fn, enabled) {
   const [state, setState] = useState({ data: null, loading: enabled, error: false });
   const [tick, setTick] = useState(0);
+  const [prevEnabled, setPrevEnabled] = useState(enabled);
+  if (enabled !== prevEnabled) {
+    setPrevEnabled(enabled);
+    setState((s) => ({ ...s, loading: enabled, error: false }));
+  }
   useEffect(() => {
     if (!enabled) return undefined;
     let live = true;
-    setState((s) => ({ ...s, loading: true, error: false }));
     fn().then((data) => live && setState({ data, loading: false, error: false }))
       .catch(() => live && setState({ data: null, loading: false, error: true }));
     return () => { live = false; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [enabled, tick]);
-  return { ...state, reload: () => setTick((t) => t + 1) };
+  return {
+    ...state,
+    reload: () => {
+      setState((s) => ({ ...s, loading: true, error: false }));
+      setTick((t) => t + 1);
+    },
+  };
 }
 
 /* ───────────────────────── building blocks ───────────────────────── */
 const Pulse = ({ className = "" }) => <div className={`animate-pulse rounded bg-primary-50 ${className}`} />;
 
+const SectionTitle = ({ children }) => (
+  <h2 className="text-sm font-semibold text-text-secondary">{children}</h2>
+);
+
 function Widget({ title, icon: Icon, to, linkLabel = "View all", loading, error, onRetry, children, className = "" }) {
   return (
     <section className={`hr-card flex flex-col ${className}`}>
-      <div className="flex items-center justify-between gap-3 border-b border-border-subtle px-5 py-4">
-        <div className="flex items-center gap-2.5">
-          {Icon && <span className="flex h-8 w-8 items-center justify-center rounded-md bg-primary-50 text-primary-700"><Icon size={16} /></span>}
-          <h2 className="text-sm font-semibold text-primary-700">{title}</h2>
+      <div className="hr-card-header">
+        <div className="flex min-w-0 items-center gap-2.5">
+          {Icon && (
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary-50 text-primary-700">
+              <Icon size={18} aria-hidden="true" />
+            </span>
+          )}
+          <h2 className="hr-card-title truncate">{title}</h2>
         </div>
+
         {to && (
-          <Link to={to} className="inline-flex items-center gap-1 text-xs font-semibold text-accent-600 hover:underline">
-            {linkLabel} <ArrowRight size={12} />
+          <Link to={to} className="inline-flex shrink-0 items-center gap-1 text-sm font-semibold text-primary-700 hover:underline">
+            {linkLabel} <ArrowRight size={14} aria-hidden="true" />
           </Link>
         )}
       </div>
+
       <div className="flex-1 p-5">
         {loading ? (
-          <div className="space-y-3"><Pulse className="h-4 w-2/3" /><Pulse className="h-4 w-full" /><Pulse className="h-4 w-1/2" /><Pulse className="h-16 w-full" /></div>
-        ) : error ? (
-          <div className="flex flex-col items-center gap-2 py-6 text-center">
-            <AlertCircle size={22} className="text-danger-500" />
-            <p className="text-sm text-text-secondary">Couldn't load this section.</p>
-            <button type="button" onClick={onRetry} className="hr-btn hr-btn-outline hr-btn-sm"><RefreshCw size={13} /> Try again</button>
+          <div className="space-y-3" role="status" aria-label="Loading">
+            <Pulse className="h-4 w-2/3" /><Pulse className="h-4 w-full" /><Pulse className="h-4 w-1/2" /><Pulse className="h-16 w-full" />
           </div>
+        ) : error ? (
+          <EmptyState
+            icon={AlertCircle}
+            title="Couldn't load this section"
+            action={
+              <button type="button" onClick={onRetry} className="hr-btn hr-btn-outline hr-btn-sm">
+                <RefreshCw size={16} /> Try again
+              </button>
+            }
+          />
         ) : children}
       </div>
     </section>
-  );
-}
-
-const Empty = ({ text }) => (
-  <div className="flex flex-col items-center gap-2 py-8 text-center text-text-disabled">
-    <Inbox size={26} /><p className="text-sm text-text-secondary">{text}</p>
-  </div>
-);
-
-function Kpi({ icon: Icon, label, value, change, color, loading }) {
-  return (
-    <div className="hr-card relative overflow-hidden px-5 py-4">
-      <span className="absolute inset-y-0 left-0 w-1" style={{ backgroundColor: color }} />
-      <div className="flex items-start justify-between">
-        <span className="flex h-10 w-10 items-center justify-center rounded-md" style={{ backgroundColor: `${color}1A`, color }}><Icon size={20} /></span>
-        {change !== null && change !== undefined && !loading && (
-          <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${change >= 0 ? "bg-success-50 text-success-600" : "bg-danger-50 text-danger-600"}`}>
-            {change > 0 ? "+" : ""}{change}%
-          </span>
-        )}
-      </div>
-      {loading ? <Pulse className="mt-4 h-7 w-14" /> : <p className="mt-3 text-2xl font-bold tabular-nums text-text-primary">{value ?? 0}</p>}
-      <p className="mt-0.5 text-xs text-text-secondary">{label}</p>
-    </div>
   );
 }
 
@@ -108,10 +131,10 @@ function Ring({ percent, size = 132, stroke = 12, color = COLORS.accent, childre
   const r = (size - stroke) / 2, c = 2 * Math.PI * r, p = Math.max(0, Math.min(100, percent));
   return (
     <div className="relative shrink-0" style={{ width: size, height: size }}>
-      <svg width={size} height={size} className="-rotate-90">
-        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={COLORS.muted} strokeWidth={stroke} />
-        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={color} strokeWidth={stroke} strokeLinecap="round"
-          strokeDasharray={`${(p / 100) * c} ${c}`} style={{ transition: "stroke-dasharray .6s" }} />
+      <svg width={size} height={size} className="-rotate-90" aria-hidden="true">
+        <circle cx={size / 2} cy={size / 2} r={r} fill="none" style={{ stroke: COLORS.muted }} strokeWidth={stroke} />
+        <circle cx={size / 2} cy={size / 2} r={r} fill="none" style={{ stroke: color, transition: "stroke-dasharray .6s" }} strokeWidth={stroke} strokeLinecap="round"
+          strokeDasharray={`${(p / 100) * c} ${c}`} />
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center text-center">{children}</div>
     </div>
@@ -125,19 +148,19 @@ function Donut({ segments, centerValue, centerLabel }) {
   return (
     <div className="flex flex-col items-center gap-4 sm:flex-row sm:gap-6">
       <div className="relative h-36 w-36 shrink-0">
-        <svg viewBox="0 0 140 140" className="h-full w-full -rotate-90">
-          <circle cx="70" cy="70" r={r} fill="none" stroke={COLORS.muted} strokeWidth="14" />
+        <svg viewBox="0 0 140 140" className="h-full w-full -rotate-90" aria-hidden="true">
+          <circle cx="70" cy="70" r={r} fill="none" style={{ stroke: COLORS.muted }} strokeWidth="14" />
           {total > 0 && segments.map((s) => {
             const len = (s.value / total) * c;
-            const el = <circle key={s.label} cx="70" cy="70" r={r} fill="none" stroke={s.color} strokeWidth="14"
+            const el = <circle key={s.label} cx="70" cy="70" r={r} fill="none" style={{ stroke: s.color }} strokeWidth="14"
               strokeDasharray={`${len} ${c - len}`} strokeDashoffset={-offset} />;
             offset += len;
             return el;
           })}
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className="text-2xl font-bold text-text-primary">{centerValue}</span>
-          <span className="text-[11px] text-text-secondary">{centerLabel}</span>
+          <span className="text-2xl font-semibold tabular-nums text-text-primary">{centerValue}</span>
+          <span className="text-xs text-text-secondary">{centerLabel}</span>
         </div>
       </div>
       <ul className="w-full space-y-2">
@@ -171,6 +194,12 @@ export default function Dashboard() {
   const monthStart = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-01`;
   const monthEnd = ymd(new Date(now.getFullYear(), now.getMonth() + 1, 0));
   const [punching, setPunching] = useState(false);
+  const [nowMs, setNowMs] = useState(() => Date.now());
+
+  useEffect(() => {
+    const id = setInterval(() => setNowMs(Date.now()), 30000);
+    return () => clearInterval(id);
+  }, []);
 
   // The attendance policy comes from the backend gate (office / WFH / biometric / fallback).
   const { gate, refresh: refreshGate } = useAttendanceGate();
@@ -211,7 +240,7 @@ export default function Dashboard() {
 
   const att = todayAtt.data?.attendance, shift = todayAtt.data?.shift;
   const checkedIn = Boolean(att?.checkIn), checkedOut = Boolean(att?.checkOut);
-  const workedMins = att?.workDurationMins ?? (checkedIn && !checkedOut ? Math.max(0, Math.round((Date.now() - toDate(att.checkIn)) / 60000)) : 0);
+  const workedMins = att?.workDurationMins ?? (checkedIn && !checkedOut ? Math.max(0, Math.round((nowMs - toDate(att.checkIn)) / 60000)) : 0);
   const targetMins = useMemo(() => {
     if (!shift?.startTime || !shift?.endTime) return 540;
     const toM = (t) => { const [h, m] = String(t).split(":").map(Number); return h * 60 + m; };
@@ -233,7 +262,7 @@ export default function Dashboard() {
           if (st.includes("half")) { color = COLORS.warning; label = "Half day"; stats.half++; }
           else if (row.isLate) { color = COLORS.accent; label = "Late"; stats.late++; stats.present++; }
           else { color = COLORS.success; label = "Present"; stats.present++; }
-        } else if (dow === 0 || dow === 6 || st.includes("holiday") || st.includes("leave")) { color = "#CBD5E1"; label = "Off / Leave"; }
+        } else if (dow === 0 || dow === 6 || st.includes("holiday") || st.includes("leave")) { color = COLORS.off; label = "Off / Leave"; }
         else { color = COLORS.danger; label = "Absent"; stats.absent++; }
       }
       return { key, day: i + 1, color, label };
@@ -276,26 +305,36 @@ export default function Dashboard() {
       />
 
       {permissionsLoaded && !hasOrg && !hasMine && (
-        <div className="hr-card px-6 py-14 text-center">
-          <LayoutDashboard size={30} className="mx-auto text-text-disabled" />
-          <h2 className="mt-3 text-lg font-semibold text-primary-700">Welcome to your workspace</h2>
-          <p className="mx-auto mt-1 max-w-md text-sm text-text-secondary">No dashboard widgets are enabled for your account yet. Use the menu to open the pages you have access to.</p>
+        <div className="hr-card">
+          <EmptyState
+            icon={LayoutDashboard}
+            title="Welcome to your workspace"
+            description="No dashboard widgets are enabled for your account yet. Use the menu to open the pages you have access to."
+          />
         </div>
       )}
 
       {/* ───────── ORGANISATION OVERVIEW (admin modules) ───────── */}
       {hasOrg && (
         <div className="space-y-4">
-          <h2 className="text-xs font-semibold uppercase tracking-wider text-text-secondary">Organisation overview</h2>
+          <SectionTitle>Organisation overview</SectionTitle>
 
-          <div className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-6">
-            {canEmployees && <Kpi icon={Users} label="Total employees" value={s?.totalEmployees ?? empStats.total} color={COLORS.primary} loading={employees.loading && !s} />}
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+            {canEmployees && (
+              <StatCard icon={Users} tone="primary" label="Total employees"
+                value={kpiValue(s?.totalEmployees ?? empStats.total, employees.loading && !s)} />
+            )}
             {canAdminAtt && <>
-              <Kpi icon={UserCheck} label="Present today" value={s?.present?.count} change={s?.present?.changePct} color={COLORS.success} loading={attSummary.loading} />
-              <Kpi icon={UserMinus} label="Absent" value={s?.absent?.count} change={s?.absent?.changePct} color={COLORS.danger} loading={attSummary.loading} />
-              <Kpi icon={Clock} label="Late login" value={s?.lateLogin?.count} change={s?.lateLogin?.changePct} color={COLORS.accent} loading={attSummary.loading} />
-              <Kpi icon={CalendarOff} label="On leave" value={s?.onLeave?.count} change={s?.onLeave?.changePct} color={COLORS.info} loading={attSummary.loading} />
-              <Kpi icon={Timer} label="Half day" value={s?.halfDay?.count} change={s?.halfDay?.changePct} color={COLORS.warning} loading={attSummary.loading} />
+              <StatCard icon={UserCheck} tone="success" label="Present today"
+                value={kpiValue(s?.present?.count, attSummary.loading)} hint={kpiChange(s?.present?.changePct, attSummary.loading)} />
+              <StatCard icon={UserMinus} tone="danger" label="Absent"
+                value={kpiValue(s?.absent?.count, attSummary.loading)} hint={kpiChange(s?.absent?.changePct, attSummary.loading)} />
+              <StatCard icon={Clock} tone="accent" label="Late login"
+                value={kpiValue(s?.lateLogin?.count, attSummary.loading)} hint={kpiChange(s?.lateLogin?.changePct, attSummary.loading)} />
+              <StatCard icon={CalendarOff} tone="info" label="On leave"
+                value={kpiValue(s?.onLeave?.count, attSummary.loading)} hint={kpiChange(s?.onLeave?.changePct, attSummary.loading)} />
+              <StatCard icon={Timer} tone="warning" label="Half day"
+                value={kpiValue(s?.halfDay?.count, attSummary.loading)} hint={kpiChange(s?.halfDay?.changePct, attSummary.loading)} />
             </>}
           </div>
 
@@ -314,7 +353,7 @@ export default function Dashboard() {
 
             {canEmployees && (
               <Widget title="Employees by department" icon={Users} to="/employee-list" loading={employees.loading} error={employees.error} onRetry={employees.reload}>
-                {dept.length === 0 ? <Empty text="No employees yet." /> : (
+                {dept.length === 0 ? <EmptyState icon={Inbox} title="No employees yet" /> : (
                   <ul className="space-y-3.5">
                     {dept.map(([name, n]) => (
                       <li key={name}>
@@ -332,14 +371,14 @@ export default function Dashboard() {
               <Widget title="Pending leave approvals" icon={CalendarDays} to="/leave-admin" linkLabel="Review" loading={pending.loading} error={pending.error} onRetry={pending.reload}>
                 <div className="mb-3 grid grid-cols-3 gap-2 text-center">
                   {[["Pending", leaveSummary.data?.pending, "warning"], ["Approved", leaveSummary.data?.approved, "success"], ["On leave", leaveSummary.data?.onLeaveToday, "info"]].map(([l, v, t]) => (
-                    <div key={l} className="rounded-md bg-background py-2"><p className="text-lg font-bold text-text-primary">{v ?? "—"}</p><StatusBadge tone={t} dot={false}>{l}</StatusBadge></div>
+                    <div key={l} className="space-y-1 rounded-lg bg-background py-2"><p className="text-lg font-semibold tabular-nums text-text-primary">{v ?? "—"}</p><StatusBadge tone={t} dot={false}>{l}</StatusBadge></div>
                   ))}
                 </div>
-                {(pending.data?.data || []).length === 0 ? <Empty text="No pending requests. You're all caught up." /> : (
+                {(pending.data?.data || []).length === 0 ? <EmptyState icon={Inbox} title="No pending requests" description="You're all caught up." /> : (
                   <ul className="divide-y divide-border-subtle">
                     {pending.data.data.map((r) => (
                       <li key={r.id} className="flex items-center gap-3 py-2.5">
-                        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary-700 text-xs font-bold text-white">{initials(r.firstName, r.lastName)}</span>
+                        <Avatar firstName={r.firstName} lastName={r.lastName} seed={`${r.firstName} ${r.lastName}`} size="md" />
                         <div className="min-w-0 flex-1"><p className="truncate text-sm font-medium text-text-primary">{r.firstName} {r.lastName}</p><p className="truncate text-xs text-text-secondary">{r.leaveName} · {fmtShort(r.startDate)} – {fmtShort(r.endDate)}</p></div>
                         <span className="text-xs font-semibold text-text-secondary">{r.totalDays}d</span>
                       </li>
@@ -353,8 +392,17 @@ export default function Dashboard() {
           {canWfhAdmin && (
             <Widget title="Work from home requests" icon={Home} to="/wfh-management" loading={wfhSummary.loading} error={wfhSummary.error} onRetry={wfhSummary.reload}>
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
-                {[["All", wfhSummary.data?.all, COLORS.primary], ["Pending", wfhSummary.data?.Pending, COLORS.warning], ["Approved", wfhSummary.data?.Approved, COLORS.success], ["Completed", wfhSummary.data?.Completed, COLORS.info], ["Rejected", wfhSummary.data?.Rejected, COLORS.danger]].map(([l, v, c]) => (
-                  <div key={l} className="rounded-md border border-border-subtle px-4 py-3" style={{ borderLeft: `3px solid ${c}` }}><p className="text-xl font-bold text-text-primary">{v ?? 0}</p><p className="text-xs text-text-secondary">{l}</p></div>
+                {[
+                  ["All", wfhSummary.data?.all, "border-l-primary-700"],
+                  ["Pending", wfhSummary.data?.Pending, "border-l-warning-500"],
+                  ["Approved", wfhSummary.data?.Approved, "border-l-success-500"],
+                  ["Completed", wfhSummary.data?.Completed, "border-l-info-500"],
+                  ["Rejected", wfhSummary.data?.Rejected, "border-l-danger-500"],
+                ].map(([l, v, bar]) => (
+                  <div key={l} className={`rounded-lg border border-l-4 border-border-subtle px-4 py-3 ${bar}`}>
+                    <p className="text-xl font-semibold tabular-nums text-text-primary">{v ?? 0}</p>
+                    <p className="text-xs text-text-secondary">{l}</p>
+                  </div>
                 ))}
               </div>
             </Widget>
@@ -365,15 +413,15 @@ export default function Dashboard() {
       {/* ───────── MY WORKSPACE (employee modules) ───────── */}
       {hasMine && (
         <div className="space-y-4">
-          <h2 className="text-xs font-semibold uppercase tracking-wider text-text-secondary">My workspace</h2>
+          <SectionTitle>My workspace</SectionTitle>
 
           <div className="grid gap-4 lg:grid-cols-3">
             {canEmpAtt && (
               <Widget title="Today" icon={Clock} to="/attendance-employee" linkLabel="Details" loading={todayAtt.loading} error={todayAtt.error} onRetry={todayAtt.reload}>
                 <div className="flex items-center gap-5">
                   <Ring percent={(workedMins / targetMins) * 100} color={checkedOut ? COLORS.success : COLORS.accent}>
-                    <span className="text-lg font-bold text-text-primary">{fmtHM(workedMins)}</span>
-                    <span className="text-[11px] text-text-secondary">of {fmtHM(targetMins)}</span>
+                    <span className="text-lg font-semibold tabular-nums text-text-primary">{fmtHM(workedMins)}</span>
+                    <span className="text-xs text-text-secondary">of {fmtHM(targetMins)}</span>
                   </Ring>
                   <dl className="space-y-2 text-sm">
                     <div><dt className="text-xs text-text-secondary">Punch in</dt><dd className="font-semibold text-text-primary">{fmtTime(att?.checkIn)}</dd></div>
@@ -388,16 +436,16 @@ export default function Dashboard() {
                   </button>
                 )}
                 {!canPunchNow && !(checkedIn && checkedOut) && (
-                  <p className="mt-5 rounded-md bg-background py-2 text-center text-xs text-text-secondary">Office attendance is recorded by the biometric device.</p>
+                  <p className="mt-5 rounded-lg bg-background px-3 py-2 text-center text-xs text-text-secondary">Office attendance is recorded by the biometric device.</p>
                 )}
-                {checkedIn && checkedOut && <p className="mt-5 rounded-md bg-success-50 py-2 text-center text-sm font-medium text-success-600">Day completed</p>}
+                {checkedIn && checkedOut && <p className="mt-5 rounded-lg bg-success-50 px-3 py-2 text-center text-sm font-medium text-success-600">Day completed</p>}
               </Widget>
             )}
 
             {canEmpLeave && (
               <Widget title="Leave balance" icon={CalendarDays} to="/leave-employee" linkLabel="Apply" loading={mySummary.loading} error={mySummary.error} onRetry={mySummary.reload}>
                 <div className="flex items-end justify-between">
-                  <div><p className="text-3xl font-bold text-text-primary">{mySummary.data?.totalRemaining ?? 0}</p><p className="text-xs text-text-secondary">days remaining</p></div>
+                  <div><p className="hr-stat-value">{mySummary.data?.totalRemaining ?? 0}</p><p className="text-xs text-text-secondary">days remaining</p></div>
                   <StatusBadge tone="warning">{mySummary.data?.pendingRequests ?? 0} pending</StatusBadge>
                 </div>
                 <div className="mt-4 h-2.5 overflow-hidden rounded-full bg-primary-50"><div className="h-full rounded-full bg-accent-500" style={{ width: `${leaveUsedPct}%` }} /></div>
@@ -409,13 +457,24 @@ export default function Dashboard() {
               <Widget title="This month" icon={CalendarCheck} to="/attendance-employee" linkLabel="Details" loading={history.loading} error={history.error} onRetry={history.reload}>
                 <div className="grid grid-cols-4 gap-2 text-center">
                   {[["Present", monthDays.stats.present, COLORS.success], ["Late", monthDays.stats.late, COLORS.accent], ["Half", monthDays.stats.half, COLORS.warning], ["Absent", monthDays.stats.absent, COLORS.danger]].map(([l, v, c]) => (
-                    <div key={l}><p className="text-xl font-bold" style={{ color: c }}>{v}</p><p className="text-[11px] text-text-secondary">{l}</p></div>
+                    <div key={l}><p className="text-xl font-semibold tabular-nums" style={{ color: c }}>{v}</p><p className="text-xs text-text-secondary">{l}</p></div>
                   ))}
                 </div>
                 <div className="mt-4 flex flex-wrap gap-1.5">
-                  {monthDays.cells.map((c) => (
-                    <span key={c.key} title={`${c.day} · ${c.label}`} className="flex h-7 w-7 items-center justify-center rounded text-[10px] font-semibold text-white" style={{ backgroundColor: c.color, color: c.color === COLORS.muted ? "#6B7280" : "#fff" }}>{c.day}</span>
-                  ))}
+                  {monthDays.cells.map((c) => {
+                    const lightCell = c.color === COLORS.muted || c.color === COLORS.off;
+                    return (
+                      <span
+                        key={c.key}
+                        title={`${c.day} · ${c.label}`}
+                        aria-label={`${c.day}: ${c.label}`}
+                        className="flex h-8 w-8 items-center justify-center rounded-md text-xs font-semibold tabular-nums"
+                        style={{ backgroundColor: c.color, color: lightCell ? "var(--color-text-secondary)" : "#fff" }}
+                      >
+                        {c.day}
+                      </span>
+                    );
+                  })}
                 </div>
               </Widget>
             )}
@@ -424,7 +483,7 @@ export default function Dashboard() {
           <div className="grid gap-4 lg:grid-cols-2">
             {canMyWfh && (
               <Widget title="My WFH requests" icon={Home} to="/my-wfh" loading={myWfh.loading} error={myWfh.error} onRetry={myWfh.reload}>
-                {(myWfh.data || []).length === 0 ? <Empty text="You haven't requested work from home yet." /> : (
+                {(myWfh.data || []).length === 0 ? <EmptyState icon={Inbox} title="No WFH requests yet" description="You haven't requested work from home yet." /> : (
                   <ul className="divide-y divide-border-subtle">
                     {myWfh.data.slice(0, 4).map((r) => (
                       <li key={r.id} className="flex items-center justify-between gap-3 py-2.5">
@@ -443,15 +502,15 @@ export default function Dashboard() {
       {/* ───────── SHARED ───────── */}
       {canHoliday && (
         <Widget title="Upcoming holidays" icon={Palmtree} to="/holiday-calender" loading={holidays.loading} error={holidays.error} onRetry={holidays.reload}>
-          {upcoming.length === 0 ? <Empty text="No upcoming holidays." /> : (
+          {upcoming.length === 0 ? <EmptyState icon={Inbox} title="No upcoming holidays" /> : (
             <ul className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
               {upcoming.map((h) => {
                 const n = daysFromToday(h.holidayDate), c = HOLIDAY_COLOR[String(h.holidayType).toUpperCase()] || COLORS.primary;
                 return (
-                  <li key={h.id} className="flex items-center gap-3 rounded-md border border-border-subtle p-3">
-                    <span className="flex h-11 w-11 shrink-0 flex-col items-center justify-center rounded-md text-white" style={{ backgroundColor: c }}>
-                      <span className="text-sm font-bold leading-none">{parseYmd(h.holidayDate).getDate()}</span>
-                      <span className="text-[9px] uppercase leading-tight">{parseYmd(h.holidayDate).toLocaleDateString("en-GB", { month: "short" })}</span>
+                  <li key={h.id} className="flex items-center gap-3 rounded-lg border border-border-subtle p-3">
+                    <span className="flex h-12 w-12 shrink-0 flex-col items-center justify-center rounded-lg text-white" style={{ backgroundColor: c }}>
+                      <span className="text-sm font-semibold leading-none tabular-nums">{parseYmd(h.holidayDate).getDate()}</span>
+                      <span className="text-xs uppercase leading-tight">{parseYmd(h.holidayDate).toLocaleDateString("en-GB", { month: "short" })}</span>
                     </span>
                     <div className="min-w-0"><p className="truncate text-sm font-medium text-text-primary">{h.holidayName}</p><p className="text-xs text-text-secondary">{n === 0 ? "Today" : n === 1 ? "Tomorrow" : `in ${n} days`}</p></div>
                   </li>
@@ -464,4 +523,3 @@ export default function Dashboard() {
     </div>
   );
 }
-  

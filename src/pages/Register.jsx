@@ -1,5 +1,4 @@
-import React, { useState } from "react";
-import { Clock, Eye, EyeOff, Loader2, Lock } from "lucide-react";
+import { useState } from 'react';import { Clock, Eye, EyeOff, Loader2, Lock } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 

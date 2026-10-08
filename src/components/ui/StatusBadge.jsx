@@ -1,4 +1,3 @@
-import React from "react";
 
 const TONES = {
   success: "bg-success-50 text-success-600",

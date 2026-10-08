@@ -145,7 +145,7 @@ api.interceptors.response.use(
       original.headers = original.headers || {};
       original.headers.Authorization = `Bearer ${newToken}`;
       return api(original);
-    } catch (refreshError) {
+    } catch {
       expireSession();
       return Promise.reject(error);
     }

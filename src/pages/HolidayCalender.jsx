@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 
 import PageHeader from "../components/ui/PageHeader";
+import StatCard from "../components/ui/StatCard";
 
 import HolidayFilters from "../components/HolidayCalender/HolidayFilters";
 import CalendarView from "../components/HolidayCalender/CalendarView";
@@ -25,36 +26,6 @@ import {
   formatShort,
   parseLocalDate,
 } from "../constants/holidayTypes";
-
-// ==========================================================
-// Stat Card
-// ==========================================================
-const StatCard = ({
-  icon: Icon,
-  label,
-  value,
-  sub,
-  bg,
-  iconColor,
-}) => (
-  <div className="bg-white border border-gray-100 rounded-xl p-4 flex items-center gap-4 shadow-sm">
-    <div className={`${bg} p-3 rounded-xl shrink-0`}>
-      <Icon size={20} className={iconColor} />
-    </div>
-
-    <div className="min-w-0">
-      <p className="text-2xl font-bold text-[#0F265C]">
-        {value}
-      </p>
-
-      <p className="text-xs text-gray-500 font-medium mt-0.5">
-        {label}
-      </p>
-
-      {sub}
-    </div>
-  </div>
-);
 
 const ALL = HOLIDAY_TYPES.map((t) => t.value);
 
@@ -213,48 +184,37 @@ export default function HolidayCalendar() {
       {/* ========================================================
           Holiday Statistics
       ======================================================== */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <StatCard
           icon={CalendarRange}
+          tone="primary"
           label={`${year} Holidays`}
           value={yearCount}
-          bg="bg-blue-50"
-          iconColor="text-blue-500"
         />
 
         <StatCard
           icon={CalendarDays}
+          tone="success"
           label="This month"
           value={monthCount}
-          bg="bg-emerald-50"
-          iconColor="text-emerald-500"
         />
 
         <StatCard
           icon={CalendarClock}
+          tone="accent"
           label="Upcoming"
           value={upcoming.length}
-          bg="bg-orange-50"
-          iconColor="text-orange-500"
-          sub={
+          hint={
             next && (
-              <div className="flex items-center gap-1.5 mt-1.5">
+              <span className="inline-flex max-w-full items-center gap-1.5 align-middle">
                 <span
-                  className="w-2 h-2 rounded-full shrink-0"
-                  style={{
-                    backgroundColor:
-                      getType(next.type).color,
-                  }}
+                  className="h-2 w-2 shrink-0 rounded-full"
+                  style={{ backgroundColor: getType(next.type).color }}
                 />
-
-                <span className="text-xs font-semibold text-orange-600 truncate">
-                  Next: {next.title}
+                <span className="truncate">
+                  Next: {next.title} · {formatShort(next.date)}
                 </span>
-
-                <span className="text-xs text-gray-400 shrink-0">
-                  · {formatShort(next.date)}
-                </span>
-              </div>
+              </span>
             )
           }
         />

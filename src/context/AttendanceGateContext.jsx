@@ -1,8 +1,10 @@
-import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
-import { toast } from "react-toastify";
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';import { toast } from "react-toastify";
 
-import { useAuth } from "./AuthContext";
+import { useAuth } from "./authValue";
+import { GateContext } from "./attendanceGateValue";
 import { getAttendanceGate, gatePunchIn, gatePunchOut } from "../services/attendanceGateApi";
+
+const ackKey = (userId, date) => `hrms.gate.ack.${userId}.${date}`;
 
 /**
  * Holds the attendance gate state for the whole signed-in session.
@@ -18,11 +20,6 @@ import { getAttendanceGate, gatePunchIn, gatePunchOut } from "../services/attend
  *  - If the gate API itself fails we FAIL OPEN (the user can still work) and show a retry
  *    banner. The punch endpoints enforce policy on the server anyway.
  */
-
-const GateContext = createContext(null);
-
-const ackKey = (userId, date) => `hrms.gate.ack.${userId}.${date}`;
-
 export const AttendanceGateProvider = ({ children }) => {
   const { user, isAuthenticated, permissionsLoaded } = useAuth();
 
@@ -57,14 +54,12 @@ export const AttendanceGateProvider = ({ children }) => {
     } finally {
       setLoading(false);
     }
-  }, [user?.id]);
+  }, [user]);
 
   // Load once per signed-in user (after permissions, because the answer depends on them)
   useEffect(() => {
     if (!isAuthenticated || !permissionsLoaded || !user?.id) {
       if (!isAuthenticated) {
-        setGate(null);
-        setLoading(false);
         loadedForUser.current = null;
       }
       return;
@@ -131,10 +126,4 @@ export const AttendanceGateProvider = ({ children }) => {
   );
 
   return <GateContext.Provider value={value}>{children}</GateContext.Provider>;
-};
-
-export const useAttendanceGate = () => {
-  const ctx = useContext(GateContext);
-  if (!ctx) throw new Error("useAttendanceGate must be used inside AttendanceGateProvider");
-  return ctx;
 };

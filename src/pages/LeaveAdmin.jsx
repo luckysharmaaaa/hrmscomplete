@@ -1,6 +1,5 @@
-// ```jsx
-import React, { useState, useEffect, useCallback } from "react";
-import {
+import { useState, useEffect, useCallback } from 'react';import {
+  Download,
   FileText,
   FileSpreadsheet,
   ChevronDown,
@@ -92,6 +91,7 @@ export default function LeaveAdmin() {
       <PageHeader
         icon={FileText}
         title="Leaves"
+        subtitle="Review, approve or reject leave requests from your team."
         breadcrumbs={[
           { label: "Attendance" },
           { label: "Leaves (Admin)" },
@@ -103,7 +103,7 @@ export default function LeaveAdmin() {
               role="button"
               className="hr-btn hr-btn-glass"
             >
-              <FileText size={16} />
+              <Download size={16} />
               Export
               <ChevronDown size={16} />
             </div>

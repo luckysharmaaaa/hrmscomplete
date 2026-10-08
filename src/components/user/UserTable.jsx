@@ -1,24 +1,23 @@
-// ```jsx
 import usePermission from "../../hooks/usePermission";
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   CheckCircle2,
-  ChevronLeft,
-  ChevronRight,
+  Eye,
+  Mail,
   Pencil,
-  RefreshCw,
-  Search,
+  Phone,
   Trash2,
   Users,
 } from "lucide-react";
 import { toast } from "react-toastify";
 
-import defaultUser from "../../assets/images/logoo.jpg";
 import EditUserModal from "./EditUserModal";
 import DeleteUserModal from "./DeleteUserModal";
+import UserViewDrawer from "./UserViewDrawer";
 import DateRangePickerButton from "./DateRangePickerButton";
 import StatusBadge from "../ui/StatusBadge";
-import IconButton from "../ui/IconButton";
+import Avatar from "../ui/Avatar";
+import DataTable from "../ui/DataTable";
 import { getFileUrl } from "../../services/profileApi";
 
 import {
@@ -43,35 +42,34 @@ const STATUS_TONE = {
   Inactive: "danger",
 };
 
-// Keeps pagination compact:
-// 1 … 4 5 6 … 20
-const getPageItems = (total, current) => {
-  if (total <= 7) {
-    return Array.from({ length: total }, (_, i) => i + 1);
-  }
-
-  const items = [1];
-  const start = Math.max(2, current - 1);
-  const end = Math.min(total - 1, current + 1);
-
-  if (start > 2) {
-    items.push("start-ellipsis");
-  }
-
-  for (let page = start; page <= end; page += 1) {
-    items.push(page);
-  }
-
-  if (end < total - 1) {
-    items.push("end-ellipsis");
-  }
-
-  items.push(total);
-
-  return items;
+// Role pills: known roles keep a fixed colour, new roles get a stable one.
+const ROLE_TONES = {
+  blue: "bg-[#E6EEFF] text-[#2F5FD0]",
+  pink: "bg-[#FCE7F6] text-[#C026A3]",
+  purple: "bg-[#F1E6FF] text-[#8B2FE0]",
+  teal: "bg-[#DDF5F1] text-[#0F8A7B]",
+  amber: "bg-[#FEF0D3] text-[#B7791F]",
 };
 
-const UserTable = ({ roles = [], refresh }) => {
+const ROLE_TONE_BY_NAME = {
+  employee: "blue",
+  "super admin": "blue",
+  hr: "pink",
+  admin: "purple",
+};
+
+const ROLE_TONE_FALLBACK = ["blue", "pink", "purple", "teal", "amber"];
+
+const roleTone = (name = "") => {
+  const key = String(name).trim().toLowerCase();
+  const tone =
+    ROLE_TONE_BY_NAME[key] ||
+    ROLE_TONE_FALLBACK[[...key].reduce((sum, ch) => sum + ch.charCodeAt(0), 0) % ROLE_TONE_FALLBACK.length];
+
+  return ROLE_TONES[tone];
+};
+
+const UserTable = ({ roles = [], refresh, onUsersLoaded }) => {
   const { canEdit, canDelete } = usePermission("users");
 
   const [users, setUsers] = useState([]);
@@ -82,7 +80,14 @@ const UserTable = ({ roles = [], refresh }) => {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editUser, setEditUser] = useState(null);
 
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [hasLoaded, setHasLoaded] = useState(false);
+
+  // Read-only "View" drawer
+  const [viewUser, setViewUser] = useState(null);
+
+  // Column sorting
+  const [sort, setSort] = useState({ key: null, dir: "asc" });
   const [editingUserId, setEditingUserId] = useState(null);
   const [approvingId, setApprovingId] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -112,63 +117,76 @@ const UserTable = ({ roles = [], refresh }) => {
   // FETCH USERS
   // ============================================================
 
-  const fetchUsers = useCallback(async () => {
-    try {
-      setLoading(true);
+  const fetchUsers = useCallback(() => {
+    return getAllUsers()
+      .then((response) => {
+        const data = response?.data?.data;
 
-      const response = await getAllUsers();
-      const data = response?.data?.data;
+        if (!Array.isArray(data)) {
+          setUsers([]);
+          return;
+        }
 
-      if (!Array.isArray(data)) {
-        setUsers([]);
-        return;
-      }
+        const mappedUsers = data.map((item) => ({
+          id: item.id,
+          firstName: item.firstName,
+          lastName: item.lastName,
 
-      const mappedUsers = data.map((item) => ({
-        id: item.id,
-        firstName: item.firstName,
-        lastName: item.lastName,
+          name:
+            `${item.firstName || ""} ${item.lastName || ""}`.trim() ||
+            "Unnamed User",
 
-        name:
-          `${item.firstName || ""} ${item.lastName || ""}`.trim() ||
-          "Unnamed User",
+          email: item.email,
+          phone: item.phone || "—",
 
-        email: item.email,
-        phone: item.phone || "—",
+          status: STATUS_LABEL[Number(item.status)] || "Inactive",
+          statusValue: Number(item.status),
 
-        status: STATUS_LABEL[Number(item.status)] || "Inactive",
-        statusValue: Number(item.status),
+          roles: Array.isArray(item.roles) ? item.roles : [],
 
-        roles: Array.isArray(item.roles) ? item.roles : [],
+          createdAt: item.createdAt,
 
-        createdAt: item.createdAt,
+          date: item.createdAt
+            ? new Date(item.createdAt * 1000).toLocaleDateString("en-IN", {
+                day: "2-digit",
+                month: "short",
+                year: "numeric",
+              })
+            : "—",
 
-        date: item.createdAt
-          ? new Date(item.createdAt * 1000).toLocaleDateString("en-IN", {
-              day: "2-digit",
-              month: "short",
-              year: "numeric",
-            })
-          : "—",
+          avatar: getFileUrl(item.profileImage) || null,
+        }));
 
-        avatar: getFileUrl(item.profileImage) || defaultUser,
-      }));
+        setUsers(mappedUsers);
+      })
+      .catch((error) => {
+        console.error("Failed to fetch users:", error);
 
-      setUsers(mappedUsers);
-    } catch (error) {
-      console.error("Failed to fetch users:", error);
-
-      toast.error(
-        error?.response?.data?.message || "Unable to load users."
-      );
-    } finally {
-      setLoading(false);
-    }
+        toast.error(
+          error?.response?.data?.message || "Unable to load users."
+        );
+      })
+      .finally(() => {
+        setLoading(false);
+        setHasLoaded(true);
+      });
   }, []);
 
   useEffect(() => {
     fetchUsers();
   }, [fetchUsers, refresh]);
+
+  // Show the loading state again whenever a parent-level refresh is requested.
+  const [prevRefresh, setPrevRefresh] = useState(refresh);
+  if (refresh !== prevRefresh) {
+    setPrevRefresh(refresh);
+    setLoading(true);
+  }
+
+  // Lets the page build its summary cards from the same list.
+  useEffect(() => {
+    if (hasLoaded) onUsersLoaded?.(users);
+  }, [hasLoaded, users, onUsersLoaded]);
 
   // ============================================================
   // EDIT USER
@@ -221,6 +239,7 @@ const UserTable = ({ roles = [], refresh }) => {
   };
 
   const handleSaveUser = async () => {
+    setLoading(true);
     await fetchUsers();
     closeEditModal();
   };
@@ -241,6 +260,7 @@ const UserTable = ({ roles = [], refresh }) => {
 
       if (response?.data?.success) {
         toast.success(`${user.name} has been approved.`);
+        setLoading(true);
         await fetchUsers();
       } else {
         toast.error(
@@ -395,30 +415,48 @@ const UserTable = ({ roles = [], refresh }) => {
 
   const safePage = Math.min(currentPage, totalPages);
 
-  useEffect(() => {
-    if (currentPage > totalPages) {
-      setCurrentPage(totalPages);
-    }
-  }, [currentPage, totalPages]);
+  if (currentPage > totalPages) {
+    setCurrentPage(totalPages);
+  }
+
+  const sortedUsers = useMemo(() => {
+    if (!sort.key) return filteredUsers;
+
+    const valueOf = (user) => {
+      switch (sort.key) {
+        case "name":
+          return user.name.toLowerCase();
+        case "email":
+          return String(user.email || "").toLowerCase();
+        case "role":
+          return String(user.roles?.[0]?.roleName || "").toLowerCase();
+        case "createdAt":
+          return Number(user.createdAt) || 0;
+        default:
+          return user.status;
+      }
+    };
+
+    const direction = sort.dir === "asc" ? 1 : -1;
+
+    return [...filteredUsers].sort((a, b) => {
+      const x = valueOf(a);
+      const y = valueOf(b);
+
+      if (typeof x === "number") return (x - y) * direction;
+      return String(x).localeCompare(String(y)) * direction;
+    });
+  }, [filteredUsers, sort]);
 
   const paginatedUsers = useMemo(
     () =>
-      filteredUsers.slice(
+      sortedUsers.slice(
         (safePage - 1) * rowsPerPage,
         safePage * rowsPerPage
       ),
-    [filteredUsers, safePage, rowsPerPage]
+    [sortedUsers, safePage, rowsPerPage]
   );
 
-  const startEntry =
-    totalEntries === 0
-      ? 0
-      : (safePage - 1) * rowsPerPage + 1;
-
-  const endEntry = Math.min(
-    safePage * rowsPerPage,
-    totalEntries
-  );
 
   // ============================================================
   // RESET FILTERS
@@ -450,79 +488,135 @@ const UserTable = ({ roles = [], refresh }) => {
   // RENDER
   // ============================================================
 
-  return (
-    <div className="hr-card overflow-hidden">
-      {/* ========================================================
-          TABLE HEADER
-      ======================================================== */}
+  const openDelete = (user) => {
+    setDeleteTarget(user);
+    setIsDeleteModalOpen(true);
+  };
 
-      <div className="border-b border-border-subtle bg-background px-5 py-4">
-        <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
-          {/* Title */}
-          <div className="min-w-0">
-            <div className="flex flex-wrap items-center gap-2">
-              <div className="flex items-center gap-2">
-                <h2 className="text-base font-semibold tracking-tight text-primary-700">
-                  Users List
-                </h2>
+  // ============================================================
+  // TABLE COLUMNS (shared DataTable, same as Employee List)
+  // ============================================================
 
+  const columns = [
+    {
+      key: "serial",
+      header: "Serial No.",
+      width: 96,
+      align: "center",
+      className: "font-medium text-text-secondary tabular-nums",
+      render: (_row, _index, serialNo) => serialNo,
+    },
+    {
+      key: "name",
+      header: "User",
+      sortable: true,
+      render: (user) => (
+        <div className="flex items-center gap-3">
+          <Avatar
+            src={user.avatar}
+            firstName={user.firstName}
+            lastName={user.lastName}
+            seed={user.email}
+          />
+          <p className="max-w-[200px] truncate font-semibold text-text-primary" title={user.name}>
+            {user.name}
+          </p>
+        </div>
+      ),
+    },
+    {
+      key: "email",
+      header: "Contact",
+      sortable: true,
+      render: (user) => (
+        <div className="space-y-0.5 text-[13.5px] leading-5">
+          <p className="flex max-w-[260px] items-center gap-2 text-text-primary" title={user.email || undefined}>
+            <Mail size={14} className="shrink-0 text-primary-400" aria-hidden="true" />
+            <span className="truncate">{user.email || "-"}</span>
+          </p>
+          <p className="flex items-center gap-2 text-text-secondary">
+            <Phone size={14} className="shrink-0 text-primary-400" aria-hidden="true" />
+            {user.phone}
+          </p>
+        </div>
+      ),
+    },
+    {
+      key: "role",
+      header: "Role",
+      sortable: true,
+      render: (user) => (
+        <div className="flex items-center gap-1.5">
+          {user.roles?.length ? (
+            <>
+              <span
+                className={`inline-flex h-7 max-w-[160px] items-center truncate rounded-full px-3.5 text-[13px] font-semibold ${roleTone(
+                  user.roles[0]?.roleName
+                )}`}
+              >
+                {user.roles[0]?.roleName || "—"}
+              </span>
+
+              {user.roles.length > 1 && (
                 <span
-                  className="
-                    inline-flex
-                    min-w-7
-                    items-center
-                    justify-center
-                    rounded-full
-                    bg-primary-50
-                    px-2
-                    py-0.5
-                    text-xs
-                    font-semibold
-                    text-primary-700
-                  "
+                  className="inline-flex h-7 items-center rounded-full bg-background px-2 text-xs font-semibold text-text-secondary"
+                  title={user.roles
+                    .slice(1)
+                    .map((role) => role?.roleName)
+                    .filter(Boolean)
+                    .join(", ")}
                 >
-                  {totalEntries}
+                  +{user.roles.length - 1}
                 </span>
-              </div>
-
-              {pendingCount > 0 && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setStatusFilter("Pending");
-                    setCurrentPage(1);
-                  }}
-                  className="
-                    inline-flex
-                    items-center
-                    rounded-full
-                    border
-                    border-warning-100
-                    bg-warning-50
-                    px-2.5
-                    py-1
-                    text-xs
-                    font-semibold
-                    text-warning-600
-                    transition
-                    hover:border-warning-200
-                    hover:bg-warning-100
-                  "
-                  title="Show users awaiting approval"
-                >
-                  {pendingCount} pending approval
-                </button>
               )}
-            </div>
+            </>
+          ) : (
+            <span className="text-xs text-text-disabled">No role assigned</span>
+          )}
+        </div>
+      ),
+    },
+    {
+      key: "createdAt",
+      header: "Joined",
+      sortable: true,
+      className: "whitespace-nowrap text-text-secondary",
+      render: (user) => user.date,
+    },
+    {
+      key: "status",
+      header: "Status",
+      sortable: true,
+      render: (user) => (
+        <StatusBadge tone={STATUS_TONE[user.status] || "danger"}>{user.status}</StatusBadge>
+      ),
+    },
+  ];
 
-            <p className="mt-1 text-xs leading-5 text-text-secondary">
-              Manage user profiles, roles, access status and
-              account details.
-            </p>
-          </div>
+  return (
+    <>
+      <DataTable
+        title="User List"
+        count={totalEntries}
+        noun="users"
+        minWidth={1000}
+        loading={loading}
+        filters={
+          <>
+            {pendingCount > 0 && (
+              <button
+                type="button"
+                onClick={() => {
+                  setStatusFilter("Pending");
+                  setCurrentPage(1);
+                }}
+                className="inline-flex h-10 items-center rounded-lg border border-warning-200 bg-warning-50 px-3 text-sm font-semibold text-warning-600 transition-colors hover:bg-warning-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary-600"
+                title="Show users awaiting approval"
+              >
+                {pendingCount} pending approval
+              </button>
+            )}
 
-          {/* Filters */}
-          <div className="flex flex-wrap items-center gap-2">
             <DateRangePickerButton
               value={appliedRange}
               onChange={(newRange) => {
@@ -533,7 +627,7 @@ const UserTable = ({ roles = [], refresh }) => {
             />
 
             <select
-              className="hr-select !w-36"
+              className="hr-select !h-10 !w-44"
               value={roleFilter}
               onChange={(e) => {
                 setRoleFilter(e.target.value);
@@ -542,7 +636,6 @@ const UserTable = ({ roles = [], refresh }) => {
               aria-label="Filter by role"
             >
               <option value="">All Roles</option>
-
               {roleOptions.map((role) => (
                 <option key={role} value={role}>
                   {role}
@@ -551,7 +644,7 @@ const UserTable = ({ roles = [], refresh }) => {
             </select>
 
             <select
-              className="hr-select !w-32"
+              className="hr-select !h-10 !w-36"
               value={statusFilter}
               onChange={(e) => {
                 setStatusFilter(e.target.value);
@@ -565,523 +658,80 @@ const UserTable = ({ roles = [], refresh }) => {
               <option value="Inactive">Inactive</option>
             </select>
 
-            <button
-              type="button"
-              onClick={fetchUsers}
-              disabled={loading}
-              className="
-                hr-btn
-                hr-btn-outline
-                !h-10
-                !w-10
-                !px-0
-              "
-              title="Refresh users"
-              aria-label="Refresh users"
-            >
-              <RefreshCw
-                size={16}
-                className={loading ? "animate-spin" : ""}
-              />
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* ========================================================
-          SEARCH / PAGINATION CONTROLS
-      ======================================================== */}
-
-      <div
-        className="
-          flex
-          flex-col
-          gap-3
-          border-b
-          border-border-subtle
-          bg-white
-          px-5
-          py-3
-          sm:flex-row
-          sm:items-center
-          sm:justify-between
-        "
-      >
-        <div className="flex flex-wrap items-center gap-2 text-sm text-text-secondary">
-          <span>Rows per page</span>
-
-          <select
-            className="hr-select !h-9 !w-20"
-            value={rowsPerPage}
-            onChange={(e) => {
-              setRowsPerPage(Number(e.target.value));
-              setCurrentPage(1);
-            }}
-            aria-label="Rows per page"
-          >
-            <option value={10}>10</option>
-            <option value={25}>25</option>
-            <option value={50}>50</option>
-          </select>
-
-          {hasActiveFilters && (
-            <button
-              type="button"
-              onClick={resetFilters}
-              className="
-                ml-1
-                text-sm
-                font-medium
-                text-primary-700
-                transition
-                hover:text-primary-800
-                hover:underline
-              "
-            >
-              Clear filters
-            </button>
-          )}
-        </div>
-
-        {/* Search */}
-        <div className="relative w-full sm:max-w-sm">
-          <Search
-            size={16}
-            strokeWidth={1.8}
-            className="
-              pointer-events-none
-              absolute
-              left-3
-              top-1/2
-              -translate-y-1/2
-              text-text-disabled
-            "
-          />
-
-          <input
-            type="text"
-            className="hr-input pl-9"
-            placeholder="Search name, email or phone..."
-            value={search}
-            onChange={(e) => {
-              setSearch(e.target.value);
-              setCurrentPage(1);
-            }}
-            aria-label="Search users"
-          />
-        </div>
-      </div>
-
-      {/* ========================================================
-          TABLE
-      ======================================================== */}
-
-      <div className="overflow-x-auto">
-        <table className="hr-table min-w-[900px]">
-          <thead>
-            <tr>
-              <th className="hr-th">User</th>
-              <th className="hr-th">Email</th>
-              <th className="hr-th">Created Date</th>
-              <th className="hr-th">Role</th>
-              <th className="hr-th">Status</th>
-              <th className="hr-th text-center">Actions</th>
-            </tr>
-          </thead>
-
-          <tbody>
-            {/* ==================================================
-                LOADING
-            ================================================== */}
-
-            {loading && users.length === 0 ? (
-              Array.from({ length: 5 }).map((_, index) => (
-                <tr key={`skeleton-${index}`}>
-                  <td colSpan={6} className="hr-td">
-                    <div className="flex animate-pulse items-center gap-4">
-                      <div className="h-10 w-10 shrink-0 rounded-full bg-primary-50" />
-
-                      <div className="space-y-2">
-                        <div className="h-3 w-36 rounded bg-primary-50" />
-                        <div className="h-2.5 w-24 rounded bg-primary-50" />
-                      </div>
-
-                      <div className="hidden h-3 w-52 rounded bg-primary-50 sm:block" />
-                    </div>
-                  </td>
-                </tr>
-              ))
-            ) : paginatedUsers.length === 0 ? (
-              /* ==================================================
-                  EMPTY STATE
-              ================================================== */
-
-              <tr>
-                <td colSpan={6} className="py-16 text-center">
-                  <div className="mx-auto max-w-sm">
-                    <div
-                      className="
-                        mx-auto
-                        mb-4
-                        flex
-                        h-12
-                        w-12
-                        items-center
-                        justify-center
-                        rounded-xl
-                        border
-                        border-primary-100
-                        bg-primary-50
-                        text-primary-700
-                      "
-                    >
-                      <Users size={21} strokeWidth={1.8} />
-                    </div>
-
-                    <p className="text-sm font-semibold text-text-primary">
-                      No users found
-                    </p>
-
-                    <p className="mt-1 text-xs leading-5 text-text-secondary">
-                      No records match your current search or
-                      filter criteria.
-                    </p>
-
-                    {hasActiveFilters && (
-                      <button
-                        type="button"
-                        onClick={resetFilters}
-                        className="
-                          mt-3
-                          text-xs
-                          font-semibold
-                          text-primary-700
-                          hover:underline
-                        "
-                      >
-                        Clear all filters
-                      </button>
-                    )}
-                  </div>
-                </td>
-              </tr>
-            ) : (
-              /* ==================================================
-                  USER ROWS
-              ================================================== */
-
-              paginatedUsers.map((user) => (
-                <tr
-                  key={user.id}
-                  className="
-                    transition-colors
-                    duration-150
-                    hover:bg-primary-50/40
-                  "
-                >
-                  {/* ==================================================
-                      USER
-                  ================================================== */}
-
-                  <td className="hr-td">
-                    <div className="flex items-center gap-3">
-                      <div
-                        className="
-                          h-10
-                          w-10
-                          shrink-0
-                          overflow-hidden
-                          rounded-full
-                          border
-                          border-border-subtle
-                          bg-background
-                        "
-                      >
-                        <img
-                          src={user.avatar}
-                          alt={user.name}
-                          className="h-full w-full object-cover"
-                          onError={(e) => {
-                            if (
-                              e.currentTarget.src !==
-                              defaultUser
-                            ) {
-                              e.currentTarget.src = defaultUser;
-                            }
-                          }}
-                        />
-                      </div>
-
-                      <div className="min-w-0">
-                        <div className="max-w-[190px] truncate text-sm font-semibold text-text-primary">
-                          {user.name}
-                        </div>
-
-                        <div className="mt-0.5 text-xs text-text-secondary">
-                          {user.phone}
-                        </div>
-                      </div>
-                    </div>
-                  </td>
-
-                  {/* ==================================================
-                      EMAIL
-                  ================================================== */}
-
-                  <td className="hr-td">
-                    <div className="max-w-[280px] truncate text-sm text-text-primary">
-                      {user.email || "—"}
-                    </div>
-                  </td>
-
-                  {/* ==================================================
-                      CREATED DATE
-                  ================================================== */}
-
-                  <td className="hr-td whitespace-nowrap text-sm text-text-secondary">
-                    {user.date}
-                  </td>
-
-                  {/* ==================================================
-                      ROLE
-                  ================================================== */}
-
-                  <td className="hr-td">
-                    <div className="flex items-center gap-1.5">
-                      {user.roles?.length ? (
-                        <>
-                          <span
-                            className="
-                              inline-flex
-                              h-7
-                              max-w-[150px]
-                              items-center
-                              truncate
-                              rounded-md
-                              border
-                              border-primary-100
-                              bg-primary-50
-                              px-2.5
-                              text-xs
-                              font-semibold
-                              text-primary-700
-                            "
-                          >
-                            {user.roles[0]?.roleName || "—"}
-                          </span>
-
-                          {user.roles.length > 1 && (
-                            <span
-                              className="
-                                text-xs
-                                font-semibold
-                                text-text-secondary
-                              "
-                              title={user.roles
-                                .slice(1)
-                                .map(
-                                  (role) => role?.roleName
-                                )
-                                .filter(Boolean)
-                                .join(", ")}
-                            >
-                              +{user.roles.length - 1}
-                            </span>
-                          )}
-                        </>
-                      ) : (
-                        <span className="text-xs text-text-disabled">
-                          No role assigned
-                        </span>
-                      )}
-                    </div>
-                  </td>
-
-                  {/* ==================================================
-                      STATUS
-                  ================================================== */}
-
-                  <td className="hr-td">
-                    <StatusBadge
-                      tone={
-                        STATUS_TONE[user.status] || "danger"
-                      }
-                    >
-                      {user.status}
-                    </StatusBadge>
-                  </td>
-
-                  {/* ==================================================
-                      ACTIONS
-                  ================================================== */}
-
-                  <td className="hr-td">
-                    <div className="flex items-center justify-center gap-1">
-                      {/* Approve */}
-                      {canEdit && user.statusValue === 2 && (
-                        <IconButton
-                          icon={CheckCircle2}
-                          label={`Approve ${user.name}`}
-                          tone="success"
-                          loading={
-                            approvingId === user.id
-                          }
-                          disabled={Boolean(approvingId)}
-                          onClick={() =>
-                            handleApprove(user)
-                          }
-                        />
-                      )}
-
-                      {/* Edit */}
-                      {canEdit && (
-                        <IconButton
-                          icon={Pencil}
-                          label={`Edit ${user.name}`}
-                          loading={
-                            editingUserId === user.id
-                          }
-                          disabled={Boolean(editingUserId)}
-                          onClick={() =>
-                            handleEdit(user)
-                          }
-                        />
-                      )}
-
-                      {/* Delete */}
-                      {canDelete && (
-                        <IconButton
-                          icon={Trash2}
-                          label={`Delete ${user.name}`}
-                          tone="danger"
-                          disabled={isDeleting}
-                          onClick={() => {
-                            setDeleteTarget(user);
-                            setIsDeleteModalOpen(true);
-                          }}
-                        />
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
-
-      {/* ========================================================
-          PAGINATION
-      ======================================================== */}
-
-      <div
-        className="
-          flex
-          flex-col
-          gap-3
-          border-t
-          border-border-subtle
-          bg-white
-          px-5
-          py-3
-          sm:flex-row
-          sm:items-center
-          sm:justify-between
-        "
-      >
-        <p className="text-sm text-text-secondary">
-          Showing{" "}
-          <span className="font-semibold text-text-primary">
-            {startEntry}
-          </span>
-          {"–"}
-          <span className="font-semibold text-text-primary">
-            {endEntry}
-          </span>{" "}
-          of{" "}
-          <span className="font-semibold text-text-primary">
-            {totalEntries}
-          </span>{" "}
-          entries
-        </p>
-
-        <div className="flex items-center gap-1">
-          {/* Previous */}
-          <IconButton
-            icon={ChevronLeft}
-            label="Previous page"
-            className="border border-border-subtle"
-            disabled={safePage === 1}
-            onClick={() =>
-              setCurrentPage((prev) =>
-                Math.max(prev - 1, 1)
-              )
-            }
-          />
-
-          {/* Pages */}
-          {getPageItems(totalPages, safePage).map((item) =>
-            typeof item === "string" ? (
-              <span
-                key={item}
-                className="px-1 text-sm text-text-disabled"
-              >
-                …
-              </span>
-            ) : (
+            {hasActiveFilters && (
               <button
                 type="button"
-                key={item}
-                onClick={() => setCurrentPage(item)}
-                aria-current={
-                  safePage === item ? "page" : undefined
-                }
-                aria-label={`Page ${item}`}
-                className={`
-                  flex
-                  h-8
-                  min-w-8
-                  items-center
-                  justify-center
-                  rounded-md
-                  px-2
-                  text-sm
-                  font-medium
-                  transition-colors
-                  focus-visible:outline
-                  focus-visible:outline-2
-                  focus-visible:outline-offset-2
-                  focus-visible:outline-primary-600
-                  ${
-                    safePage === item
-                      ? "bg-primary-700 text-white shadow-sm"
-                      : "text-text-secondary hover:bg-primary-50 hover:text-primary-700"
-                  }
-                `}
+                onClick={resetFilters}
+                className="text-sm font-medium text-primary-700 hover:underline"
               >
-                {item}
+                Clear filters
               </button>
-            )
-          )}
+            )}
+          </>
+        }
+        columns={columns}
+        rows={paginatedUsers}
+        total={totalEntries}
+        page={safePage}
+        pageSize={rowsPerPage}
+        onPageChange={setCurrentPage}
+        onPageSizeChange={(n) => {
+          setRowsPerPage(n);
+          setCurrentPage(1);
+        }}
+        search={search}
+        onSearchChange={(value) => {
+          setSearch(value);
+          setCurrentPage(1);
+        }}
+        searchPlaceholder="Search by name, email or phone..."
+        searchLabel="Search users"
+        sort={sort}
+        onSortChange={setSort}
+        emptyIcon={Users}
+        emptyTitle="No users found"
+        emptyDescription="Nothing matches your current search or filters. Try adjusting them."
+        actions={(user) => [
+          {
+            label: `Approve ${user.name}`,
+            icon: CheckCircle2,
+            tone: "success",
+            hidden: !(canEdit && user.statusValue === 2),
+            loading: approvingId === user.id,
+            disabled: Boolean(approvingId),
+            onClick: () => handleApprove(user),
+          },
+          { label: `View ${user.name}`, icon: Eye, onClick: () => setViewUser(user) },
+          {
+            label: `Edit ${user.name}`,
+            icon: Pencil,
+            hidden: !canEdit,
+            loading: editingUserId === user.id,
+            disabled: Boolean(editingUserId),
+            onClick: () => handleEdit(user),
+          },
+          {
+            label: `Delete ${user.name}`,
+            icon: Trash2,
+            tone: "danger",
+            hidden: !canDelete,
+            disabled: isDeleting,
+            onClick: () => openDelete(user),
+          },
+        ]}
+      />
 
-          {/* Next */}
-          <IconButton
-            icon={ChevronRight}
-            label="Next page"
-            className="border border-border-subtle"
-            disabled={safePage === totalPages}
-            onClick={() =>
-              setCurrentPage((prev) =>
-                Math.min(prev + 1, totalPages)
-              )
-            }
-          />
-        </div>
-      </div>
-
-      {/* ========================================================
-          DELETE MODAL
-      ======================================================== */}
+      <UserViewDrawer
+        open={Boolean(viewUser)}
+        user={viewUser}
+        statusTone={STATUS_TONE[viewUser?.status] || "danger"}
+        canEdit={canEdit}
+        onClose={() => setViewUser(null)}
+        onEdit={(user) => {
+          setViewUser(null);
+          handleEdit(user);
+        }}
+      />
 
       <DeleteUserModal
         isOpen={isDeleteModalOpen}
@@ -1096,10 +746,6 @@ const UserTable = ({ roles = [], refresh }) => {
         onConfirm={handleDeleteUser}
       />
 
-      {/* ========================================================
-          EDIT DRAWER
-      ======================================================== */}
-
       <EditUserModal
         isOpen={isEditModalOpen}
         editUser={editUser}
@@ -1107,9 +753,8 @@ const UserTable = ({ roles = [], refresh }) => {
         onClose={closeEditModal}
         onSave={handleSaveUser}
       />
-    </div>
+    </>
   );
 };
 
 export default UserTable;
-

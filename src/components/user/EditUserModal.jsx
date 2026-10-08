@@ -1,5 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
-import { useFormik } from "formik";
+import { useState, useEffect, useRef } from 'react';import { useFormik } from "formik";
 import * as Yup from "yup";
 import { toast } from "react-toastify";
 
@@ -206,17 +205,45 @@ const EditUserModal = ({
   // Temporary browser image URL
   const previewUrlRef = useRef(null);
 
-  // ========================= Drawer Animation =========================
+  // ========================= Drawer Animation + Modal Close =========================
+
+  const [prevIsOpen, setPrevIsOpen] = useState(isOpen);
+
+  if (isOpen !== prevIsOpen) {
+    setPrevIsOpen(isOpen);
+    if (!isOpen) {
+      setVisible(false);
+      setProfileImageFile(null);
+      setImageRemoved(false);
+    }
+  }
 
   useEffect(() => {
     if (isOpen) {
       setTimeout(() => setVisible(true), 10);
-    } else {
-      setVisible(false);
     }
   }, [isOpen]);
 
   // ========================= Load User =========================
+
+  const [prevEditUser, setPrevEditUser] = useState(editUser);
+
+  if (editUser !== prevEditUser) {
+    setPrevEditUser(editUser);
+
+    if (editUser) {
+      const roleIds = editUser.roles
+        ? editUser.roles.map((r) => Number(r.roleId))
+        : [];
+
+      setStatus(Number(editUser.status) === 1);
+      setSelectedRoles(roleIds);
+
+      setImageRemoved(false);
+      setProfileImageFile(null);
+      setProfileImagePreview(null);
+    }
+  }
 
   useEffect(() => {
     if (!editUser) return;
@@ -226,13 +253,6 @@ const EditUserModal = ({
       : [];
 
     const isActive = Number(editUser.status) === 1;
-
-    setStatus(isActive);
-    setSelectedRoles(roleIds);
-
-    setImageRemoved(false);
-    setProfileImageFile(null);
-    setProfileImagePreview(null);
 
     let cancelled = false;
 
@@ -323,15 +343,6 @@ const EditUserModal = ({
       cancelled = true;
     };
   }, [editUser]);
-
-  // ========================= Modal Close =========================
-
-  useEffect(() => {
-    if (!isOpen) {
-      setProfileImageFile(null);
-      setImageRemoved(false);
-    }
-  }, [isOpen]);
 
   // ========================= Role Change =========================
 

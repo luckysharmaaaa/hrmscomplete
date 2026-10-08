@@ -48,8 +48,22 @@ export default function useHolidays() {
   }, []);
 
   useEffect(() => {
-    load();
-  }, [load]);
+    let live = true;
+    (async () => {
+      try {
+        const list = unwrap(await api.get("/holidays"));
+        if (!live) return;
+        setHolidays((Array.isArray(list) ? list : []).map(fromApi).sort(byDate));
+      } catch (e) {
+        if (live) toast.error(errorMessage(e, "Could not load holidays."));
+      } finally {
+        if (live) setLoading(false);
+      }
+    })();
+    return () => {
+      live = false;
+    };
+  }, []);
 
   // All write helpers toast the error and re-throw so the drawer can stay open.
 

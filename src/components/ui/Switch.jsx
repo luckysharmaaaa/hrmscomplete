@@ -1,4 +1,3 @@
-import React from "react";
 
 /**
  * Switch — one toggle for the whole app (status Active/Inactive etc.)

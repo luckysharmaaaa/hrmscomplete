@@ -1,5 +1,4 @@
-import React, { useState } from "react";
-import { useFormik } from "formik";
+import { useEffect, useState } from 'react';import { useFormik } from "formik";
 import { toast } from "react-toastify";
 import * as Yup from "yup";
 
@@ -12,8 +11,6 @@ import UserForm from "./Userform";
 // ============================================================
 // VALIDATION SCHEMA
 // ============================================================
-// Email rule: ONLY an official company email (@bytesbrick.com)
-// is allowed, and it is required.
 const validationSchema = Yup.object({
   firstName: Yup.string()
     .min(2, "First Name must be at least 2 characters")
@@ -48,9 +45,15 @@ const validationSchema = Yup.object({
     .required("Phone is required"),
 });
 
-// ============================================================
-// INITIAL ADDRESS STATE
-// ============================================================
+const initialValues = {
+  firstName: "",
+  lastName: "",
+  email: "",
+  password: "",
+  confirmPassword: "",
+  phone: "",
+};
+
 const initialAddressState = {
   addressType: "home",
   countryID: 1,
@@ -70,61 +73,42 @@ const initialAddressState = {
   isDefault: false,
 };
 
+const revokeIfBlob = (url) => {
+  if (url?.startsWith("blob:")) URL.revokeObjectURL(url);
+};
+
 // ============================================================
-// ADD USER DRAWER COMPONENT
+// ADD USER DRAWER
 // ============================================================
 const AddUserDrawer = ({ open, onClose, onSuccess, roles = [] }) => {
-  // Default status of a newly created user is Active (true).
   const [status, setStatus] = useState(true);
-
-  // IDs of roles selected by the admin.
   const [selectedRoles, setSelectedRoles] = useState([]);
 
-  // Profile image
   const [profileImageFile, setProfileImageFile] = useState(null);
   const [profileImagePreview, setProfileImagePreview] = useState(null);
 
-  // Address
   const [addressData, setAddressData] = useState(initialAddressState);
 
-  // ==========================================================
-  // ROLE CHANGE HANDLER
-  // ==========================================================
   const handleRoleChange = (roleId) => {
     setSelectedRoles((prev) =>
       prev.includes(roleId)
         ? prev.filter((item) => item !== roleId)
-        : [...prev, roleId]
+        : [...prev, roleId],
     );
   };
 
-  // ==========================================================
-  // IMAGE CHANGE HANDLER
-  // ==========================================================
   const handleImageChange = (file) => {
-    if (profileImagePreview?.startsWith("blob:")) {
-      URL.revokeObjectURL(profileImagePreview);
-    }
-
+    revokeIfBlob(profileImagePreview);
     setProfileImageFile(file);
     setProfileImagePreview(URL.createObjectURL(file));
   };
 
-  // ==========================================================
-  // REMOVE IMAGE HANDLER
-  // ==========================================================
   const handleRemoveImage = () => {
-    if (profileImagePreview?.startsWith("blob:")) {
-      URL.revokeObjectURL(profileImagePreview);
-    }
-
+    revokeIfBlob(profileImagePreview);
     setProfileImageFile(null);
     setProfileImagePreview(null);
   };
 
-  // ==========================================================
-  // ADDRESS CHANGE HANDLER
-  // ==========================================================
   const handleAddressChange = (e) => {
     const { name, value, type, checked } = e.target;
 
@@ -134,48 +118,17 @@ const AddUserDrawer = ({ open, onClose, onSuccess, roles = [] }) => {
     }));
   };
 
-  // ==========================================================
-  // RESET ALL FORM DATA
-  // ==========================================================
-  const resetAll = (resetForm) => {
-    resetForm?.();
-
-    setSelectedRoles([]);
-    setStatus(true);
-
-    if (profileImagePreview?.startsWith("blob:")) {
-      URL.revokeObjectURL(profileImagePreview);
-    }
-    setProfileImageFile(null);
-    setProfileImagePreview(null);
-
-    setAddressData(initialAddressState);
-  };
-
-  // ==========================================================
-  // FORMIK CONFIGURATION
-  // ==========================================================
   const formik = useFormik({
-    initialValues: {
-      firstName: "",
-      lastName: "",
-      email: "",
-      password: "",
-      confirmPassword: "",
-      phone: "",
-    },
-
+    initialValues,
     validationSchema,
 
     onSubmit: async (values, { resetForm }) => {
       try {
-        // STEP 1: VALIDATE ROLE
         if (selectedRoles.length === 0) {
           toast.error("Please select at least one role.");
           return;
         }
 
-        // STEP 2: VALIDATE REQUIRED ADDRESS FIELDS
         if (
           !addressData.addressType ||
           !addressData.addressLine1 ||
@@ -190,131 +143,118 @@ const AddUserDrawer = ({ open, onClose, onSuccess, roles = [] }) => {
           return;
         }
 
-        // STEP 3: CREATE USER PAYLOAD
         const payload = {
           firstName: values.firstName,
           lastName: values.lastName,
-
-          // Official company email only (@bytesbrick.com)
           email: values.email.trim().toLowerCase(),
-
           phone: values.phone,
           password: values.password,
-
-          // User active/inactive status.
           status,
-
-          // Selected role IDs.
           roles: selectedRoles,
-
-          // Address information.
           address: {
             addressType: addressData.addressType,
-
-            // Backend expects houseNumber.
-            houseNumber: addressData.houseNo,
-
+            houseNumber: addressData.houseNo, // backend expects houseNumber
             addressLine1: addressData.addressLine1,
             addressLine2: addressData.addressLine2,
             landmark: addressData.landmark,
             locality: addressData.locality,
-
             city: addressData.city,
             state: addressData.state,
             zipCode: addressData.zipCode,
-
             countryID: Number(addressData.countryID),
-
             countryCode: addressData.countryCode,
             phoneCode: addressData.phoneCode,
             phone: addressData.phone,
-
-            latitude: addressData.latitude
-              ? Number(addressData.latitude)
-              : null,
-
-            longitude: addressData.longitude
-              ? Number(addressData.longitude)
-              : null,
-
+            latitude: addressData.latitude ? Number(addressData.latitude) : null,
+            longitude: addressData.longitude ? Number(addressData.longitude) : null,
             isDefault: addressData.isDefault,
           },
         };
 
-        // STEP 4: CREATE USER
         const response = await createUser(payload);
 
-        // STEP 5: CHECK USER CREATION RESPONSE
-        if (response.data.success) {
-          const userId = response.data.data.id;
+        if (!response.data.success) {
+          toast.error(response.data.message || "Failed to create user.");
+          return;
+        }
 
-          // STEP 6: UPLOAD PROFILE IMAGE
-          // The user already exists at this point. If the image upload
-          // fails we warn, but still finish the success path so the admin
-          // doesn't re-submit and create a duplicate user.
-          if (profileImageFile) {
-            try {
-              const formData = new FormData();
+        const userId = response.data.data.id;
 
-              formData.append("file", profileImageFile);
-              formData.append("title", profileImageFile.name);
-              formData.append(
-                "altText",
-                `${values.firstName} ${values.lastName}`.trim()
-              );
+        // The user already exists. An image failure only warns, so the admin
+        // doesn't re-submit and create a duplicate.
+        if (profileImageFile) {
+          try {
+            const formData = new FormData();
 
-              // Tells the backend this media belongs to the new user.
-              formData.append("objectID", String(userId));
-              formData.append("objectType", "user");
+            formData.append("file", profileImageFile);
+            formData.append("title", profileImageFile.name);
+            formData.append(
+              "altText",
+              `${values.firstName} ${values.lastName}`.trim(),
+            );
+            formData.append("objectID", String(userId));
+            formData.append("objectType", "user");
 
-              const mediaResponse = await uploadMedia(formData, "users");
+            const mediaResponse = await uploadMedia(formData, "users");
 
-              if (!mediaResponse.data.success) {
-                toast.warn(
-                  `User created, but the profile photo didn't upload: ${
-                    mediaResponse.data.message || "please add it from the user's profile."
-                  }`
-                );
-              }
-            } catch (imageError) {
-              console.error("Image Upload Error:", imageError);
-
+            if (!mediaResponse.data.success) {
               toast.warn(
-                "User created, but the profile photo didn't upload. You can add it from the user's profile."
+                `User created, but the profile photo didn't upload: ${
+                  mediaResponse.data.message ||
+                  "please add it from the user's profile."
+                }`,
               );
             }
+          } catch (imageError) {
+            console.error("Image Upload Error:", imageError);
+            toast.warn(
+              "User created, but the profile photo didn't upload. You can add it from the user's profile.",
+            );
           }
-
-          // STEP 7: SUCCESS
-          if (!profileImageFile) {
-            toast.success(response.data.message);
-          }
-
-          resetAll(resetForm);
-
-          onSuccess?.();
-
-          onClose();
-        } else {
-          toast.error(
-            response.data.message || "Failed to create user."
-          );
         }
+
+        // FIX: success toast now shows whether or not a photo was attached
+        // (before, it was skipped whenever a photo was selected).
+        toast.success(response.data.message || "User created successfully.");
+
+        resetAll(resetForm);
+        onSuccess?.();
+        onClose();
       } catch (error) {
         console.error(error);
-
-        toast.error(
-          error.response?.data?.message || "Failed to create user."
-        );
+        toast.error(error.response?.data?.message || "Failed to create user.");
       }
     },
   });
 
-  // ==========================================================
-  // CLOSE DRAWER HANDLER
-  // ==========================================================
+  // ============================================================
+  // RESET — one place, used on close, on success and on reopen
+  // ============================================================
+  function resetAll(resetForm = formik.resetForm) {
+    resetForm?.();
+
+    setSelectedRoles([]);
+    setStatus(true);
+
+    revokeIfBlob(profileImagePreview);
+    setProfileImageFile(null);
+    setProfileImagePreview(null);
+
+    setAddressData(initialAddressState);
+  }
+
+  // Every time the drawer opens it starts clean (no data from a previous add).
+  useEffect(() => {
+    if (open) resetAll();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
+
+  // Free the preview URL if the drawer unmounts with a photo selected.
+  useEffect(() => () => revokeIfBlob(profileImagePreview), [profileImagePreview]);
+
   const handleClose = () => {
-    resetAll(formik.resetForm);
+    if (formik.isSubmitting) return; // don't close mid-save
+    resetAll();
     onClose();
   };
 

@@ -1,5 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from "react";
-import { ChevronDown, FileText, FileSpreadsheet, BarChart3 } from "lucide-react";
+import { useState, useEffect, useCallback, useRef } from 'react';import { ChevronDown, FileText, FileSpreadsheet, BarChart3 } from "lucide-react";
 import { toast } from "react-toastify";
 
 import PageHeader from "../components/ui/PageHeader";
@@ -22,7 +21,7 @@ import {
 import { canShowPunchCard } from "../utils/attendancePolicy";
 import { buildMonthAttendance } from "../utils/monthAttendance";
 
-import { useAttendanceGate } from "../context/AttendanceGateContext";
+import { useAttendanceGate } from "../context/attendanceGateValue";
 import Can from "../components/rbac/Can";
 
 const pad2 = (n) => String(n).padStart(2, "0");
@@ -58,22 +57,22 @@ const AttendanceEmployee = () => {
   // ==========================================================
   // Load data
   // ==========================================================
-  const loadAll = useCallback(async () => {
-    try {
-      const { startDate, endDate, lastDay } = monthBounds(selectedYear, selectedMonth);
+  const loadAll = useCallback(() => {
+    const { startDate, endDate, lastDay } = monthBounds(selectedYear, selectedMonth);
 
-      const [todayRes, historyRes, regularizationRes] = await Promise.all([
-        getTodayAttendance(),
-        getAttendanceHistory(1, lastDay, { startDate, endDate }),
-        getMyRegularizations(1, 100),
-      ]);
-
-      setToday(todayRes?.data || null);
-      setHistory(historyRes?.data?.data || []);
-      setMyRegularizations(regularizationRes?.data || []);
-    } catch (error) {
-      toast.error(error?.response?.data?.message || "Failed to load attendance");
-    }
+    return Promise.all([
+      getTodayAttendance(),
+      getAttendanceHistory(1, lastDay, { startDate, endDate }),
+      getMyRegularizations(1, 100),
+    ])
+      .then(([todayRes, historyRes, regularizationRes]) => {
+        setToday(todayRes?.data || null);
+        setHistory(historyRes?.data?.data || []);
+        setMyRegularizations(regularizationRes?.data || []);
+      })
+      .catch((error) => {
+        toast.error(error?.response?.data?.message || "Failed to load attendance");
+      });
   }, [selectedYear, selectedMonth]);
 
   // Reload on month change, and whenever the punch card changes the attendance state

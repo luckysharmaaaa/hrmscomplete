@@ -13,13 +13,15 @@ export default function WfhApplyModal({ open, onClose, onSubmit }) {
   const [error, setError] = React.useState("");
   const today = toYMD(new Date());
 
-  React.useEffect(() => {
+  const [prevOpen, setPrevOpen] = React.useState(open);
+  if (open !== prevOpen) {
+    setPrevOpen(open);
     if (open) {
       setForm(EMPTY);
       setError("");
       setSaving(false);
     }
-  }, [open]);
+  }
 
   React.useEffect(() => {
     if (!open) return;

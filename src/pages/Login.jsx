@@ -1,5 +1,4 @@
-import React, { useState } from "react";
-import {
+import { useState } from 'react';import {
   Eye,
   EyeOff,
   Loader2,
@@ -12,7 +11,7 @@ import { toast } from "react-toastify";
 import AuthLayout from "../components/auth/Authlayout";
 import GoogleAuthSection from "../components/auth/GoogleAuthSection";
 import { loginUser } from "../services/loginAPI";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../context/authValue";
 import {
   COMPANY_NAME,
   COMPANY_EMAIL_DOMAIN,
@@ -164,10 +163,7 @@ const Login = () => {
         {/* PASSWORD */}
         <div>
           <div className="mb-1.5 flex items-center justify-between gap-4">
-            <label
-              htmlFor="password"
-              className="text-[13px] font-medium text-text-primary"
-            >
+            <label htmlFor="password" className="hr-label !mb-0">
               Password
             </label>
 
@@ -175,7 +171,7 @@ const Login = () => {
               type="button"
               onClick={() => navigate("/forgot-password")}
               disabled={loading}
-              className="shrink-0 text-[13px] font-medium text-primary-700 transition-colors hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-600/30 disabled:cursor-not-allowed disabled:opacity-50"
+              className="shrink-0 rounded text-sm font-medium text-primary-700 transition-colors hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary-600 disabled:cursor-not-allowed disabled:opacity-50"
             >
               Forgot password?
             </button>
@@ -205,7 +201,7 @@ const Login = () => {
               onClick={() => setShowPassword((prev) => !prev)}
               disabled={loading}
               aria-label={showPassword ? "Hide password" : "Show password"}
-              className="absolute right-2 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-md text-text-secondary transition-colors hover:bg-primary-50 hover:text-primary-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-600/30 disabled:cursor-not-allowed disabled:opacity-50"
+              className="hr-icon-btn absolute right-2 top-1/2 -translate-y-1/2"
             >
               {showPassword ? (
                 <EyeOff size={18} strokeWidth={1.8} />
@@ -249,7 +245,7 @@ const Login = () => {
         New to {COMPANY_NAME}?{" "}
         <Link
           to="/register"
-          className="font-medium text-primary-700 hover:underline"
+          className="font-medium text-primary-700 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary-600"
         >
           Create account
         </Link>

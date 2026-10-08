@@ -1,5 +1,4 @@
-import React, { useState } from "react";
-import { Info } from "lucide-react";
+import { useState } from 'react';import { Info } from "lucide-react";
 
 // ── Tooltip for Leave Reason ──────────────────────────────────
 export default function ReasonTooltip({ reason }) {

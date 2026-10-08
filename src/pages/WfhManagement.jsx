@@ -1,7 +1,7 @@
 // ```jsx
 import usePermission from "../hooks/usePermission";
 
-import React, {
+import {
   useState,
   useEffect,
   useCallback,
@@ -108,9 +108,12 @@ export default function WfhManagement() {
   const debouncedSearch = useDebounced(search);
 
   // Search changes should jump back to page 1
-  useEffect(() => {
+  const [prevSearch, setPrevSearch] = useState(debouncedSearch);
+
+  if (debouncedSearch !== prevSearch) {
+    setPrevSearch(debouncedSearch);
     setCurrentPage(1);
-  }, [debouncedSearch]);
+  }
 
   const reload = useCallback(
     () => setRefreshKey((k) => k + 1),
@@ -148,8 +151,6 @@ export default function WfhManagement() {
   // ==========================================================
   useEffect(() => {
     let cancelled = false;
-
-    setLoading(true);
 
     getWfhRequests({
       page: currentPage,
@@ -263,9 +264,7 @@ export default function WfhManagement() {
       setEditItem(null);
       reload();
     } catch (err) {
-      throw new Error(
-        apiErrorMessage(err)
-      );
+      throw new Error(apiErrorMessage(err), { cause: err });
     }
   };
 

@@ -1,21 +1,26 @@
 import usePermission from "../hooks/usePermission";
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   CalendarDays,
-  ChevronLeft,
-  ChevronRight,
+  CheckCircle2,
+  ChevronDown,
+  Download,
+  FileSpreadsheet,
+  FileText,
   Loader2,
   Pencil,
+  Plus,
+  Power,
   RefreshCw,
-  Search,
-  Settings2,
   Wallet,
-  X,
 } from "lucide-react";
 import { toast } from "react-toastify";
 
 import PageHeader from "../components/ui/PageHeader";
+import StatCard from "../components/ui/StatCard";
 import StatusBadge from "../components/ui/StatusBadge";
+import ConfirmModal from "../components/ui/ConfirmModal";
+import DataTable from "../components/ui/DataTable";
 import LeaveSettingModal from "../components/LeaveSettingModal";
 
 import {
@@ -25,125 +30,11 @@ import {
 
 /* -------------------------------------------------------------------------- */
 /* Helpers                                                                    */
-/* ---------- ---------------------------------------------------------------- */
-
-// 1 … 4 5 6 … 20
-const getPageItems = (total, current) => {        
-  if (total <= 7) {
-    return Array.from({ length: total }, (_, i) => i + 1);
-  }
-
-  const items = [1];
-
-  const start = Math.max(2, current - 1);
-  const end = Math.min(total - 1, current + 1);
-
-  if (start > 2) {
-    items.push("start-ellipsis");
-  }
-
-  for (let page = start; page <= end; page += 1) {
-    items.push(page);
-  }
-
-  if (end < total - 1) {
-    items.push("end-ellipsis");
-  }
-
-  items.push(total);
-
-  return items;
-};
+/* -------------------------------------------------------------------------- */
 
 const isActiveLeave = (leave) => Number(leave?.status) === 1;
 
 const isPaidLeave = (leave) => Number(leave?.isPaid) === 1;
-
-/* -------------------------------------------------------------------------- */
-/* Confirm Deactivation                                                       */
-/* -------------------------------------------------------------------------- */
-
-const ConfirmDeactivateDialog = ({
-  open,
-  leave,
-  loading,
-  onClose,
-  onConfirm,
-}) => {
-  if (!open) return null;
-
-  return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 p-4">
-      <div className="w-full max-w-md rounded-lg border border-border-subtle bg-surface shadow-xl">
-        <div className="flex items-start justify-between border-b border-border-subtle px-5 py-4">
-          <div>
-            <h3 className="text-base font-semibold text-text-primary">
-              Deactivate Leave Type
-            </h3>
-
-            <p className="mt-1 text-xs text-text-secondary">
-              This leave type will no longer be available for new leave
-              applications.
-            </p>
-          </div>
-
-          <button
-            type="button"
-            onClick={onClose}
-            disabled={loading}
-            className="hr-icon-btn"
-            aria-label="Close"
-          >
-            <X size={16} />
-          </button>
-        </div>
-
-        <div className="px-5 py-5">
-          <div className="rounded-lg border border-border-subtle bg-background px-4 py-3">
-            <p className="text-sm font-semibold text-text-primary">
-              {leave?.leaveName || "Leave Type"}
-            </p>
-
-            <p className="mt-1 text-xs text-text-secondary">
-              Code: {leave?.leaveCode || "—"}
-            </p>
-          </div>
-
-          <p className="mt-4 text-sm leading-6 text-text-secondary">
-            Are you sure you want to deactivate this leave type?
-          </p>
-        </div>
-
-        <div className="flex items-center justify-end gap-2 border-t border-border-subtle px-5 py-3">
-          <button
-            type="button"
-            onClick={onClose}
-            disabled={loading}
-            className="hr-btn hr-btn-glass"
-          >
-            Cancel
-          </button>
-
-          <button
-            type="button"
-            onClick={onConfirm}
-            disabled={loading}
-            className="hr-btn bg-danger-500 text-white hover:bg-danger-600 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {loading ? (
-              <>
-                <Loader2 size={16} className="animate-spin" />
-                Deactivating...
-              </>
-            ) : (
-              "Deactivate"
-            )}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-};
 
 /* -------------------------------------------------------------------------- */
 /* Leave Settings                                                             */
@@ -154,7 +45,7 @@ const LeaveSettings = () => {
 
   const [leaveTypes, setLeaveTypes] = useState([]);
 
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
@@ -173,33 +64,32 @@ const LeaveSettings = () => {
   /* Fetch                                                                    */
   /* ------------------------------------------------------------------------ */
 
-  const fetchSettings = useCallback(async () => {
-    try {
-      setLoading(true);
+  const fetchSettings = useCallback(() => {
+    getLeaveSettings()
+      .then((data) => {
+        /*
+         * Current service is expected to return the leave-setting array.
+         * The fallback also supports common API response wrappers.
+         */
+        const items = Array.isArray(data)
+          ? data
+          : data?.data?.data ?? data?.data ?? [];
 
-      const data = await getLeaveSettings();
+        setLeaveTypes(Array.isArray(items) ? items : []);
+      })
+      .catch((error) => {
+        console.error("Failed to fetch leave settings:", error);
 
-      /*
-       * Current service is expected to return the leave-setting array.
-       * The fallback also supports common API response wrappers.
-       */
-      const items = Array.isArray(data)
-        ? data
-        : data?.data?.data ?? data?.data ?? [];
+        toast.error(
+          error?.response?.data?.message ||
+            "Unable to load leave settings."
+        );
 
-      setLeaveTypes(Array.isArray(items) ? items : []);
-    } catch (error) {
-      console.error("Failed to fetch leave settings:", error);
-
-      toast.error(
-        error?.response?.data?.message ||
-          "Unable to load leave settings."
-      );
-
-      setLeaveTypes([]);
-    } finally {
-      setLoading(false);
-    }
+        setLeaveTypes([]);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
   }, []);
 
   useEffect(() => {
@@ -238,6 +128,7 @@ const LeaveSettings = () => {
 
     closeModal();
 
+    setLoading(true);
     await fetchSettings();
   };
 
@@ -392,10 +283,41 @@ const LeaveSettings = () => {
   }, [leaveTypes, search, statusFilter, paymentFilter]);
 
   /* ------------------------------------------------------------------------ */
-  /* Pagination                                                                */
+  /* Sorting + Pagination                                                      */
   /* ------------------------------------------------------------------------ */
 
-  const totalEntries = filteredLeaveTypes.length;
+  const [sort, setSort] = useState({ key: null, dir: "asc" });
+
+  const sortedLeaveTypes = useMemo(() => {
+    if (!sort.key) return filteredLeaveTypes;
+
+    const valueOf = (leave) => {
+      switch (sort.key) {
+        case "leaveName":
+          return String(leave?.leaveName || "").toLowerCase();
+        case "leaveCode":
+          return String(leave?.leaveCode || "").toLowerCase();
+        case "maxBalance":
+          return Number(leave?.maxBalance) || 0;
+        case "payment":
+          return isPaidLeave(leave) ? 1 : 0;
+        default:
+          return isActiveLeave(leave) ? 1 : 0;
+      }
+    };
+
+    const direction = sort.dir === "asc" ? 1 : -1;
+
+    return [...filteredLeaveTypes].sort((a, b) => {
+      const x = valueOf(a);
+      const y = valueOf(b);
+
+      if (typeof x === "number") return (x - y) * direction;
+      return String(x).localeCompare(String(y)) * direction;
+    });
+  }, [filteredLeaveTypes, sort]);
+
+  const totalEntries = sortedLeaveTypes.length;
 
   const totalPages = Math.max(
     1,
@@ -404,29 +326,17 @@ const LeaveSettings = () => {
 
   const safePage = Math.min(currentPage, totalPages);
 
-  useEffect(() => {
-    if (currentPage > totalPages) {
-      setCurrentPage(totalPages);
-    }
-  }, [currentPage, totalPages]);
+  if (currentPage > totalPages) {
+    setCurrentPage(totalPages);
+  }
 
   const paginatedLeaveTypes = useMemo(
     () =>
-      filteredLeaveTypes.slice(
+      sortedLeaveTypes.slice(
         (safePage - 1) * rowsPerPage,
         safePage * rowsPerPage
       ),
-    [filteredLeaveTypes, safePage, rowsPerPage]
-  );
-
-  const startEntry =
-    totalEntries === 0
-      ? 0
-      : (safePage - 1) * rowsPerPage + 1;
-
-  const endEntry = Math.min(
-    safePage * rowsPerPage,
-    totalEntries
+    [sortedLeaveTypes, safePage, rowsPerPage]
   );
 
   /* ------------------------------------------------------------------------ */
@@ -468,6 +378,184 @@ const LeaveSettings = () => {
     };
   }, [leaveTypes]);
 
+  // Show "—" until the first load finishes, never a wrong 0.
+  const statValue = (value) => (loading && leaveTypes.length === 0 ? "—" : value);
+
+  // The summary cards double as quick filters.
+  const summaryCards = [
+    {
+      key: "total",
+      icon: CalendarDays,
+      tone: "primary",
+      label: "Total Leave Types",
+      value: stats.total,
+      hint: "All leave policies",
+      selected: !statusFilter && !paymentFilter,
+      apply: () => {
+        setStatusFilter("");
+        setPaymentFilter("");
+      },
+    },
+    {
+      key: "active",
+      icon: CheckCircle2,
+      tone: "success",
+      label: "Active",
+      value: stats.active,
+      hint: "Currently available",
+      selected: statusFilter === "Active" && !paymentFilter,
+      apply: () => {
+        setStatusFilter("Active");
+        setPaymentFilter("");
+      },
+    },
+    {
+      key: "paid",
+      icon: Wallet,
+      tone: "info",
+      label: "Paid Leave",
+      value: stats.paid,
+      hint: "Salary is paid",
+      selected: paymentFilter === "Paid" && !statusFilter,
+      apply: () => {
+        setStatusFilter("");
+        setPaymentFilter("Paid");
+      },
+    },
+    {
+      key: "unpaid",
+      icon: Wallet,
+      tone: "accent",
+      label: "Unpaid Leave",
+      value: stats.unpaid,
+      hint: "Without salary",
+      selected: paymentFilter === "Unpaid" && !statusFilter,
+      apply: () => {
+        setStatusFilter("");
+        setPaymentFilter("Unpaid");
+      },
+    },
+  ];
+
+  // Closes the daisyUI focus-dropdown after an item is clicked
+  const closeDropdown = () => document.activeElement?.blur?.();
+
+  /* ------------------------------------------------------------------------ */
+  /* Table columns (shared DataTable)                                          */
+  /* ------------------------------------------------------------------------ */
+
+  const columns = [
+    {
+      key: "serial",
+      header: "Serial No.",
+      width: 96,
+      align: "center",
+      className: "font-medium text-text-secondary tabular-nums",
+      render: (_row, _index, serialNo) => serialNo,
+    },
+    {
+      key: "leaveName",
+      header: "Leave Type",
+      sortable: true,
+      render: (leave) => (
+        <div className="flex items-center gap-3">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary-50 text-primary-700">
+            <CalendarDays size={18} aria-hidden="true" />
+          </span>
+
+          <div className="min-w-0">
+            <p
+              className="max-w-[220px] truncate font-semibold text-text-primary"
+              title={leave.leaveName || undefined}
+            >
+              {leave.leaveName || "Unnamed Leave"}
+            </p>
+
+            <p className="text-xs text-text-secondary">Leave policy</p>
+          </div>
+        </div>
+      ),
+    },
+    {
+      key: "leaveCode",
+      header: "Code",
+      sortable: true,
+      render: (leave) => (
+        <span className="inline-flex h-7 items-center rounded-full border border-primary-100 bg-primary-50 px-2.5 text-xs font-semibold text-primary-700">
+          {leave.leaveCode || "—"}
+        </span>
+      ),
+    },
+    {
+      key: "maxBalance",
+      header: "Total Days",
+      sortable: true,
+      render: (leave) => (
+        <div className="flex items-center gap-2">
+          <span className="font-semibold tabular-nums text-text-primary">
+            {leave.maxBalance ?? "—"}
+          </span>
+
+          {leave.leavePerMonth !== undefined && leave.leavePerMonth !== null && (
+            <span className="text-xs text-text-secondary">/ month: {leave.leavePerMonth}</span>
+          )}
+        </div>
+      ),
+    },
+    {
+      key: "payment",
+      header: "Payment",
+      sortable: true,
+      render: (leave) => {
+        const paid = isPaidLeave(leave);
+        return <StatusBadge tone={paid ? "success" : "danger"}>{paid ? "Paid" : "Unpaid"}</StatusBadge>;
+      },
+    },
+    {
+      key: "status",
+      header: "Status",
+      sortable: true,
+      render: (leave) => {
+        const active = isActiveLeave(leave);
+        const pending = isPending(leave.id);
+
+        // Click the badge to activate / deactivate
+        return (
+          <button
+            type="button"
+            onClick={() => {
+              if (!pending && canEdit) {
+                requestToggle(leave);
+              }
+            }}
+            disabled={pending || !canEdit}
+            className="cursor-pointer rounded-full focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-600 disabled:cursor-not-allowed disabled:opacity-60"
+            title={
+              canEdit
+                ? active
+                  ? "Deactivate leave type"
+                  : "Activate leave type"
+                : "You do not have permission to change status"
+            }
+          >
+            <StatusBadge tone={active ? "success" : "danger"}>
+              {pending ? (
+                <span className="inline-flex items-center gap-1.5">
+                  <Loader2 size={14} className="animate-spin" />
+                  Updating
+                </span>
+              ) : active ? (
+                "Active"
+              ) : (
+                "Inactive"
+              )}
+            </StatusBadge>
+          </button>
+        );
+      },
+    },
+  ];
+
   /* ------------------------------------------------------------------------ */
   /* Render                                                                    */
   /* ------------------------------------------------------------------------ */
@@ -485,13 +573,50 @@ const LeaveSettings = () => {
         ]}
         actions={
           <>
+            {/* Export */}
+            <div className="dropdown dropdown-end">
+              <div tabIndex={0} role="button" className="hr-btn hr-btn-glass">
+                <Download size={16} />
+                Export
+                <ChevronDown size={16} />
+              </div>
+
+              <ul
+                tabIndex={0}
+                className="dropdown-content z-50 mt-2 w-52 rounded-lg border border-border-subtle bg-surface p-1.5 shadow-lg"
+              >
+                <li>
+                  <button
+                    type="button"
+                    onClick={closeDropdown}
+                    className="flex h-10 w-full items-center gap-2.5 rounded-md px-3 text-sm text-text-primary transition-colors hover:bg-primary-50 hover:text-primary-700"
+                  >
+                    <FileText size={16} className="text-danger-500" />
+                    Export as PDF
+                  </button>
+                </li>
+
+                <li>
+                  <button
+                    type="button"
+                    onClick={closeDropdown}
+                    className="flex h-10 w-full items-center gap-2.5 rounded-md px-3 text-sm text-text-primary transition-colors hover:bg-primary-50 hover:text-primary-700"
+                  >
+                    <FileSpreadsheet size={16} className="text-success-600" />
+                    Export as Excel
+                  </button>
+                </li>
+              </ul>
+            </div>
+
+            {/* Add Leave Type — RBAC: leave-settings:add */}
             {canAdd && (
               <button
                 type="button"
                 onClick={openCreate}
                 className="hr-btn hr-btn-primary"
               >
-                <Settings2 size={16} />
+                <Plus size={16} />
                 Add Leave Type
               </button>
             )}
@@ -499,154 +624,57 @@ const LeaveSettings = () => {
         }
       />
 
-      {/* Summary */}
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <button
-          type="button"
-          onClick={() => {
-            setStatusFilter("");
-            setPaymentFilter("");
-            setCurrentPage(1);
-          }}
-          className={`hr-card px-4 py-4 text-left transition ${
-            !statusFilter && !paymentFilter
-              ? "border-primary-200 ring-1 ring-primary-100"
-              : "hover:border-primary-200"
-          }`}
-        >
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs font-medium text-text-secondary">
-                Total Leave Types
-              </p>
-              <p className="mt-1 text-2xl font-semibold text-text-primary">
-                {stats.total}
-              </p>
-            </div>
-
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary-50 text-primary-700">
-              <CalendarDays size={19} />
-            </div>
-          </div>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => {
-            setStatusFilter("Active");
-            setPaymentFilter("");
-            setCurrentPage(1);
-          }}
-          className={`hr-card px-4 py-4 text-left transition ${
-            statusFilter === "Active" && !paymentFilter
-              ? "border-primary-200 ring-1 ring-primary-100"
-              : "hover:border-primary-200"
-          }`}
-        >
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs font-medium text-text-secondary">
-                Active
-              </p>
-              <p className="mt-1 text-2xl font-semibold text-text-primary">
-                {stats.active}
-              </p>
-            </div>
-
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-success-50 text-success-600">
-              <CalendarDays size={19} />
-            </div>
-          </div>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => {
-            setStatusFilter("");
-            setPaymentFilter("Paid");
-            setCurrentPage(1);
-          }}
-          className={`hr-card px-4 py-4 text-left transition ${
-            paymentFilter === "Paid" && !statusFilter
-              ? "border-primary-200 ring-1 ring-primary-100"
-              : "hover:border-primary-200"
-          }`}
-        >
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs font-medium text-text-secondary">
-                Paid Leave
-              </p>
-              <p className="mt-1 text-2xl font-semibold text-text-primary">
-                {stats.paid}
-              </p>
-            </div>
-
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary-50 text-primary-700">
-              <Wallet size={19} />
-            </div>
-          </div>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => {
-            setStatusFilter("");
-            setPaymentFilter("Unpaid");
-            setCurrentPage(1);
-          }}
-          className={`hr-card px-4 py-4 text-left transition ${
-            paymentFilter === "Unpaid" && !statusFilter
-              ? "border-primary-200 ring-1 ring-primary-100"
-              : "hover:border-primary-200"
-          }`}
-        >
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs font-medium text-text-secondary">
-                Unpaid Leave
-              </p>
-              <p className="mt-1 text-2xl font-semibold text-text-primary">
-                {stats.unpaid}
-              </p>
-            </div>
-
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-background text-text-secondary">
-              <Wallet size={19} />
-            </div>
-          </div>
-        </button>
+      {/* Summary (click a card to filter the table) */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        {summaryCards.map(({ key, selected, apply, value, ...card }) => (
+          <button
+            key={key}
+            type="button"
+            aria-pressed={selected}
+            onClick={() => {
+              apply();
+              setCurrentPage(1);
+            }}
+            className={`block w-full rounded-xl text-left transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-600 ${
+              selected ? "ring-2 ring-primary-600 ring-offset-2" : ""
+            }`}
+          >
+            <StatCard {...card} value={statValue(value)} />
+          </button>
+        ))}
       </div>
 
-      {/* Table Card */}
-      <div className="hr-card overflow-hidden">
-        {/* Card Header */}
-        <div className="flex flex-col gap-4 border-b border-border-subtle px-5 py-4 xl:flex-row xl:items-center xl:justify-between">
-          <div>
-            <div className="flex items-center gap-2">
-              <h2 className="text-base font-semibold text-primary-700">
-                Leave Types List
-              </h2>
+      {/* Leave types table (shared DataTable, same as Employee List) */}
+      <DataTable
+        title="Leave Types"
+        count={totalEntries}
+        noun="leave types"
+        minWidth={960}
+        loading={loading}
+        filters={
+          <>
+            <button
+              type="button"
+              onClick={() => {
+                setLoading(true);
+                fetchSettings();
+              }}
+              disabled={loading}
+              className="hr-btn hr-btn-outline !w-10 !px-0"
+              title="Refresh leave types"
+              aria-label="Refresh leave types"
+            >
+              <RefreshCw size={18} className={loading ? "animate-spin" : ""} />
+            </button>
 
-              <span className="rounded-full bg-primary-50 px-2 py-0.5 text-xs font-semibold text-primary-700">
-                {totalEntries}
-              </span>
-            </div>
-
-            <p className="mt-1 text-xs text-text-secondary">
-              Manage leave type configuration, entitlement and availability.
-            </p>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-2.5">
             <select
-              className="hr-select !w-32"
               value={statusFilter}
               onChange={(e) => {
                 setStatusFilter(e.target.value);
                 setCurrentPage(1);
               }}
               aria-label="Filter by status"
+              className="hr-select !h-10 !w-36"
             >
               <option value="">All Status</option>
               <option value="Active">Active</option>
@@ -654,16 +682,15 @@ const LeaveSettings = () => {
             </select>
 
             <select
-              className="hr-select !w-32"
               value={paymentFilter}
               onChange={(e) => {
                 setPaymentFilter(e.target.value);
                 setCurrentPage(1);
               }}
               aria-label="Filter by payment"
+              className="hr-select !h-10 !w-40"
             >
               <option value="">All Payment</option>
-
               {paymentOptions.map((option) => (
                 <option key={option} value={option}>
                   {option}
@@ -671,333 +698,53 @@ const LeaveSettings = () => {
               ))}
             </select>
 
-            <button
-              type="button"
-              onClick={fetchSettings}
-              disabled={loading}
-              className="hr-btn hr-btn-outline !w-10 !px-0"
-              title="Refresh leave types"
-              aria-label="Refresh leave types"
-            >
-              <RefreshCw
-                size={16}
-                className={loading ? "animate-spin" : ""}
-              />
-            </button>
-          </div>
-        </div>
-
-        {/* Rows + Search */}
-        <div className="flex flex-col gap-3 border-b border-border-subtle px-5 py-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-2 text-sm text-text-secondary">
-            <span>Rows per page</span>
-
-            <select
-              className="hr-select !h-9 !w-20"
-              value={rowsPerPage}
-              onChange={(e) => {
-                setRowsPerPage(Number(e.target.value));
-                setCurrentPage(1);
-              }}
-              aria-label="Rows per page"
-            >
-              <option value={10}>10</option>
-              <option value={25}>25</option>
-              <option value={50}>50</option>
-            </select>
-
             {hasFilters && (
               <button
                 type="button"
                 onClick={resetFilters}
-                className="ml-1 text-sm font-medium text-primary-700 transition hover:underline"
+                className="text-sm font-medium text-primary-700 hover:underline"
               >
                 Clear filters
               </button>
             )}
-          </div>
-
-          <div className="relative w-full sm:max-w-sm">
-            <Search
-              size={16}
-              className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-text-disabled"
-            />
-
-            <input
-              type="text"
-              className="hr-input pl-9"
-              placeholder="Search leave name or code..."
-              value={search}
-              onChange={(e) => {
-                setSearch(e.target.value);
-                setCurrentPage(1);
-              }}
-              aria-label="Search leave types"
-            />
-          </div>
-        </div>
-
-        {/* Table */}
-        <div className="overflow-x-auto">
-          <table className="hr-table min-w-[900px]">
-            <thead>
-              <tr>
-                <th className="hr-th">Leave Type</th>
-                <th className="hr-th">Code</th>
-                <th className="hr-th">Total Days</th>
-                <th className="hr-th">Payment</th>
-                <th className="hr-th">Status</th>
-                <th className="hr-th text-center">Actions</th>
-              </tr>
-            </thead>
-
-            <tbody>
-              {loading && leaveTypes.length === 0 ? (
-                Array.from({ length: 5 }).map((_, index) => (
-                  <tr key={`skeleton-${index}`}>
-                    <td colSpan={6} className="hr-td">
-                      <div className="flex animate-pulse items-center gap-4">
-                        <div className="h-10 w-10 rounded-lg bg-primary-50" />
-
-                        <div className="h-3 w-40 rounded bg-primary-50" />
-
-                        <div className="h-3 w-24 rounded bg-primary-50" />
-
-                        <div className="h-3 w-20 rounded bg-primary-50" />
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              ) : paginatedLeaveTypes.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="py-16 text-center">
-                    <div className="mx-auto max-w-sm">
-                      <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-primary-50 text-primary-700">
-                        <CalendarDays size={22} />
-                      </div>
-
-                      <p className="text-sm font-semibold text-text-primary">
-                        {leaveTypes.length === 0
-                          ? "No leave types found"
-                          : "No matching leave types"}
-                      </p>
-
-                      <p className="mt-1 text-xs text-text-secondary">
-                        {leaveTypes.length === 0
-                          ? "Create a leave type to configure your leave policies."
-                          : "Try changing your search or filter criteria."}
-                      </p>
-                    </div>
-                  </td>
-                </tr>
-              ) : (
-                paginatedLeaveTypes.map((leave) => {
-                  const active = isActiveLeave(leave);
-                  const paid = isPaidLeave(leave);
-                  const pending = isPending(leave.id);
-
-                  return (
-                    <tr key={leave.id}>
-                      {/* Leave Type */}
-                      <td className="hr-td">
-                        <div className="flex items-center gap-3">
-                          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-border-subtle bg-primary-50 text-primary-700">
-                            <CalendarDays size={18} />
-                          </div>
-
-                          <div className="min-w-0">
-                            <div className="truncate text-sm font-semibold text-text-primary">
-                              {leave.leaveName || "Unnamed Leave"}
-                            </div>
-
-                            <div className="mt-0.5 text-xs text-text-secondary">
-                              Leave policy
-                            </div>
-                          </div>
-                        </div>
-                      </td>
-
-                      {/* Code */}
-                      <td className="hr-td">
-                        <span className="inline-flex h-7 items-center rounded-full border border-primary-100 bg-primary-50 px-2.5 text-xs font-semibold text-primary-700">
-                          {leave.leaveCode || "—"}
-                        </span>
-                      </td>
-
-                      {/* Total Days */}
-                      <td className="hr-td">
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm font-semibold text-text-primary">
-                            {leave.maxBalance ?? "—"}
-                          </span>
-
-                          {leave.leavePerMonth !== undefined &&
-                            leave.leavePerMonth !== null && (
-                              <span className="text-xs text-text-secondary">
-                                / month: {leave.leavePerMonth}
-                              </span>
-                            )}
-                        </div>
-                      </td>
-
-                      {/* Payment */}
-                      <td className="hr-td">
-                        <StatusBadge tone={paid ? "success" : "danger"}>
-                          {paid ? "Paid" : "Unpaid"}
-                        </StatusBadge>
-                      </td>
-
-                      {/* Status */}
-                      <td className="hr-td">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            if (!pending && canEdit) {
-                              requestToggle(leave);
-                            }
-                          }}
-                          disabled={pending || !canEdit}
-                          className="cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
-                          title={
-                            canEdit
-                              ? active
-                                ? "Deactivate leave type"
-                                : "Activate leave type"
-                              : "You do not have permission to change status"
-                          }
-                        >
-                          <StatusBadge tone={active ? "success" : "danger"}>
-                            {pending ? (
-                              <span className="inline-flex items-center gap-1.5">
-                                <Loader2
-                                  size={13}
-                                  className="animate-spin"
-                                />
-                                Updating
-                              </span>
-                            ) : active ? (
-                              "Active"
-                            ) : (
-                              "Inactive"
-                            )}
-                          </StatusBadge>
-                        </button>
-                      </td>
-
-                      {/* Actions */}
-                      <td className="hr-td">
-                        <div className="flex items-center justify-center gap-1">
-                          {canEdit && (
-                            <button
-                              type="button"
-                              aria-label={`Edit ${
-                                leave.leaveName || "leave type"
-                              }`}
-                              title={`Edit ${
-                                leave.leaveName || "leave type"
-                              }`}
-                              disabled={pending}
-                              onClick={(e) => {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                openEdit(leave);
-                              }}
-                              className="hr-icon-btn"
-                            >
-                              {pending ? (
-                                <Loader2
-                                  size={16}
-                                  className="animate-spin"
-                                />
-                              ) : (
-                                <Pencil size={16} />
-                              )}
-                            </button>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Pagination */}
-        <div className="flex flex-col gap-3 border-t border-border-subtle px-5 py-3 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-sm text-text-secondary">
-            Showing{" "}
-            <span className="font-semibold text-text-primary">
-              {startEntry}
-            </span>
-            –
-            <span className="font-semibold text-text-primary">
-              {endEntry}
-            </span>{" "}
-            of{" "}
-            <span className="font-semibold text-text-primary">
-              {totalEntries}
-            </span>{" "}
-            entries
-          </p>
-
-          <div className="flex items-center gap-1">
-            <button
-              type="button"
-              className="hr-icon-btn border border-border-subtle"
-              disabled={safePage === 1}
-              onClick={() =>
-                setCurrentPage((prev) => Math.max(prev - 1, 1))
-              }
-              aria-label="Previous page"
-            >
-              <ChevronLeft size={16} />
-            </button>
-
-            {getPageItems(totalPages, safePage).map((item) =>
-              typeof item === "string" ? (
-                <span
-                  key={item}
-                  className="px-1 text-sm text-text-disabled"
-                >
-                  …
-                </span>
-              ) : (
-                <button
-                  type="button"
-                  key={item}
-                  onClick={() => setCurrentPage(item)}
-                  aria-current={
-                    safePage === item ? "page" : undefined
-                  }
-                  className={`flex h-8 min-w-8 items-center justify-center rounded-md px-2 text-sm font-medium transition-colors ${
-                    safePage === item
-                      ? "bg-primary-700 text-white shadow-sm"
-                      : "text-text-secondary hover:bg-primary-50 hover:text-primary-700"
-                  }`}
-                >
-                  {item}
-                </button>
-              )
-            )}
-
-            <button
-              type="button"
-              className="hr-icon-btn border border-border-subtle"
-              disabled={safePage === totalPages}
-              onClick={() =>
-                setCurrentPage((prev) =>
-                  Math.min(prev + 1, totalPages)
-                )
-              }
-              aria-label="Next page"
-            >
-              <ChevronRight size={16} />
-            </button>
-          </div>
-        </div>
-      </div>
+          </>
+        }
+        columns={columns}
+        rows={paginatedLeaveTypes}
+        total={totalEntries}
+        page={safePage}
+        pageSize={rowsPerPage}
+        onPageChange={setCurrentPage}
+        onPageSizeChange={(n) => {
+          setRowsPerPage(n);
+          setCurrentPage(1);
+        }}
+        search={search}
+        onSearchChange={(value) => {
+          setSearch(value);
+          setCurrentPage(1);
+        }}
+        searchPlaceholder="Search leave name or code..."
+        searchLabel="Search leave types"
+        sort={sort}
+        onSortChange={setSort}
+        emptyIcon={CalendarDays}
+        emptyTitle={leaveTypes.length === 0 ? "No leave types found" : "No matching leave types"}
+        emptyDescription={
+          leaveTypes.length === 0
+            ? "Create a leave type to configure your leave policies."
+            : "Nothing matches your current search or filters. Try adjusting them."
+        }
+        actions={(leave) => [
+          {
+            label: `Edit ${leave.leaveName || "leave type"}`,
+            icon: Pencil,
+            onClick: () => openEdit(leave),
+            hidden: !canEdit,
+            loading: isPending(leave.id),
+          },
+        ]}
+      />
 
       {/* Create / Edit Modal */}
       <LeaveSettingModal
@@ -1008,24 +755,33 @@ const LeaveSettings = () => {
       />
 
       {/* Deactivate Confirmation */}
-      <ConfirmDeactivateDialog
+      <ConfirmModal
         open={Boolean(confirmLeave)}
-        leave={confirmLeave}
-        loading={
-          confirmLeave ? isPending(confirmLeave.id) : false
-        }
+        title="Deactivate Leave Type"
+        confirmLabel="Deactivate"
+        loadingLabel="Deactivating..."
+        confirmIcon={Power}
+        loading={confirmLeave ? isPending(confirmLeave.id) : false}
         onClose={() => {
-          if (
-            confirmLeave &&
-            isPending(confirmLeave.id)
-          ) {
+          if (confirmLeave && isPending(confirmLeave.id)) {
             return;
           }
 
           setConfirmLeave(null);
         }}
         onConfirm={confirmDeactivate}
-      />
+      >
+        <p>
+          Are you sure you want to deactivate{" "}
+          <span className="font-semibold text-text-primary">
+            {confirmLeave?.leaveName || "this leave type"}
+          </span>
+          {confirmLeave?.leaveCode ? ` (${confirmLeave.leaveCode})` : ""}?
+        </p>
+        <p className="mt-1 text-xs">
+          It will no longer be available for new leave applications.
+        </p>
+      </ConfirmModal>
     </div>
   );
 };

@@ -1,4 +1,3 @@
-import React from "react";
 import { Loader2, LogIn, LogOut } from "lucide-react";
 
 /**
